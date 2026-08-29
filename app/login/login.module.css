@@ -1,0 +1,145 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    linear-gradient(90deg, rgba(24, 32, 27, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(24, 32, 27, 0.035) 1px, transparent 1px),
+    var(--canvas);
+  background-size: 32px 32px;
+}
+
+.panel {
+  width: min(420px, 100%);
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.heading {
+  margin: 58px 0 28px;
+}
+
+.heading > span,
+.environment {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.heading h1 {
+  margin: 8px 0 7px;
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-subtle);
+}
+
+.segmented button {
+  min-width: 0;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.segmented button.selected {
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: 0 1px 4px rgba(31, 45, 36, 0.13);
+}
+
+.submit {
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px 0 17px;
+  border: 0;
+  border-radius: 6px;
+  color: #fff;
+  background: var(--surface-strong);
+  cursor: pointer;
+}
+
+.submit:hover:not(:disabled) {
+  background: #26382d;
+}
+
+.submit:disabled {
+  opacity: 0.62;
+  cursor: wait;
+}
+
+.environment {
+  justify-self: center;
+  color: #809087;
+}
+
+.error,
+.providerUnavailable {
+  margin: 0;
+  color: var(--red);
+  font-size: 12px;
+}
+
+.providerUnavailable {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 13px;
+  border: 1px solid #e5c6c2;
+  border-radius: 6px;
+  background: var(--red-soft);
+}
+
+.panel footer {
+  margin-top: 44px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: #8a968e;
+  font-size: 11px;
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 12px;
+  }
+
+  .panel {
+    padding: 22px;
+  }
+
+  .heading {
+    margin-top: 44px;
+  }
+}

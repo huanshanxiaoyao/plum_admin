@@ -1,0 +1,283 @@
+.page {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+}
+
+.pageHeader {
+  min-height: 84px;
+}
+
+.pageHeader span {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.pageHeader h1 {
+  margin: 5px 0 4px;
+  font-size: 25px;
+  line-height: 1.15;
+}
+
+.pageHeader p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.toolbar {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.search,
+.select {
+  height: 36px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  color: var(--muted);
+  background: var(--surface);
+}
+
+.search {
+  width: min(420px, 100%);
+}
+
+.select {
+  width: 148px;
+}
+
+.search input,
+.select select {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  background: transparent;
+  font-size: 11px;
+}
+
+.search input::placeholder {
+  color: #8c9890;
+}
+
+.toolbar button,
+.reset {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  color: var(--muted-strong);
+  background: var(--surface);
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.toolbar button[type="submit"] {
+  color: #fff;
+  border-color: var(--surface-strong);
+  background: var(--surface-strong);
+  cursor: pointer;
+}
+
+.toolbar :disabled,
+.pagination :disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+.table {
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.table table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table th,
+.table td {
+  min-width: 0;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table th {
+  height: 42px;
+  color: var(--muted);
+  background: var(--surface-subtle);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.table td {
+  height: 68px;
+  color: var(--muted-strong);
+  font-size: 11px;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover td {
+  background: #fbfcfa;
+}
+
+.identityCell,
+.stackCell {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.identityCell strong,
+.stackCell strong,
+.plan {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identityCell code,
+.identityCell small,
+.stackCell small {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.good {
+  color: var(--green);
+  border-color: #bcdac7;
+  background: var(--green-soft);
+}
+
+.warn {
+  color: var(--amber);
+  border-color: #ead1aa;
+  background: var(--amber-soft);
+}
+
+.muted {
+  color: var(--muted-strong);
+  background: var(--surface-subtle);
+}
+
+.empty {
+  min-height: 310px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 7px;
+  color: var(--muted);
+}
+
+.emptyMark,
+.errorCode {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: 50%;
+  font-size: 11px;
+}
+
+.errorCode {
+  color: var(--red);
+  border-color: #dfb7b4;
+  background: var(--red-soft);
+}
+
+.empty strong {
+  color: var(--muted-strong);
+  font-size: 12px;
+}
+
+.empty small {
+  font-size: 10px;
+}
+
+.pagination {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.pagination div {
+  display: flex;
+  gap: 5px;
+}
+
+.pagination button,
+.pagination a {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  background: var(--surface);
+}
+
+@media (max-width: 560px) {
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search,
+  .select,
+  .toolbar button,
+  .reset {
+    width: 100%;
+  }
+
+  .empty {
+    min-height: 260px;
+  }
+}

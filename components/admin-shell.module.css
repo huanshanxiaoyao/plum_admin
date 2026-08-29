@@ -1,0 +1,299 @@
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 228px minmax(0, 1fr);
+}
+
+.sidebar {
+  height: 100dvh;
+  position: sticky;
+  top: 0;
+  display: grid;
+  grid-template-rows: 70px minmax(0, 1fr) 54px;
+  color: #dbe6df;
+  background: var(--surface-strong);
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nav {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 10px;
+  overflow-y: auto;
+}
+
+.nav a {
+  height: 42px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 0 11px;
+  border-radius: 5px;
+  color: #9fb0a5;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.nav a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.nav a.active {
+  color: #fff;
+  background: #2b3b31;
+  box-shadow: inset 3px 0 #6fc28e;
+}
+
+.sidebarFooter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #7f9185;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #64bd85;
+  box-shadow: 0 0 0 3px rgba(100, 189, 133, 0.12);
+}
+
+.workspace {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 64px minmax(0, 1fr);
+}
+
+.topbar {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.accountWrap {
+  position: relative;
+  margin-left: auto;
+}
+
+.accountButton {
+  min-width: 0;
+  height: 44px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 15px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.accountButton:hover {
+  background: var(--surface-subtle);
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #3b674e;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.accountCopy {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.accountCopy strong,
+.accountCopy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountCopy strong {
+  max-width: 130px;
+  font-size: 11px;
+}
+
+.accountCopy small {
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.accountMenu {
+  width: 250px;
+  position: absolute;
+  top: 50px;
+  right: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.accountMenu > div {
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.accountMenu strong {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+
+.accountMenu span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.accountMenu button {
+  width: 100%;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 5px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--red);
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.accountMenu button:hover {
+  background: var(--red-soft);
+}
+
+.content {
+  min-width: 0;
+  padding: 24px;
+}
+
+.menuButton,
+.mobileClose {
+  width: 36px;
+  height: 36px;
+  display: none;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: inherit;
+  background: transparent;
+}
+
+.scrim {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .shell {
+    display: block;
+  }
+
+  .sidebar {
+    width: min(280px, calc(100vw - 42px));
+    position: fixed;
+    z-index: 50;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    transition: transform 180ms ease;
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+
+  .scrim {
+    position: fixed;
+    z-index: 40;
+    inset: 0;
+    display: block;
+    border: 0;
+    background: rgba(11, 17, 13, 0.42);
+  }
+
+  .menuButton,
+  .mobileClose {
+    display: grid;
+  }
+
+  .mobileClose {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .content {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar {
+    padding: 0 12px;
+  }
+
+  .breadcrumb {
+    display: none;
+  }
+
+  .accountCopy {
+    display: none;
+  }
+
+  .accountButton {
+    grid-template-columns: 30px 15px;
+  }
+
+  .content {
+    padding: 14px;
+  }
+}

@@ -1,0 +1,32 @@
+.brand {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+}
+
+.mark {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 6px;
+  color: #dff6e7;
+  background: #28764d;
+}
+
+.name {
+  overflow: hidden;
+  font-size: 18px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.name b {
+  color: #88a292;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}

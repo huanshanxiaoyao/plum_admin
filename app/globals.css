@@ -1,0 +1,63 @@
+:root {
+  --canvas: #f4f6f3;
+  --surface: #ffffff;
+  --surface-subtle: #f8faf7;
+  --surface-strong: #17211b;
+  --ink: #18201b;
+  --muted: #66716a;
+  --muted-strong: #4d5951;
+  --line: #dce3dd;
+  --line-strong: #c7d0c9;
+  --green: #207a4d;
+  --green-soft: #e5f2e9;
+  --amber: #a76013;
+  --amber-soft: #fff1d8;
+  --red: #b43f3f;
+  --red-soft: #fbe8e6;
+  --shadow: 0 8px 26px rgba(28, 44, 34, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas);
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  color: var(--ink);
+  background: var(--canvas);
+  font-family: Inter, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgba(32, 122, 77, 0.25);
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+}
+
+::selection {
+  color: #fff;
+  background: var(--green);
+}

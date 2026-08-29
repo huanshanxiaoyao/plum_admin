@@ -1,0 +1,21 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# testing
+/coverage/
+/playwright-report/
+/test-results/
+/output/
+
+# local configuration
+.env*
+!.env.example
+
+# system and editor
+.DS_Store
+*.log
+*.tsbuildinfo
