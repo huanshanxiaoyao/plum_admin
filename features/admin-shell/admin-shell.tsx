@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import type { AdminModule, AdminModuleKey } from "@/lib/admin/modules";
+import type { AdminModule, AdminModuleKey } from "@/features/admin-navigation/modules";
 import type { AdminIdentity } from "@/lib/auth/types";
 import { Brand } from "./brand";
 import styles from "./admin-shell.module.css";

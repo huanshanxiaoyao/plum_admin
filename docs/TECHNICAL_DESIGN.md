@@ -1,6 +1,6 @@
 # Plum 管理后台技术设计
 
-- 文档版本：v0.6
+- 文档版本：v0.7
 - 文档状态：一期范围已冻结；M1 已生产交付，M2～M6 待实施
 - 更新时间：2026-08-30
 - 关联 PRD：[Plum 管理后台产品需求文档](./PRD.md)
@@ -173,27 +173,49 @@ app/
   (admin)/
     layout.tsx
     page.tsx
-    [section]/page.tsx
+    characters/page.tsx
+    creators/page.tsx
+    users/page.tsx
+    subscriptions/page.tsx
+    audit/page.tsx
+    staff/page.tsx
   login/
   access-denied/
   api/
     auth/
     admin/[...path]/route.ts
-components/
-  admin-shell.tsx
-  staff-status-action.tsx
-lib/
-  admin/
+features/
+  admin-navigation/
     modules.ts
+  admin-resources/
     contracts.ts
     data-source.ts
     fixtures.ts
+  admin-sections/
+    admin-section-page.tsx
+    definition.ts
+    presentation.tsx
+  admin-shell/
+  dashboard/
+  characters/
+  creators/
+  users/
+  subscriptions/
+  audit/
+  staff/
+lib/
   auth/
   bff/
   server/
 ```
 
-这是 M1 的实际组织方式。`lib/admin/modules.ts` 是模块可用性、导航和 Capability 要求的唯一前端注册表；环境判断保留在 Server Component，浏览器组件只接收已经裁剪的导航数据。按业务域拆分页面、组件和契约属于 PR-B，PR-A 不做大规模搬迁。
+这是 PR-B 后的组织方式，依赖方向固定为 `app -> features -> lib`：
+
+- `app` 只声明 URL、Layout 和 Route Handler。六个后台业务模块使用显式路由，删除宽泛的 `[section]` 业务 catch-all，未知一级路径由 Next.js 直接返回 404。
+- `features/admin-navigation/modules.ts` 是模块可用性、导航和 Capability 要求的唯一前端注册表；环境判断保留在 Server Component，浏览器组件只接收已经裁剪的导航数据。
+- `features/admin-sections` 统一处理鉴权、查询参数、分页、错误和空态；各业务目录只拥有自己的页面定义、列配置与行映射，避免再次形成跨领域巨型页面。
+- `features/admin-resources` 暂时集中手写 Contract、数据源和 Fixture。PR-C 接入后端契约生成时替换该层，不在 PR-B 重复设计 API Schema。
+- `lib` 只保存 Auth、BFF 和服务端基础设施，不允许反向依赖 `features` 或 `app`；架构测试固化该规则。
 
 前端可以在非生产 Fixture 模式保留 `characters`、`creators`、`users`、`subscriptions` 和 `audit` 原型页，用于并行开发和验收。生产 Remote 模式只显示后端真实 API 已交付的模块：M1 为工作台基础壳，以及仅 Admin 可见的 `staff`；未交付模块不显示导航，直接访问返回 404。`moderation`、`taxonomy` 仅表示长期目录方向，一期不创建空页面或导航入口。
 

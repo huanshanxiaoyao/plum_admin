@@ -3,7 +3,7 @@
 import { LoaderCircle, UserCheck, UserX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { StaffSummary } from "@/lib/admin/contracts";
+import type { StaffSummary } from "@/features/admin-resources/contracts";
 import styles from "./staff-status-action.module.css";
 
 export function StaffStatusAction({ member }: { member: StaffSummary }) {

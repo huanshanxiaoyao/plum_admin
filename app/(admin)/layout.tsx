@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { AdminShell } from "@/components/admin-shell";
-import { visibleAdminModules } from "@/lib/admin/modules";
+import { AdminShell } from "@/features/admin-shell/admin-shell";
+import { visibleAdminModules } from "@/features/admin-navigation/modules";
 import { getCurrentIdentity } from "@/lib/auth/session";
 import { AdminApiError } from "@/lib/bff/client";
 import { adminDataSourceMode } from "@/lib/bff/config";

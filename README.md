@@ -39,6 +39,16 @@ Mock 登录仅在 `NODE_ENV` 不是 `production` 且 `ADMIN_AUTH_MODE=mock` 时�
 
 浏览器不会直接访问远端 API。单元测试和 CI Fixture 测试也不会连接线上服务。
 
+## 代码组织
+
+- `app/` 只负责 Next.js 路由、Layout 和 Route Handler；后台业务 URL 使用显式目录，不使用业务 catch-all。
+- `features/` 按后台能力和业务域组织页面、组件与列表定义；每个资源模块维护自己的列、状态和展示映射。
+- `features/admin-sections/` 统一处理列表鉴权、查询参数、分页、空态和错误态。
+- `features/admin-resources/` 暂存共享 API Contract、数据源和 Fixture；PR-C 将在这里接入后端契约生成。
+- `lib/` 只放 Auth、BFF 和服务端基础设施，不反向依赖 `features/` 或 `app/`。
+
+依赖方向固定为 `app -> features -> lib`，架构测试会阻止反向引用。
+
 ## 权限
 
 | Capability | Operator | Admin |

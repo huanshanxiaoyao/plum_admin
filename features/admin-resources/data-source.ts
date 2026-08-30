@@ -1,8 +1,8 @@
 import "server-only";
 
-import { getCurrentIdentity } from "../auth/session.ts";
-import { AdminApiError } from "../bff/client.ts";
-import { adminApiOrigin, adminDataSourceMode } from "../bff/config.ts";
+import { getCurrentIdentity } from "../../lib/auth/session.ts";
+import { AdminApiError } from "../../lib/bff/client.ts";
+import { adminApiOrigin, adminDataSourceMode } from "../../lib/bff/config.ts";
 import type {
   AdminListQuery,
   AdminListResponseMap,
