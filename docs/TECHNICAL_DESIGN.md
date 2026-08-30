@@ -227,12 +227,12 @@ lib/
 
 ### 6.1 登录链路
 
-一期使用飞书 OAuth v3 授权码流程；认证模块保留 Provider Adapter 边界，未来替换身份提供方不改变后端 Admin Identity 契约：
+一期使用飞书 OAuth 授权码流程；认证模块保留 Provider Adapter 边界，未来替换身份提供方不改变后端 Admin Identity 契约：
 
 1. 员工访问 `admin.plum.top`。
 2. `GET /api/auth/feishu/start` 生成随机 `state`、PKCE verifier/challenge；签名交易写入 10 分钟、HttpOnly、SameSite=Lax Cookie。
 3. 浏览器跳转 `https://accounts.feishu.cn/open-apis/authen/v1/authorize`，不主动请求普通 OpenAPI Scope 或 `offline_access`。
-4. `GET /api/auth/feishu/callback` 校验 state、Cookie 签名和过期时间，携带 PKCE verifier 调用 `POST /oauth/v3/token`。
+4. `GET /api/auth/feishu/callback` 校验 state、Cookie 签名和过期时间，携带 PKCE verifier 以 JSON 调用 `POST https://open.feishu.cn/open-apis/authen/v2/oauth/token`。
 5. Next.js 用短期 access token 调用 `GET /open-apis/authen/v1/user_info`，提取同一飞书应用下的 `open_id`、`union_id`、`tenant_key`、姓名、可选头像和邮箱。
 6. Callback 调用后端 `POST /admin/plum/session`；后端以 `open_id` 原子 Upsert `plum_admin_users`，首次登录默认创建 Active Operator，重复登录更新资料和 `last_login_at`。
 7. 后端校验员工状态、角色和 Capability 后，Next.js 建立 8 小时 Secure、HttpOnly、SameSite=Strict 后台会话；回调结束即丢弃飞书 Token，不保存 access/refresh token。
@@ -240,7 +240,7 @@ lib/
 
 飞书应用“可用范围”是外部准入边界，仅配置产品、运营和管理人员。禁止根据邮箱域名自动授权，也不调用通讯录导出接口。Admin 不通过自注册产生：首个 Admin 使用一次性 Bootstrap 建立，后续只能由 Active Admin 授予。
 
-飞书 Token v3 与 `user_info` 不要求普通 OpenAPI 权限。本流程不使用 `auth:user_access_token:read`；该权限不是 `auth:user.id:read` 的替代项，也不是本登录链路的前置依赖。
+飞书 OAuth token 与 `user_info` 不要求普通 OpenAPI 权限。本流程不使用 `auth:user_access_token:read`；该权限不是 `auth:user.id:read` 的替代项，也不是本登录链路的前置依赖。
 
 后端同时服务三个业务，Plum Admin 必须保持产品级隔离。现有 `app/products/zhaoxi/api/admin_accounts.py` 的旧 `/admin/me` 保持路径、Token 和响应契约不变；Plum 新身份固定使用 `/admin/plum/me`，由 `app/products/plum/manifest.py` 注册。组合根只负责调用 Plum Admin Router Installer，不让 Plum Admin Identity 导入其他产品实现。Route Inventory 测试必须证明两个端点各注册一次。
 
