@@ -31,6 +31,26 @@ test("operator sees daily navigation and is denied advanced actions", async ({ p
   await expect(page.getByText("Ember", { exact: true })).toBeVisible();
   await expect(page.getByText("Ada", { exact: true })).toHaveCount(0);
 
+  await page.getByRole("link", { name: "Ember", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Ember", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "版本记录" })).toBeVisible();
+  await expect(page.getByText("仅展示不可变版本元数据，不包含 Prompt 或角色正文")).toBeVisible();
+  await expect(page.getByText("content_json", { exact: true })).toHaveCount(0);
+
+  await page.getByRole("link", { name: "返回 Character 列表" }).click();
+  await page.getByRole("link", { name: "Work / 草稿" }).click();
+  await expect(page).toHaveURL(/view=works/);
+  await page.getByLabel("审核状态").selectOption("pending_review");
+  await page.getByLabel("Owner").fill("North Window");
+  await page.getByRole("button", { name: "查询" }).click();
+  await expect(page).toHaveURL(/moderation=pending_review/);
+  await expect(page).toHaveURL(/owner=North\+Window/);
+  await expect(page.getByRole("link", { name: "Haru", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Haru", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Haru", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "生命周期" })).toBeVisible();
+  await expect(page.getByText("content_json", { exact: true })).toHaveCount(0);
+
   await page.goto("/staff");
   await expect(page).toHaveURL("/forbidden");
   await expect(page.getByRole("heading", { name: "权限不足" })).toBeVisible();

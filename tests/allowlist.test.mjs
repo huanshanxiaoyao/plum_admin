@@ -4,6 +4,9 @@ import { encodeBackendPath, requiredCapability } from "../lib/bff/allowlist.ts";
 
 test("daily routes resolve to operations access", () => {
   assert.equal(requiredCapability("GET", "characters"), "operations.access");
+  assert.equal(requiredCapability("GET", "characters/char-01"), "operations.access");
+  assert.equal(requiredCapability("GET", "characters/char-01/versions"), "operations.access");
+  assert.equal(requiredCapability("GET", "works/work-01"), "operations.access");
   assert.equal(requiredCapability("POST", "official/works/accept-01/submit"), "operations.access");
   assert.equal(requiredCapability("PATCH", "creators/pusr-01/control"), "operations.access");
 });
@@ -22,6 +25,7 @@ test("unknown paths and methods remain closed", () => {
   assert.equal(requiredCapability("GET", "users/pusr-01/wallet"), null);
   assert.equal(requiredCapability("GET", "moderation/tasks"), null);
   assert.equal(requiredCapability("GET", "tags"), null);
+  assert.equal(requiredCapability("GET", "works/work-01/content"), null);
 });
 
 test("backend paths reject traversal and encode each accepted segment", () => {
