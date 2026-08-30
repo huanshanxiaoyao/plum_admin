@@ -1,7 +1,7 @@
 # Plum 管理后台一期详细开发计划
 
-- 文档版本：v1.2
-- 文档状态：已确认；M1 已生产完成，M2～M6 待实施
+- 文档版本：v1.3
+- 文档状态：已确认；M1 已生产完成，M2/M3 部分完成
 - 更新时间：2026-08-30
 - 关联 PRD：[Plum 管理后台产品需求文档](./PRD.md)
 - 关联技术设计：[Plum 管理后台技术设计](./TECHNICAL_DESIGN.md)
@@ -73,9 +73,10 @@
 
 截至 2026-08-30：
 
-- 两个仓库均以 `main` 为当前集成主干；PR-C 分支基线分别为 `plum_admin@f81dd49`、`ai4all_bridge@aa49be0`，这些是开发基线，不替代生产发布记录中的不可变 SHA。
+- 两个仓库均以 `main` 为当前集成主干；本次状态同步基线分别为 `plum_admin@4a77d2c`、`ai4all_bridge@31b0132`，这些是开发基线，不替代生产发布记录中的不可变 SHA。
 - M1 已部署到 `admin.plum.top`，真实飞书登录、首位 Admin、Operator 自注册、后台成员禁用/恢复和生产回调均已验证。
-- 生产写开关保持关闭；M2～M6 尚未交付的模块不得出现在生产导航或可访问路由中。
+- M2/M3 已完成 Character/Version/Work 只读 API、OpenAPI 契约和 Character/Work Remote UI；Creator、User/Membership、Subscription、Overview、Audit 仍待交付。
+- 生产写开关保持关闭；未交付模块不得出现在生产导航或可访问路由中，主干合入状态不替代生产部署和只读 UAT 记录。
 
 ## 2. 前置依赖总表
 
@@ -153,7 +154,7 @@ M1 所需的飞书应用发布与回调、`admin.plum.top` DNS/TLS、systemd/ngi
 
 状态：M1 身份链路已于 2026-08-30 部署并完成真实飞书登录联调。`plum_admin` 前端、Remote Identity BFF、员工列表和禁用/恢复交互已完成；后端 Plum 私有员工目录、登录自注册、按 `open_id` 禁用/恢复、最后一个 Active Admin 保护和隔离测试已完成。Migration 129、首个真实 Admin Bootstrap、Operator 自注册与错误占位身份停用均已验证；生产写开关仍保持关闭。
 
-在后端仓库并行开发期间，`plum_admin` 已先完成角色、创作者、用户和订阅的本地确定性 Fixture 及只读列表。PR-C 已为 M1 四个操作建立后端权威 OpenAPI、前端生成类型和漂移门禁；尚未交付的 M2 资源仍是手写原型类型，不代表真实 Admin API 或 M3 联调退出门槛已经完成。
+`plum_admin` 已完成角色、创作者、用户和订阅的本地确定性 Fixture 及只读原型。PR-C 建立后端权威 OpenAPI、前端生成类型和漂移门禁；随后已完成 Character/Version/Work 的后端只读 API、契约同步和前端真实数据页面。Creator、User/Membership、Subscription、Overview 和 Audit 仍是未交付的 M2/M3 资源，其 Fixture 原型不代表真实 Admin API 或联调退出门槛已经完成。
 
 预计：2～3 个工作日。
 
@@ -201,6 +202,8 @@ M1 所需的飞书应用发布与回调、`admin.plum.top` DNS/TLS、systemd/ngi
 
 预计：3～4 个工作日。
 
+状态：进行中。R-01、R-02 和 R-03 已完成；下一项为 R-04 Creator Read Model。R-05～R-10 尚待实施。
+
 任务分解：
 
 | ID | 仓库 | 任务 | 依赖 | 交付物/验证 |
@@ -246,6 +249,8 @@ M1 所需的飞书应用发布与回调、`admin.plum.top` DNS/TLS、systemd/ngi
 ### M3：只读后台 UI
 
 预计：3～4 个工作日，可在 M2 各资源契约稳定后按模块并行。
+
+状态：进行中。U-01 和 U-03 已完成，Character/Work 的桌面及窄屏验证已通过；下一项为 U-04 Creator 列表与详情。其余任务随对应后端资源实施。
 
 任务分解：
 

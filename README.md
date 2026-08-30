@@ -1,15 +1,15 @@
 # Plum Admin
 
-Plum 内部管理后台。M1 飞书登录、两角色 RBAC、后台工作台基础和 Plum Admin Identity 已完成生产交付；M2～M6 仍在一期计划中。
+Plum 内部管理后台。M1 飞书登录、两角色 RBAC、后台工作台基础和 Plum Admin Identity 已完成生产交付；M2/M3 已交付 Character/Work 首条真实数据纵向切片，其余一期模块继续按计划实施。
 
-## M1 状态
+## 当前状态
 
 已完成管理前端工程基础、开发环境 Mock Identity、飞书 OAuth 授权码流程 + PKCE、签名 HttpOnly Session、两角色 Capability、显式路径白名单 BFF、CSRF 防护和基础后台界面。
 
 M1 身份链路已于 2026-08-30 在 `admin.plum.top` 完成真实飞书登录、Operator 自注册和首位 Admin 验证。
 生产写开关继续保持关闭；开放写操作前仍需完成专用验收数据、备份和双开关审批。
 
-生产 Remote 模式只显示已经有真实后端 API 的模块：工作台，以及仅 Admin 可见的后台成员。角色、创作者、用户、订阅和审计原型仅在非生产 Fixture 模式显示，待对应 M2 API 交付后逐项开放。
+生产 Remote 模式只显示已经有真实后端 API 的模块：工作台基础壳、Character/Work，以及仅 Admin 可见的后台成员。创作者、用户、订阅和审计原型仅在非生产 Fixture 模式显示，待对应 M2 API 交付后逐项开放。Character/Work 已支持列表、详情、版本、URL 筛选和绑定筛选条件的 Cursor 分页；运行时响应校验会拒绝 Prompt、Greeting、Intro 和 `content_json` 等私有正文。
 
 新机器安装、配置、首位 Admin、监控和回滚步骤见
 [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)。
@@ -63,9 +63,10 @@ npm run contract:generate
 npm run contract:check
 ```
 
-`contract:check` 已纳入 `npm run verify`，生成类型过期会直接失败。当前快照只允许 M1 的
-`session`、`me` 和 `admin-users` 四个操作；后端新增 M2 路径时必须先显式加入 Admin 契约，
-再同步快照和生成类型。生成类型负责编译期漂移，现有运行时 Guard 继续拒绝不可信远端响应。
+`contract:check` 已纳入 `npm run verify`，生成类型过期会直接失败。当前快照包含 M1 的
+`session`、`me`、`admin-users`，以及 M2 已交付的 `characters`、`character versions` 和
+`works` 只读操作；后端新增路径时必须先显式加入 Admin 契约，再同步快照和生成类型。
+生成类型负责编译期漂移，现有运行时 Guard 继续拒绝不可信远端响应。
 
 ## 权限
 
