@@ -1,7 +1,7 @@
 # Plum 管理后台技术设计
 
-- 文档版本：v0.5
-- 文档状态：Ready for Development
+- 文档版本：v0.6
+- 文档状态：一期范围已冻结；M1 已生产交付，M2～M6 待实施
 - 更新时间：2026-08-30
 - 关联 PRD：[Plum 管理后台产品需求文档](./PRD.md)
 - 实施范围：长期技术蓝图；本文明确标注一期实现和后续预留
@@ -49,7 +49,7 @@ Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 
 | --- | --- | --- | --- |
 | 用户前端 | `/Users/suchong/workspace/ai4all/plum_chat` | `huanshanxiaoyao/plum_chat` | Next.js 16.3、React 19 |
 | 后端 | `/Users/suchong/workspace/ai4all/weixin_bot` | `huanshanxiaoyao/ai4all_bridge` | FastAPI、Python 3.11、PostgreSQL 16 |
-| 管理后台 | `/Users/suchong/workspace/ai4all/plum_admin` | `huanshanxiaoyao/plum_admin` | 本设计建议 Next.js 16、React 19 |
+| 管理后台 | `/Users/suchong/workspace/ai4all/plum_admin` | `huanshanxiaoyao/plum_admin` | Next.js 16.3、React 19、TypeScript 5 |
 
 ### 2.2 生产拓扑
 
@@ -63,7 +63,7 @@ Internet
               -> PostgreSQL 16 127.0.0.1:55432
 ```
 
-后台加入后：
+当前后台生产链路：
 
 ```text
 admin.plum.top
@@ -77,7 +77,7 @@ admin.plum.top
 ### 2.3 现有约束
 
 - PostgreSQL 迁移使用全局单链，新增 Plum 迁移也会在其他产品环境执行。
-- 生产迁移必须显式执行，服务启动不应自动获得迁移权限。
+- 当前生产部署在后端应用启动阶段执行待处理迁移；发布前必须完成兼容性、备份和回滚检查，迁移失败时不得停止仍在运行的旧服务。
 - 角色和私有资产查询必须遵守 owner 隔离。
 - Character Version 是不可变快照，不能原地修改或删除。
 - 当前媒体资产以 `owner_platform_user_id` 为强制隔离锚。
@@ -166,39 +166,36 @@ flowchart LR
 - 表单校验使用共享 TypeScript Schema；具体 Schema 库在工程初始化时根据依赖策略决定。
 - 首版不引入复杂全局状态库，URL 保存筛选状态，局部状态由 React 管理。
 
-### 5.2 建议目录
+### 5.2 当前目录与演进边界
 
 ```text
 app/
-  (auth)/login/
-  (console)/
+  (admin)/
     layout.tsx
     page.tsx
-    characters/
-    creators/
-    users/
-    subscriptions/
-    moderation/
-    taxonomy/
-    audit/
-    staff/
+    [section]/page.tsx
+  login/
+  access-denied/
   api/
     auth/
     admin/[...path]/route.ts
 components/
-  layout/
-  tables/
-  forms/
-  feedback/
+  admin-shell.tsx
+  staff-status-action.tsx
 lib/
+  admin/
+    modules.ts
+    contracts.ts
+    data-source.ts
+    fixtures.ts
   auth/
-  server/backend-client.ts
-  capabilities.ts
-  contracts.ts
-  errors.ts
+  bff/
+  server/
 ```
 
-一期只创建 `characters`、`creators`、`users`、`subscriptions`、`audit` 和 `staff` 的可访问页面；`moderation`、`taxonomy` 仅表示长期目录方向，一期不创建空页面或导航入口。
+这是 M1 的实际组织方式。`lib/admin/modules.ts` 是模块可用性、导航和 Capability 要求的唯一前端注册表；环境判断保留在 Server Component，浏览器组件只接收已经裁剪的导航数据。按业务域拆分页面、组件和契约属于 PR-B，PR-A 不做大规模搬迁。
+
+前端可以在非生产 Fixture 模式保留 `characters`、`creators`、`users`、`subscriptions` 和 `audit` 原型页，用于并行开发和验收。生产 Remote 模式只显示后端真实 API 已交付的模块：M1 为工作台基础壳，以及仅 Admin 可见的 `staff`；未交付模块不显示导航，直接访问返回 404。`moderation`、`taxonomy` 仅表示长期目录方向，一期不创建空页面或导航入口。
 
 ### 5.3 BFF 规则
 
@@ -419,6 +416,8 @@ CREATE TABLE plum_creator_controls (
 | 502/503 | `dependency_unavailable` | 审核、存储或其他依赖不可用 |
 | 504 | `upstream_timeout` | 上游超时 |
 
+上表是 M2 及后续 Admin API 的规范目标。M1 已上线身份/成员接口仍存在两个已知偏差：权限拒绝使用 `admin_forbidden`，字段校验使用 `validation_error`；PR-C 在新增 M2 接口前统一为 `admin_permission_denied` 和 `validation_failed`，前端在过渡期不得假设旧错误码已经消失。
+
 #### 8.1.3 分页契约
 
 列表请求统一支持：
@@ -545,7 +544,7 @@ Subscription 响应必须显式返回 `billing_connected: false`，直到真实�
 
 | Method | Path | Capability | 说明 |
 | --- | --- | --- | --- |
-| GET | `/admin/plum/admin-users` | `operations.access` | 后台成员分页列表，可按姓名、`open_id` 和状态筛选 |
+| GET | `/admin/plum/admin-users` | `staff.manage` | 后台成员分页列表，可按姓名、`open_id` 和状态筛选 |
 | PATCH | `/admin/plum/admin-users/{open_id}` | `staff.manage` | 修改角色或启停状态；禁止禁用或降级最后一个 Active Admin |
 
 `plum_admin_users` 是 Plum 产品私有员工目录，不复用普通业务用户 `platform_users`，也不写入三个业务共享的 `admin_users`。一期直接以应用维度唯一的 `open_id` 为主键，并保存可空 `union_id`、`tenant_key`、姓名、可选邮箱和头像、`role`、`status`、`created_at`、`last_login_at` 和 `updated_at`。
@@ -677,16 +676,17 @@ PLUM_ADMIN_WRITES_ENABLED=false
 ### 12.4 发布顺序
 
 1. 保持前后端写开关关闭，部署向后兼容的后端代码。
-2. 显式执行待处理数据库迁移。
-3. 验证 FastAPI readiness、Admin API 鉴权和只读接口。
-4. 构建 `plum_admin`。
-5. 启动或重启 `plum-admin-frontend`。
-6. 验证本机 `127.0.0.1:3001`。
-7. 安装 nginx 配置并执行 `nginx -t`。
-8. Reload nginx。
-9. 完成登录、只读查询、403 和跨产品隔离 UAT。
-10. 完成备份与恢复检查、准备专用验收数据后，先开后端再开前端写开关。
-11. 逐类验证官方角色、治理和成员管理写操作；任一异常立即关闭写开关。
+2. 在重启前确认启动阶段待执行迁移向后兼容，且备份与回滚基线可用。
+3. 启动新后端实例，由应用启动流程执行迁移；迁移或启动失败时保留旧服务运行。
+4. 验证 FastAPI readiness、Admin API 鉴权和只读接口。
+5. 构建 `plum_admin`。
+6. 启动或重启 `plum-admin-frontend`。
+7. 验证本机 `127.0.0.1:3001`。
+8. 安装 nginx 配置并执行 `nginx -t`。
+9. Reload nginx。
+10. 完成登录、只读查询、403 和跨产品隔离 UAT。
+11. 完成备份与恢复检查、准备专用验收数据后，先开后端再开前端写开关。
+12. 逐类验证官方角色、治理和成员管理写操作；任一异常立即关闭写开关。
 
 数据库迁移失败时不得停止仍在运行的旧服务。
 

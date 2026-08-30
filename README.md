@@ -1,6 +1,6 @@
 # Plum Admin
 
-Plum 内部管理后台。当前处于 M1：飞书登录、两角色 RBAC、后台工作台和 Plum Admin Identity。
+Plum 内部管理后台。M1 飞书登录、两角色 RBAC、后台工作台基础和 Plum Admin Identity 已完成生产交付；M2～M6 仍在一期计划中。
 
 ## M1 状态
 
@@ -8,6 +8,8 @@ Plum 内部管理后台。当前处于 M1：飞书登录、两角色 RBAC、后�
 
 M1 身份链路已于 2026-08-30 在 `admin.plum.top` 完成真实飞书登录、Operator 自注册和首位 Admin 验证。
 生产写开关继续保持关闭；开放写操作前仍需完成专用验收数据、备份和双开关审批。
+
+生产 Remote 模式只显示已经有真实后端 API 的模块：工作台，以及仅 Admin 可见的后台成员。角色、创作者、用户、订阅和审计原型仅在非生产 Fixture 模式显示，待对应 M2 API 交付后逐项开放。
 
 新机器安装、配置、首位 Admin、监控和回滚步骤见
 [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)。
@@ -49,11 +51,9 @@ Mock 登录仅在 `NODE_ENV` 不是 `production` 且 `ADMIN_AUTH_MODE=mock` 时�
 ## 质量门禁
 
 ```bash
-npm run lint
-npm run typecheck
-npm test
-npm run build
-npm run test:e2e
+npm run verify
 ```
+
+`verify` 依次执行 Lint、Typecheck、单元测试、生产构建和 Playwright E2E。
 
 需求和实现边界见 [`docs/`](./docs/)。

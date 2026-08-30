@@ -18,25 +18,20 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import type { AdminModule, AdminModuleKey } from "@/lib/admin/modules";
 import type { AdminIdentity } from "@/lib/auth/types";
 import { Brand } from "./brand";
 import styles from "./admin-shell.module.css";
 
-type NavItem = {
-  href: string;
-  label: string;
-  icon: LucideIcon;
+const NAV_ICONS: Record<AdminModuleKey, LucideIcon> = {
+  dashboard: House,
+  characters: BadgeCheck,
+  creators: UsersRound,
+  users: CircleUserRound,
+  subscriptions: ReceiptText,
+  audit: ClipboardList,
+  staff: Users,
 };
-
-const NAV_ITEMS: readonly NavItem[] = [
-  { href: "/", label: "工作台", icon: House },
-  { href: "/characters", label: "角色管理", icon: BadgeCheck },
-  { href: "/creators", label: "创作者", icon: UsersRound },
-  { href: "/users", label: "用户", icon: CircleUserRound },
-  { href: "/subscriptions", label: "用户订阅", icon: ReceiptText },
-  { href: "/audit", label: "操作审计", icon: ClipboardList },
-  { href: "/staff", label: "后台成员", icon: Users },
-];
 
 function isActivePath(pathname: string, href: string): boolean {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
@@ -44,10 +39,12 @@ function isActivePath(pathname: string, href: string): boolean {
 
 export function AdminShell({
   identity,
+  navigation,
   environmentLabel,
   children,
 }: {
   identity: AdminIdentity;
+  navigation: readonly AdminModule[];
   environmentLabel: string;
   children: React.ReactNode;
 }) {
@@ -72,8 +69,8 @@ export function AdminShell({
           </button>
         </div>
         <nav className={styles.nav} aria-label="主导航">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
+          {navigation.map((item) => {
+            const Icon = NAV_ICONS[item.key];
             const active = isActivePath(pathname, item.href);
             return (
               <Link

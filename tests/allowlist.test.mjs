@@ -6,12 +6,12 @@ test("daily routes resolve to operations access", () => {
   assert.equal(requiredCapability("GET", "characters"), "operations.access");
   assert.equal(requiredCapability("POST", "official/works/accept-01/submit"), "operations.access");
   assert.equal(requiredCapability("PATCH", "creators/pusr-01/control"), "operations.access");
-  assert.equal(requiredCapability("GET", "admin-users"), "operations.access");
 });
 
 test("three advanced route groups require admin capabilities", () => {
   assert.equal(requiredCapability("POST", "characters/char-01/restore"), "character.restore");
   assert.equal(requiredCapability("POST", "users/pusr-01/membership/disable"), "membership.manage");
+  assert.equal(requiredCapability("GET", "admin-users"), "staff.manage");
   assert.equal(requiredCapability("PATCH", "admin-users/adm-01"), "staff.manage");
 });
 
