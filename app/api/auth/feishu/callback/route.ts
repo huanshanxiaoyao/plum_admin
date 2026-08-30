@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { isFeishuAuthEnabled } from "@/lib/auth/auth-mode";
 import {
   exchangeFeishuCode,
+  FeishuOAuthError,
   fetchFeishuIdentity,
   loadFeishuOAuthConfig,
 } from "@/lib/auth/feishu-provider";
@@ -24,6 +25,7 @@ import {
   OAUTH_TRANSACTION_COOKIE_NAME,
   oauthTransactionCookieOptions,
 } from "@/lib/auth/oauth-cookies";
+import { publicUrl } from "@/lib/server/origin";
 
 const SAFE_DENIAL_CODES = new Set([
   "admin_user_disabled",
@@ -79,16 +81,18 @@ export async function GET(request: NextRequest) {
       );
       return response;
     }
+    const errorCode = error instanceof FeishuOAuthError
+      ? error.code
+      : error instanceof AdminApiError
+        ? error.code
+        : "unexpected_error";
+    console.error("Plum Admin OAuth callback failed", { code: errorCode });
     return clearOAuthCookie(redirect(request, "/login?error=login_failed"));
   }
 }
 
 function redirect(request: NextRequest, path: string): NextResponse {
-  const url = request.nextUrl.clone();
-  url.pathname = path.split("?", 1)[0];
-  url.search = path.includes("?") ? path.slice(path.indexOf("?")) : "";
-  url.hash = "";
-  return NextResponse.redirect(url, 302);
+  return NextResponse.redirect(publicUrl(request, path), 302);
 }
 
 function clearOAuthCookie(response: NextResponse): NextResponse {

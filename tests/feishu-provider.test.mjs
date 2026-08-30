@@ -28,7 +28,7 @@ test("authorization URL includes state and S256 PKCE without requesting extra sc
   assert.equal(url.searchParams.has("scope"), false);
 });
 
-test("token exchange uses OAuth v3 form contract and returns access token", async () => {
+test("token exchange uses Feishu JSON contract and returns access token", async () => {
   let captured;
   const token = await exchangeFeishuCode(CONFIG, "authorization-code", "code-verifier", async (url, init) => {
     captured = { url, init };
@@ -37,14 +37,14 @@ test("token exchange uses OAuth v3 form contract and returns access token", asyn
   assert.equal(token, "u-test-token");
   assert.equal(captured.url, FEISHU_TOKEN_ENDPOINT);
   assert.equal(captured.init.method, "POST");
-  assert.equal(captured.init.headers["Content-Type"], "application/x-www-form-urlencoded");
-  const body = captured.init.body;
-  assert.equal(body.get("grant_type"), "authorization_code");
-  assert.equal(body.get("client_id"), CONFIG.clientId);
-  assert.equal(body.get("client_secret"), CONFIG.clientSecret);
-  assert.equal(body.get("code"), "authorization-code");
-  assert.equal(body.get("redirect_uri"), CONFIG.redirectUri);
-  assert.equal(body.get("code_verifier"), "code-verifier");
+  assert.equal(captured.init.headers["Content-Type"], "application/json");
+  const body = JSON.parse(captured.init.body);
+  assert.equal(body.grant_type, "authorization_code");
+  assert.equal(body.client_id, CONFIG.clientId);
+  assert.equal(body.client_secret, CONFIG.clientSecret);
+  assert.equal(body.code, "authorization-code");
+  assert.equal(body.redirect_uri, CONFIG.redirectUri);
+  assert.equal(body.code_verifier, "code-verifier");
 });
 
 test("user info maps open_id and allows missing email", async () => {

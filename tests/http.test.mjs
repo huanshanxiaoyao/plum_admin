@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isSameOrigin } from "../lib/server/origin.ts";
+import { isSameOrigin, publicUrl, requestOrigin } from "../lib/server/origin.ts";
 
 function request(origin, headers = {}) {
   return new Request("http://localhost:3001/api/auth/mock", {
@@ -25,6 +25,32 @@ test("same-origin validation honors reverse proxy protocol", () => {
     },
   });
   assert.equal(isSameOrigin(proxied), true);
+});
+
+test("public URLs honor reverse proxy host and protocol", () => {
+  const proxied = new Request("http://localhost:3001/api/auth/feishu/callback", {
+    headers: {
+      Host: "localhost:3001",
+      "X-Forwarded-Host": "admin.plum.top",
+      "X-Forwarded-Proto": "https",
+    },
+  });
+  assert.equal(requestOrigin(proxied).origin, "https://admin.plum.top");
+  assert.equal(
+    publicUrl(proxied, "/login?error=login_failed").href,
+    "https://admin.plum.top/login?error=login_failed",
+  );
+});
+
+test("public URLs ignore invalid forwarded protocols", () => {
+  const request = new Request("http://localhost:3001/api/auth/feishu/callback", {
+    headers: {
+      Host: "localhost:3001",
+      "X-Forwarded-Host": "evil.example",
+      "X-Forwarded-Proto": "javascript",
+    },
+  });
+  assert.equal(requestOrigin(request).origin, "http://localhost:3001");
 });
 
 test("production rejects write requests without an Origin", () => {
