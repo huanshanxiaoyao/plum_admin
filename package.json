@@ -16,8 +16,10 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-transform-types --test tests/*.test.mjs",
     "test:e2e": "playwright test",
+    "contract:generate": "openapi-typescript contracts/plum-admin-v1.openapi.json --output contracts/generated/admin-api.ts",
+    "contract:check": "openapi-typescript contracts/plum-admin-v1.openapi.json --output contracts/generated/admin-api.ts --check",
     "clean": "rm -rf .cache .artifacts .next .next-e2e coverage playwright-report test-results output tsconfig.tsbuildinfo",
-    "verify": "npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e"
+    "verify": "npm run contract:check && npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
@@ -32,6 +34,7 @@
     "@types/react-dom": "19.2.2",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.0",
+    "openapi-typescript": "^7.13.0",
     "typescript": "5.8.2"
   }
 }

@@ -28,6 +28,10 @@ test("feature modules do not depend on the route layer", () => {
   assertNoImports("features", [/@\/app\//, /["'](?:\.\.\/)+app\//]);
 });
 
+test("the generated contract layer does not depend on application code", () => {
+  assertNoImports("contracts", [/@\/(?:app|features|lib)\//, /["'](?:\.\.\/)+(?:app|features|lib)\//]);
+});
+
 test("admin business routes are explicit instead of catch-all", () => {
   for (const section of ["characters", "creators", "users", "subscriptions", "audit", "staff"]) {
     assert.equal(existsSync(join(ROOT, "app", "(admin)", section, "page.tsx")), true, section);

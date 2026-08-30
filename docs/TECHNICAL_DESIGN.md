@@ -110,6 +110,7 @@ admin.plum.top
 
 - `plum_admin` 只通过后端 API 读取或修改业务数据，不直连数据库、不导入 `weixin_bot` 源码，也不依赖 SSH、服务器文件或运维命令完成业务操作。
 - 前后端保持独立仓库、独立构建和独立发布，不建设共享运行时代码包。双方只依赖版本化 API 契约，包括资源结构、稳定 ID、状态枚举、Capability、错误、分页、时间、幂等和并发语义。
+- 后端 `docs/products/plum/openapi/admin_v1.json` 是 Plum Admin 契约的唯一权威来源；前端只提交快照副本和生成类型，不从后端源码或运行中服务生成。
 - 本地开发需要真实联调时，通过服务端 BFF 访问已部署的 HTTPS Admin API，不启动本地 `weixin_bot`。浏览器不得直接访问远端 API。
 - 单元测试、CI 和确定性验收 Fixture 不访问线上服务。远端写请求默认关闭，只有在明确的联调或发布窗口通过配置显式开启。
 - `plum_admin` 与 FastAPI 部署在同一线上节点时，可以通过 loopback 或私网地址调用后端 API；这仍是 API 边界，并可避免不必要的公网回环。
@@ -184,6 +185,9 @@ app/
   api/
     auth/
     admin/[...path]/route.ts
+contracts/
+  plum-admin-v1.openapi.json
+  generated/admin-api.ts
 features/
   admin-navigation/
     modules.ts
@@ -209,12 +213,13 @@ lib/
   server/
 ```
 
-这是 PR-B 后的组织方式，依赖方向固定为 `app -> features -> lib`：
+这是 PR-C 后的组织方式，应用依赖方向固定为 `app -> features -> lib`，`contracts` 是不依赖应用代码的叶子层：
 
 - `app` 只声明 URL、Layout 和 Route Handler。六个后台业务模块使用显式路由，删除宽泛的 `[section]` 业务 catch-all，未知一级路径由 Next.js 直接返回 404。
 - `features/admin-navigation/modules.ts` 是模块可用性、导航和 Capability 要求的唯一前端注册表；环境判断保留在 Server Component，浏览器组件只接收已经裁剪的导航数据。
 - `features/admin-sections` 统一处理鉴权、查询参数、分页、错误和空态；各业务目录只拥有自己的页面定义、列配置与行映射，避免再次形成跨领域巨型页面。
-- `features/admin-resources` 暂时集中手写 Contract、数据源和 Fixture。PR-C 接入后端契约生成时替换该层，不在 PR-B 重复设计 API Schema。
+- `contracts` 保存后端 OpenAPI 的逐字节副本和 `openapi-typescript` 生成结果；生成文件禁止手改，漂移检查进入 `npm run verify`。
+- `features/admin-resources` 保存未交付模块的本地 Fixture、数据源和运行时 Guard；M1 Staff 类型直接引用生成 Schema，后续资源随 M2 契约逐项替换手写类型。
 - `lib` 只保存 Auth、BFF 和服务端基础设施，不允许反向依赖 `features` 或 `app`；架构测试固化该规则。
 
 前端可以在非生产 Fixture 模式保留 `characters`、`creators`、`users`、`subscriptions` 和 `audit` 原型页，用于并行开发和验收。生产 Remote 模式只显示后端真实 API 已交付的模块：M1 为工作台基础壳，以及仅 Admin 可见的 `staff`；未交付模块不显示导航，直接访问返回 404。`moderation`、`taxonomy` 仅表示长期目录方向，一期不创建空页面或导航入口。
@@ -438,7 +443,14 @@ CREATE TABLE plum_creator_controls (
 | 502/503 | `dependency_unavailable` | 审核、存储或其他依赖不可用 |
 | 504 | `upstream_timeout` | 上游超时 |
 
-上表是 M2 及后续 Admin API 的规范目标。M1 已上线身份/成员接口仍存在两个已知偏差：权限拒绝使用 `admin_forbidden`，字段校验使用 `validation_error`；PR-C 在新增 M2 接口前统一为 `admin_permission_denied` 和 `validation_failed`，前端在过渡期不得假设旧错误码已经消失。
+上表同时约束 M1 和后续 Admin API。PR-C 已将 M1 身份/成员接口的权限拒绝统一为 `admin_permission_denied`，字段及语义校验统一为 `validation_failed`；FastAPI 字段错误不会回显提交值，并通过 `details.fields` 返回字段位置、消息和类型。
+
+#### 8.1.2.1 OpenAPI 版本与漂移门禁
+
+- 后端显式导出 `docs/products/plum/openapi/admin_v1.json`，当前仅包含 `POST /session`、`GET /me`、`GET /admin-users` 和 `PATCH /admin-users/{open_id}`。
+- `/admin/plum/*` 下的评测、记忆和模型配置等历史控制面不属于新后台契约；导出器使用显式路径集合，不能按前缀整体收录。
+- 前端 vendoring 同一 JSON 并生成 TypeScript 类型。Identity、Capability、Staff 和分页结构引用生成 Schema，远端 JSON 仍必须经过运行时 Guard。
+- 后端 PR 先更新响应模型、聚焦契约测试和快照；前端 PR 再同步 JSON、重新生成并通过 `contract:check`。新增 M2 路径必须显式加入导出集合，避免偶然扩大 BFF 表面。
 
 #### 8.1.3 分页契约
 
