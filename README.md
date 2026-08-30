@@ -27,6 +27,8 @@ npm run dev -- --port 3001
 
 打开 `http://localhost:3001`，选择 Operator 或 Admin 模拟身份。
 
+本地生成文件集中在两个隐藏目录：`.cache/` 保存 Next.js 和 TypeScript 可重建缓存，`.artifacts/` 保存 Playwright 运行产物。停止开发或测试服务后，使用 `npm run clean` 可同时清除当前目录和旧版根目录中的生成内容。`node_modules/`、`.env` 和 Next.js 管理的 `next-env.d.ts` 按工具约定保留在项目根目录。
+
 Mock 登录仅在 `NODE_ENV` 不是 `production` 且 `ADMIN_AUTH_MODE=mock` 时启用。生产环境必须配置飞书 OAuth 和长度不少于 32 字符的 `ADMIN_SESSION_SECRET`。
 
 飞书登录使用授权码流程、随机 `state` 和 S256 PKCE。后台仅短暂使用飞书 access token 获取 `open_id`，回调结束即丢弃；不请求 `offline_access`，也不需要配置 `auth:user_access_token:read`。`open_id` 是后台成员的稳定主身份，企业邮箱不是前置条件。

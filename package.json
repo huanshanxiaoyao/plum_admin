@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-transform-types --test tests/*.test.mjs",
     "test:e2e": "playwright test",
+    "clean": "rm -rf .cache .artifacts .next .next-e2e coverage playwright-report test-results output tsconfig.tsbuildinfo",
     "verify": "npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e"
   },
   "dependencies": {
