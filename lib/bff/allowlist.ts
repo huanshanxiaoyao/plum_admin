@@ -29,7 +29,7 @@ const RULES: readonly AllowRule[] = [
   },
   { methods: ["GET"], path: /^subscriptions$/, capability: DAILY },
   { methods: ["GET"], path: /^audit-events$/, capability: DAILY },
-  { methods: ["GET", "POST"], path: /^admin-users$/, capability: "staff.manage" },
+  { methods: ["GET"], path: /^admin-users$/, capability: DAILY },
   { methods: ["PATCH"], path: /^admin-users\/[^/]+$/, capability: "staff.manage" },
 ];
 

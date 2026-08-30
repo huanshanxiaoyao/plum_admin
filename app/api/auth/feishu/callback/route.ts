@@ -10,7 +10,7 @@ import {
   createDeniedIdentityToken,
   verifyOAuthTransaction,
 } from "@/lib/auth/oauth-state";
-import { resolveRemoteAdminIdentity } from "@/lib/auth/remote-identity";
+import { registerRemoteAdminIdentity } from "@/lib/auth/remote-identity";
 import {
   getSessionSecret,
   SESSION_COOKIE_NAME,
@@ -59,10 +59,7 @@ export async function GET(request: NextRequest) {
     const config = loadFeishuOAuthConfig();
     const accessToken = await exchangeFeishuCode(config, code, transaction.codeVerifier);
     feishuIdentity = await fetchFeishuIdentity(accessToken);
-    const identity = await resolveRemoteAdminIdentity({
-      id: feishuIdentity.openId,
-      email: feishuIdentity.email,
-    });
+    const identity = await registerRemoteAdminIdentity(feishuIdentity);
     const sessionToken = await createSessionToken(identity, secret);
     const response = clearOAuthCookie(redirect(request, "/"));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, sessionCookieOptions());

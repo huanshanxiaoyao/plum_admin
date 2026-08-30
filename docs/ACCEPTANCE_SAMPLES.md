@@ -29,7 +29,7 @@
 
 ## 3. 后台成员样例
 
-以下 `open_id` 均为合成值，只用于临时 PostgreSQL 和测试；生产成员必须使用飞书实际返回、且属于当前应用的 `open_id`。
+以下 `open_id` 均为合成值，只用于临时 PostgreSQL 和测试；生产成员必须来自当前飞书应用 OAuth 回调，Operator 不需要预先导入。
 
 | Feishu Open ID | Email | Role | Status | 用途 |
 | --- | --- | --- | --- | --- |
@@ -41,9 +41,11 @@
 预期：
 
 - 三个 Active 成员的 `/admin/plum/me` 返回各自 Capability。
-- `X-Admin-User-Id` 只传上述 `open_id`、`X-Admin-Email` 为空时仍可解析成员。
-- Disabled 成员登录成功后，业务 API 返回 `403 admin_user_disabled`。
-- 不在表中的飞书用户返回 403，拒绝页显示本人 `open_id`，且不会被自动写成 Operator 或 Admin。
+- 新 `open_id` 首次调用 `/admin/plum/session` 时创建为 Active Operator，保存 Provider 资料并设置 `created_at=last_login_at`。
+- 同一 `open_id` 重复登录不重复建记录，只更新资料和 `last_login_at`，既有角色不被覆盖。
+- Disabled 成员调用 `/admin/plum/session` 或任意受保护 API 均返回 `403 admin_user_disabled`，登录不能自动恢复状态。
+- Active Admin 可以按指定 `open_id` 禁用或恢复成员；Operator 对同一操作返回 403。
+- 首次自注册永远不会产生 Admin；合成 Admin 由测试 Bootstrap Helper 建立。
 
 ## 4. 平台用户样例
 

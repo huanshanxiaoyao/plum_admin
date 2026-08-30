@@ -53,13 +53,24 @@ test("user info maps open_id and allows missing email", async () => {
     captured = { url, init };
     return Response.json({
       code: 0,
-      data: { open_id: "ou_acceptance_operator", name: "Jack" },
+      data: {
+        open_id: "ou_acceptance_operator",
+        union_id: "on_acceptance_operator",
+        tenant_key: "tenant_acceptance",
+        name: "Jack",
+        en_name: "Jack",
+        avatar_url: "https://example.invalid/jack.png",
+      },
     });
   });
   assert.deepEqual(identity, {
     openId: "ou_acceptance_operator",
+    unionId: "on_acceptance_operator",
+    tenantKey: "tenant_acceptance",
     email: "",
     displayName: "Jack",
+    enName: "Jack",
+    avatarUrl: "https://example.invalid/jack.png",
   });
   assert.equal(captured.url, FEISHU_USER_INFO_ENDPOINT);
   assert.equal(captured.init.headers.Authorization, "Bearer u-test-token");

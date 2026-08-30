@@ -16,6 +16,7 @@ const RESOURCE_PATHS: Record<AdminListSection, string> = {
   creators: "creators",
   users: "users",
   subscriptions: "subscriptions",
+  staff: "admin-users",
 };
 
 function normalizeQuery(query: AdminListQuery) {

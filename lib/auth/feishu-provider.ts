@@ -10,8 +10,12 @@ export type FeishuOAuthConfig = {
 
 export type FeishuIdentity = {
   openId: string;
+  unionId: string;
+  tenantKey: string;
   email: string;
   displayName: string;
+  enName: string;
+  avatarUrl: string;
 };
 
 export class FeishuOAuthError extends Error {
@@ -123,13 +127,23 @@ export async function fetchFeishuIdentity(
     payload?.code !== 0 ||
     !data ||
     typeof data.open_id !== "string" ||
-    !data.open_id.trim()
+    !data.open_id.trim() ||
+    typeof data.tenant_key !== "string" ||
+    !data.tenant_key.trim()
   ) {
     throw new FeishuOAuthError("user_info_failed");
   }
   const displayName = firstString(data.name, data.en_name) || "飞书用户";
   const email = firstString(data.enterprise_email, data.email);
-  return { openId: data.open_id.trim(), email, displayName };
+  return {
+    openId: data.open_id.trim(),
+    unionId: firstString(data.union_id),
+    tenantKey: data.tenant_key.trim(),
+    email,
+    displayName,
+    enName: firstString(data.en_name),
+    avatarUrl: firstString(data.avatar_url),
+  };
 }
 
 async function readJsonObject(response: Response): Promise<Record<string, unknown> | null> {

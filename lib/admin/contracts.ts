@@ -1,4 +1,4 @@
-export type AdminListSection = "characters" | "creators" | "users" | "subscriptions";
+export type AdminListSection = "characters" | "creators" | "users" | "subscriptions" | "staff";
 
 export type PageInfo = {
   limit: number;
@@ -61,11 +61,27 @@ export type SubscriptionSummary = {
   updated_at: string;
 };
 
+export type StaffSummary = {
+  open_id: string;
+  union_id: string | null;
+  tenant_key: string;
+  display_name: string;
+  en_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  role: "operator" | "admin";
+  status: "active" | "disabled";
+  created_at: string;
+  last_login_at: string;
+  updated_at: string;
+};
+
 export type AdminListResourceMap = {
   characters: CharacterSummary;
   creators: CreatorSummary;
   users: UserSummary;
   subscriptions: SubscriptionSummary;
+  staff: StaffSummary;
 };
 
 export type AdminListResponseMap = {
@@ -154,11 +170,30 @@ function isSubscription(value: unknown): value is SubscriptionSummary {
   );
 }
 
+function isStaff(value: unknown): value is StaffSummary {
+  if (!isRecord(value)) return false;
+  return (
+    hasString(value, "open_id") &&
+    isNullableString(value.union_id) &&
+    hasString(value, "tenant_key") &&
+    hasString(value, "display_name") &&
+    isNullableString(value.en_name) &&
+    isNullableString(value.email) &&
+    isNullableString(value.avatar_url) &&
+    (value.role === "operator" || value.role === "admin") &&
+    (value.status === "active" || value.status === "disabled") &&
+    hasString(value, "created_at") &&
+    hasString(value, "last_login_at") &&
+    hasString(value, "updated_at")
+  );
+}
+
 const ITEM_GUARDS = {
   characters: isCharacter,
   creators: isCreator,
   users: isUser,
   subscriptions: isSubscription,
+  staff: isStaff,
 } as const;
 
 export function parseListResponse<Section extends AdminListSection>(

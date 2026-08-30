@@ -11,6 +11,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  distDir: process.env.PLAYWRIGHT_TEST === "1" ? ".next-e2e" : undefined,
   allowedDevOrigins: ["127.0.0.1", "localhost", "admin.plum.top"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

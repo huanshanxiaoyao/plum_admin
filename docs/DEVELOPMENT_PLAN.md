@@ -1,7 +1,7 @@
 # Plum 管理后台一期详细开发计划
 
-- 文档版本：v1.0-draft
-- 文档状态：待确认；确认后进入实施
+- 文档版本：v1.1
+- 文档状态：已确认；实施中
 - 更新时间：2026-08-30
 - 关联 PRD：[Plum 管理后台产品需求文档](./PRD.md)
 - 关联技术设计：[Plum 管理后台技术设计](./TECHNICAL_DESIGN.md)
@@ -22,6 +22,8 @@
 - 无普通明文访问入口。
 - 角色下架允许 Operator；角色恢复仅允许 Admin。
 - 员工登录使用飞书 OAuth v3、随机 state 和 S256 PKCE，以 `open_id` 为稳定身份，邮箱允许为空。
+- 飞书应用可用范围仅包含产品、运营和管理人员；范围内成员首次登录自注册为 Active Operator，Admin 只能受控授予。
+- Admin 可以按指定 `open_id` 禁用或恢复成员，禁用对已有会话的后续请求立即生效。
 - 生产域名使用 `admin.plum.top`。
 - RBAC 仅包含 Operator 和 Admin；一期不建设通用审批流。
 
@@ -39,6 +41,7 @@
 
 | 能力组 | Method | Path | 权限 | 阶段 |
 | --- | --- | --- | --- | --- |
+| 身份 | POST | `/admin/plum/session` | Valid BFF + Feishu identity | M1 |
 | 身份 | GET | `/admin/plum/me` | Active member | M1 |
 | 工作台 | GET | `/admin/plum/overview` | `operations.access` | M2 |
 | Character | GET | `/admin/plum/characters` | `operations.access` | M2 |
@@ -52,8 +55,8 @@
 | 用户 | GET | `/admin/plum/users/{id}` | `operations.access` | M2 |
 | 订阅 | GET | `/admin/plum/subscriptions` | `operations.access` | M2 |
 | 审计 | GET | `/admin/plum/audit-events` | `operations.access` | M2 |
-| 后台成员 | GET/POST | `/admin/plum/admin-users` | `staff.manage` | M2/M5 |
-| 后台成员 | PATCH | `/admin/plum/admin-users/{id}` | `staff.manage` | M5 |
+| 后台成员 | GET | `/admin/plum/admin-users` | `operations.access` | M2 |
+| 后台成员 | PATCH | `/admin/plum/admin-users/{open_id}` | `staff.manage` | M5 |
 | 官方媒体 | POST | `/admin/plum/official/media/uploads` | `operations.access` | M4 |
 | 官方 Work | POST | `/admin/plum/official/works` | `operations.access` | M4 |
 | 官方 Work | PATCH | `/admin/plum/official/works/{id}` | `operations.access` | M4 |
@@ -70,10 +73,10 @@
 
 截至 2026-08-30：
 
-- `plum_admin` 当前开发分支为 `codex/phase1-admin`，初始提交为 `922e4f9`；M1 改动尚未提交。
-- `ai4all_bridge` 当前开发分支为 `codex/phase1-admin-api`，已对齐 `origin/main@882d711`；M1 改动尚未提交。
+- `plum_admin` 当前开发分支为 `codex/phase1-admin`，身份基础提交为 `b36200e`；本轮员工自注册与禁用能力已完成并通过本地验收。
+- `ai4all_bridge` 当前开发分支为 `codex/phase1-admin-api`，身份 API 基础提交为 `964685d`；本轮员工目录与治理能力已完成并通过隔离数据库验收。
 - 线上后端已由运维切换到 `main`，旧未跟踪探查脚本已删除；正式部署仍必须使用评审后的不可变 Commit SHA。
-- 未经明确授权，不 Commit、Push 或创建 PR。
+- 本轮已获授权创建本地 Commit；Push 或创建 PR 仍需明确授权。
 
 ## 2. 前置依赖总表
 
@@ -98,11 +101,11 @@
 | Node.js/npm 版本 | 工程 | 与 `plum_chat` 生产版本兼容，并在 CI 固定 | 工程构建 |
 | 后端隔离测试环境 | 工程 | `pytest-postgresql` 可启动，完整 Migration 模板和每测试数据库克隆可用 | 后端自动化测试 |
 | 飞书应用方案 | 产品/工程 | 已发布；本地与生产 Callback 已配置 | 已完成 |
-| 首批后台成员 | 产品 | 提供同一飞书应用下至少 1 Admin、2 Operator 的 `open_id` | RBAC UAT |
+| 首个后台 Admin | 产品/运维 | 使用已确认的 Jack `open_id` 执行一次性 Bootstrap；其他成员登录自注册 | RBAC UAT |
 | 官方创作者账号规格 | 产品 | 名称、Handle、头像和公开展示文案 | 官方角色流程 |
 | `plum_admin` 初始 Commit | 用户/工程 | 初始提交 `922e4f9` | 已完成 |
 
-飞书 OAuth 实现已完成；提供首批 `open_id` 后才能预置生产成员并执行真实登录 UAT。开发机现有数据库不作为 M1 或后续里程碑的验收输入。
+飞书 OAuth 基础实现已完成；无需继续人工收集 Operator `open_id`。开发机现有数据库不作为 M1 或后续里程碑的验收输入。
 
 ### 2.3 M2/M3 联调前
 
@@ -125,7 +128,7 @@
 | systemd/nginx 权限 | 运维 | 可安装用户级服务和 nginx vhost | 服务上线 |
 | 生产 Secrets | 运维 | 独立 BFF Token、Session Secret、OAuth Secret | 服务启动 |
 | Plum Official 账号 | 产品/后端 | Active User、Membership、Profile，ID 写入生产配置 | 官方角色上传 |
-| 后台成员 Seed | Admin | 成员预置且角色正确，不自动按邮箱域授权 | 生产授权 |
+| 首个 Admin Bootstrap | Admin/运维 | Jack 以真实 `open_id` 建立为 Active Admin；真实 ID 不写入 Git | 生产授权 |
 | 异地备份 | 运维 | EBS Snapshot 或对象存储备份，并完成恢复演练 | 开放写操作 |
 | 回滚方案 | 工程/运维 | 前端、后端、迁移和 nginx 均有明确回滚路径 | 发布审批 |
 | 两层写开关 | 工程/运维 | 前端 `ADMIN_API_WRITE_ENABLED`、后端 `PLUM_ADMIN_WRITES_ENABLED` 默认均为 `false` | 生产写操作 |
@@ -152,7 +155,7 @@
 
 ### M1：管理前端基础与 Admin Identity
 
-状态：进行中。`plum_admin` 前端基础、飞书 OAuth v3、后端 Plum Admin Identity、Remote Identity BFF 和隔离测试已完成；不可变 Commit、首批成员预置与线上只读联调待完成。
+状态：开发完成，待部署联调。`plum_admin` 前端基础、飞书 OAuth v3、Remote Identity BFF、员工列表和禁用/恢复交互已完成；后端 Plum 私有员工目录、登录自注册、按 `open_id` 禁用/恢复、最后一个 Active Admin 保护和隔离测试已完成。线上迁移、首个 Admin Bootstrap 与真实飞书登录验收待执行。
 
 在后端仓库并行开发期间，`plum_admin` 已先完成角色、创作者、用户和订阅的本地 API Contract、确定性 Fixture 及只读列表。该工作属于 M3 前置准备，不代表 M2 真实 Admin API 或 M3 联调退出门槛已经完成。
 
@@ -165,7 +168,7 @@
 | I-01 | `ai4all_bridge` | 新增 Plum 专属 `/admin/plum/me`，保留其他产品 `/admin/me` 不变 | M0 | Route Inventory 测试；两个端点各注册一次 |
 | I-02 | `ai4all_bridge` | 新增 `PLUM_ADMIN_BFF_TOKEN` 配置、恒定时间比较和冲突校验 | I-01 | 正确/缺失/错误 Token 测试 |
 | I-03 | `ai4all_bridge` | 解析并校验员工 ID、规范化邮箱和 Request ID Header | I-02 | 非法 Header 返回稳定 401/422 |
-| I-04 | `ai4all_bridge` | 从 `admin_users` 加载 Active 成员并映射四个 Capability | I-03 | Admin、Operator、Disabled、Unknown 矩阵 |
+| I-04 | `ai4all_bridge` | 新增 `plum_admin_users`，实现 OAuth 登录原子自注册和四个 Capability | I-03 | 首登、重登、Admin、Operator、Disabled 矩阵 |
 | I-05 | `ai4all_bridge` | 实现 `/admin/plum/me` 响应和统一错误 Envelope | I-04 | Plum 新契约与其他产品旧契约隔离测试 |
 | I-06 | `plum_admin` | 完成飞书 OAuth v3、state/PKCE、Provider Adapter、Callback 和 HttpOnly Session | 飞书应用方案 | 已完成；Auth 单测通过，Mock 仅开发可用 |
 | I-07 | `plum_admin` | BFF 附加服务 Token、员工 Header、Request ID 和 CSRF 防护 | I-05、I-06 | 浏览器 Bundle 无服务 Token |
@@ -185,18 +188,18 @@
 
 - 增加 `PLUM_ADMIN_BFF_TOKEN` 配置和冲突校验。
 - 实现 BFF 服务鉴权与员工 Header 解析。
-- 从 `admin_users` 读取状态和角色。
-- 实现代码内 Capability 映射和 `/admin/plum/me`。
+- 从 Plum 私有 `plum_admin_users` 读取状态和角色。
+- 实现代码内 Capability 映射、`POST /admin/plum/session` 和 `GET /admin/plum/me`。
 - 保持旧 Admin/Staff/Reviewer Token 兼容。
 
 测试：
 
 - Admin、Operator 两个角色的 Capability 快照。
-- Disabled 和未知成员拒绝。
+- 首次登录创建 Operator、重复登录更新 `last_login_at`，Disabled 成员拒绝且不被登录自动恢复。
 - 无 BFF Token、错误 Token 和伪造 Role Header 拒绝。
 - 浏览器 Bundle 不包含服务端 Token。
 
-退出门槛：`/admin/plum/me` 契约、两角色 Capability、Disabled/Unknown 拒绝、其他产品路由兼容和浏览器密钥排除测试通过；验收样例中后续 Moderation 场景不作为一期门槛。
+退出门槛：`/admin/plum/session`、`/admin/plum/me` 契约、两角色 Capability、Disabled 拒绝、其他产品路由兼容和浏览器密钥排除测试通过；验收样例中后续 Moderation 场景不作为一期门槛。
 
 ### M2：只读 Admin API
 
@@ -394,7 +397,7 @@
 
 需要覆盖的数据组合：
 
-- Active Admin、Active Operator、Disabled 成员和未知成员。
+- Active Admin、首次登录 Operator、重复登录 Operator 和 Disabled 成员。
 - Plum Official、Active Creator、Restricted Creator、普通 Plum User 和仅其他产品用户。
 - Official/UGC、Active/Takedown/Private Character。
 - Draft/Pending/Rejected/Published Work 及 Revision Conflict。
@@ -495,7 +498,7 @@ M3 + M4 + M5 + Production Prerequisites
 - 当前任务对 `/Users/suchong/workspace/ai4all/weixin_bot` 的可写权限。
 - 飞书应用已发布，Callback 已配置；上线时仍需把生产凭据安全写入 aws-sg 环境文件。
 - `Plum Official` 的名称、Handle、头像、展示文案和生产平台用户 ID。
-- 首批至少 1 名 Admin、2 名 Operator 在同一飞书应用下的 `open_id`。
+- 已确认的 Jack `open_id` 用于线上一次性 Admin Bootstrap；Operator 无需预先提供 `open_id`。
 - aws-sg 的部署、DNS/TLS、Secrets、备份和恢复执行权限或协作人。
 
 ## 9. 工期估算

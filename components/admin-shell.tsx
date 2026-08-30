@@ -26,7 +26,6 @@ type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
-  adminOnly?: boolean;
 };
 
 const NAV_ITEMS: readonly NavItem[] = [
@@ -36,7 +35,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { href: "/users", label: "用户", icon: CircleUserRound },
   { href: "/subscriptions", label: "用户订阅", icon: ReceiptText },
   { href: "/audit", label: "操作审计", icon: ClipboardList },
-  { href: "/staff", label: "后台成员", icon: Users, adminOnly: true },
+  { href: "/staff", label: "后台成员", icon: Users },
 ];
 
 function isActivePath(pathname: string, href: string): boolean {
@@ -63,10 +62,6 @@ export function AdminShell({
     router.refresh();
   }
 
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.adminOnly || identity.capabilities.includes("staff.manage"),
-  );
-
   return (
     <div className={styles.shell}>
       <aside className={`${styles.sidebar} ${menuOpen ? styles.sidebarOpen : ""}`}>
@@ -77,7 +72,7 @@ export function AdminShell({
           </button>
         </div>
         <nav className={styles.nav} aria-label="主导航">
-          {visibleItems.map((item) => {
+          {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isActivePath(pathname, item.href);
             return (

@@ -3,13 +3,14 @@ import Link from "next/link";
 import { ChevronRight, Filter, RotateCcw, Search } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentIdentity } from "@/lib/auth/session";
-import type { Capability } from "@/lib/auth/capabilities";
 import { listAdminResources } from "@/lib/admin/data-source";
+import { StaffStatusAction } from "@/components/staff-status-action";
 import type {
   AdminListResponseMap,
   AdminListSection,
   CharacterSummary,
   CreatorSummary,
+  StaffSummary,
   SubscriptionSummary,
   UserSummary,
 } from "@/lib/admin/contracts";
@@ -25,7 +26,6 @@ type SectionConfig = {
   searchPlaceholder: string;
   columns: readonly string[];
   statusOptions?: readonly StatusOption[];
-  requiredCapability?: Capability;
 };
 
 const SECTIONS: Record<string, SectionConfig> = {
@@ -84,13 +84,22 @@ const SECTIONS: Record<string, SectionConfig> = {
     eyebrow: "ACCESS",
     title: "后台成员",
     description: "Operator 与 Admin",
-    searchPlaceholder: "搜索姓名或企业邮箱",
-    columns: ["成员", "邮箱", "角色", "状态", "最近登录", "更新时间"],
-    requiredCapability: "staff.manage",
+    searchPlaceholder: "搜索姓名或 Open ID",
+    columns: ["成员", "邮箱", "角色", "状态", "首次登录", "最近登录", "操作"],
+    statusOptions: [
+      { value: "active", label: "Active" },
+      { value: "disabled", label: "Disabled" },
+    ],
   },
 };
 
-const LIST_SECTIONS = new Set<AdminListSection>(["characters", "creators", "users", "subscriptions"]);
+const LIST_SECTIONS = new Set<AdminListSection>([
+  "characters",
+  "creators",
+  "users",
+  "subscriptions",
+  "staff",
+]);
 
 function isListSection(section: string): section is AdminListSection {
   return LIST_SECTIONS.has(section as AdminListSection);
@@ -174,9 +183,22 @@ function subscriptionRows(items: SubscriptionSummary[]): ReactNode[][] {
   ]);
 }
 
+function staffRows(items: StaffSummary[], canManage: boolean): ReactNode[][] {
+  return items.map((item) => [
+    identityCell(item.display_name, item.open_id, item.en_name ?? undefined),
+    item.email || "--",
+    status(item.role === "admin" ? "Admin" : "Operator", item.role === "admin" ? "good" : "muted"),
+    status(item.status === "active" ? "Active" : "Disabled", item.status === "active" ? "good" : "warn"),
+    formatDateTime(item.created_at),
+    formatDateTime(item.last_login_at),
+    canManage ? <StaffStatusAction key={item.open_id} member={item} /> : <span key={item.open_id}>只读</span>,
+  ]);
+}
+
 function tableRows<Section extends AdminListSection>(
   section: Section,
   response: AdminListResponseMap[Section],
+  canManageStaff: boolean,
 ): ReactNode[][] {
   switch (section) {
     case "characters":
@@ -187,6 +209,8 @@ function tableRows<Section extends AdminListSection>(
       return userRows(response.data as UserSummary[]);
     case "subscriptions":
       return subscriptionRows(response.data as SubscriptionSummary[]);
+    case "staff":
+      return staffRows(response.data as StaffSummary[], canManageStaff);
   }
 }
 
@@ -211,11 +235,6 @@ export default async function SectionPage({
 
   const identity = await getCurrentIdentity();
   if (!identity) redirect("/login");
-  if (
-    config.requiredCapability &&
-    !identity.capabilities.includes(config.requiredCapability)
-  ) redirect("/forbidden");
-
   const queryParams = await searchParams;
   const q = firstParam(queryParams.q)?.trim() || undefined;
   const statusValue = firstParam(queryParams.status)?.trim() || undefined;
@@ -230,7 +249,9 @@ export default async function SectionPage({
       loadError = error;
     }
   }
-  const rows = response && isListSection(section) ? tableRows(section, response) : [];
+  const rows = response && isListSection(section)
+    ? tableRows(section, response, identity.capabilities.includes("staff.manage"))
+    : [];
 
   return (
     <div className={styles.page}>
