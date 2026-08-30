@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import {
   ArrowRight,
   BadgeCheck,
@@ -17,7 +18,8 @@ const METRICS = [
   { label: "受限创作者", icon: CircleAlert },
 ] as const;
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  await connection();
   const fixtureMode = adminDataSourceMode() === "fixture";
   const today = new Intl.DateTimeFormat("zh-CN", {
     timeZone: "Asia/Shanghai",
@@ -33,10 +35,12 @@ export default function DashboardPage() {
           <h1>工作台</h1>
           <p>{today} · Asia/Shanghai</p>
         </div>
-        <Link className={styles.primaryAction} href="/characters">
-          <Plus size={17} />
-          新建官方角色
-        </Link>
+        {fixtureMode && (
+          <Link className={styles.primaryAction} href="/characters">
+            <Plus size={17} />
+            新建官方角色
+          </Link>
+        )}
       </header>
 
       <section className={styles.metrics} aria-label="核心指标">
@@ -59,9 +63,11 @@ export default function DashboardPage() {
               <UsersRound size={18} />
               <h2>创作者概览</h2>
             </div>
-            <Link href="/creators">
-              查看全部 <ArrowRight size={15} />
-            </Link>
+            {fixtureMode && (
+              <Link href="/creators">
+                查看全部 <ArrowRight size={15} />
+              </Link>
+            )}
           </header>
           <div className={styles.tableHeader}>
             <span>创作者</span>
@@ -81,9 +87,11 @@ export default function DashboardPage() {
               <Clock3 size={18} />
               <h2>最近操作</h2>
             </div>
-            <Link href="/audit" aria-label="查看操作审计">
-              <ArrowRight size={16} />
-            </Link>
+            {fixtureMode && (
+              <Link href="/audit" aria-label="查看操作审计">
+                <ArrowRight size={16} />
+              </Link>
+            )}
           </header>
           <div className={styles.emptyActivity}>
             <span className={styles.activityMark} />

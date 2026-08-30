@@ -1,7 +1,7 @@
 # Plum 管理后台一期详细开发计划
 
-- 文档版本：v1.1
-- 文档状态：已确认；实施中
+- 文档版本：v1.2
+- 文档状态：已确认；M1 已生产完成，M2～M6 待实施
 - 更新时间：2026-08-30
 - 关联 PRD：[Plum 管理后台产品需求文档](./PRD.md)
 - 关联技术设计：[Plum 管理后台技术设计](./TECHNICAL_DESIGN.md)
@@ -55,8 +55,8 @@
 | 用户 | GET | `/admin/plum/users/{id}` | `operations.access` | M2 |
 | 订阅 | GET | `/admin/plum/subscriptions` | `operations.access` | M2 |
 | 审计 | GET | `/admin/plum/audit-events` | `operations.access` | M2 |
-| 后台成员 | GET | `/admin/plum/admin-users` | `operations.access` | M2 |
-| 后台成员 | PATCH | `/admin/plum/admin-users/{open_id}` | `staff.manage` | M5 |
+| 后台成员 | GET | `/admin/plum/admin-users` | `staff.manage` | M1 |
+| 后台成员 | PATCH | `/admin/plum/admin-users/{open_id}` | `staff.manage` | M1 |
 | 官方媒体 | POST | `/admin/plum/official/media/uploads` | `operations.access` | M4 |
 | 官方 Work | POST | `/admin/plum/official/works` | `operations.access` | M4 |
 | 官方 Work | PATCH | `/admin/plum/official/works/{id}` | `operations.access` | M4 |
@@ -73,10 +73,9 @@
 
 截至 2026-08-30：
 
-- `plum_admin` 当前开发分支为 `codex/phase1-admin`，身份基础提交为 `b36200e`；本轮员工自注册与禁用能力已完成并通过本地验收。
-- `ai4all_bridge` 当前开发分支为 `codex/phase1-admin-api`，身份 API 基础提交为 `964685d`；本轮员工目录与治理能力已完成并通过隔离数据库验收。
-- 线上后端已由运维切换到 `main`，旧未跟踪探查脚本已删除；正式部署仍必须使用评审后的不可变 Commit SHA。
-- 本轮已获授权创建本地 Commit；Push 或创建 PR 仍需明确授权。
+- 两个仓库均以 `main` 为当前集成主干；开发机仓库基线分别为 `plum_admin@8801bc1`、`ai4all_bridge@aa49be0`，这些是仓库基线，不替代生产发布记录中的不可变 SHA。
+- M1 已部署到 `admin.plum.top`，真实飞书登录、首位 Admin、Operator 自注册、后台成员禁用/恢复和生产回调均已验证。
+- 生产写开关保持关闭；M2～M6 尚未交付的模块不得出现在生产导航或可访问路由中。
 
 ## 2. 前置依赖总表
 
@@ -118,17 +117,13 @@
 | 验收 Fixture Helper | 后端 | 仅向 pytest 临时 PostgreSQL 幂等创建合成样例，不成为生产 Seed | Contract/E2E |
 | 契约快照 | 前后端 | 后端 OpenAPI 与前端类型/Fixture 对齐并纳入差异检查 | 真实数据接入 |
 
-### 2.4 生产部署前
+### 2.4 后续生产写操作前
+
+M1 所需的飞书应用发布与回调、`admin.plum.top` DNS/TLS、systemd/nginx、生产 Secrets 和首位 Admin Bootstrap 已完成。M4～M6 开放业务写操作前仍需：
 
 | 依赖 | Owner | 要求 | 阻塞项 |
 | --- | --- | --- | --- |
-| 飞书 OAuth 凭据 | 飞书应用管理员 | 应用已发布且两个 Redirect URI 已配置；生产 Secret 仍需安全写入 aws-sg | 生产登录 |
-| DNS | 域名管理员 | `admin.plum.top` 指向 aws-sg | 公网访问 |
-| TLS | 运维 | `admin.plum.top` 有效证书和自动续期 | HTTPS |
-| systemd/nginx 权限 | 运维 | 可安装用户级服务和 nginx vhost | 服务上线 |
-| 生产 Secrets | 运维 | 独立 BFF Token、Session Secret、OAuth Secret | 服务启动 |
 | Plum Official 账号 | 产品/后端 | Active User、Membership、Profile，ID 写入生产配置 | 官方角色上传 |
-| 首个 Admin Bootstrap | Admin/运维 | Jack 以真实 `open_id` 建立为 Active Admin；真实 ID 不写入 Git | 生产授权 |
 | 异地备份 | 运维 | EBS Snapshot 或对象存储备份，并完成恢复演练 | 开放写操作 |
 | 回滚方案 | 工程/运维 | 前端、后端、迁移和 nginx 均有明确回滚路径 | 发布审批 |
 | 两层写开关 | 工程/运维 | 前端 `ADMIN_API_WRITE_ENABLED`、后端 `PLUM_ADMIN_WRITES_ENABLED` 默认均为 `false` | 生产写操作 |
@@ -216,8 +211,7 @@
 | R-05 | `ai4all_bridge` | 实现 Plum User/Membership Read Model | R-02 | 固定 `app_id=plum`、跨产品隔离 |
 | R-06 | `ai4all_bridge` | 实现 Subscription Read Model | R-05 | `billing_connected=false`、无支付推断 |
 | R-07 | `ai4all_bridge` | 实现一期 Overview 和 Audit Event 查询 | R-03～R-06 | 指标口径、敏感元数据排除 |
-| R-08 | `ai4all_bridge` | 实现 Admin User 列表 | I-04 | 仅 `staff.manage` 可访问 |
-| R-09 | `ai4all_bridge` | 新增 pytest-only 验收 Seed Helper | R-03～R-08 | 只写临时 PG；合成 ID 可重复执行 |
+| R-09 | `ai4all_bridge` | 新增 pytest-only 验收 Seed Helper | R-03～R-07、M1 Staff | 只写临时 PG；合成 ID 可重复执行 |
 | R-10 | 两仓库 | 导出 OpenAPI/JSON 示例并执行契约差异检查 | R-01～R-09 | 前端类型、Fixture 与后端一致 |
 
 后端实现：
@@ -261,7 +255,7 @@
 | U-03 | `plum_admin` | 接入 Character 与 Work/草稿双视图、详情和版本 | R-03 | URL 筛选、Cursor、深链恢复 |
 | U-04 | `plum_admin` | 接入 Creator 列表与详情 | R-04 | 作品摘要、状态和空态一致 |
 | U-05 | `plum_admin` | 接入 User、Membership 和 Subscription 页面 | R-05、R-06 | 脱敏展示；无 Wallet 字段/入口 |
-| U-06 | `plum_admin` | 接入 Audit 和 Admin User 只读页 | R-07、R-08 | Operator 看不到成员页 |
+| U-06 | `plum_admin` | 接入 Audit；保持 M1 Admin User 页 | R-07、M1 Staff | Operator 看不到成员页 |
 | U-07 | `plum_admin` | 固化 BFF 路径/方法 Allowlist | U-01～U-06 | 后续路由和任意代理被拒绝 |
 | U-08 | `plum_admin` | 执行桌面/窄屏 Playwright 与可访问性检查 | U-02～U-07 | 无重叠、溢出和错误权限入口 |
 
@@ -329,8 +323,7 @@
 | G-04 | `ai4all_bridge` | 实现 Creator restrict/restore/note 应用服务 | G-02 | Operator/Admin 允许；原因和审计必填 |
 | G-05 | `ai4all_bridge` | 实现 Character takedown/restore 应用服务 | G-01 | Operator 可下架；仅 Admin 可恢复；409 防覆盖 |
 | G-06 | `ai4all_bridge` | 实现 Plum Membership disable/enable | I-04 | 仅 Admin；固定 `app_id=plum`；其他产品不变 |
-| G-07 | `ai4all_bridge` | 实现 Admin User create/update 和最后一个 Active Admin 保护 | R-08 | 仅 Admin；自锁和最后管理员测试 |
-| G-08 | `plum_admin` | 接入创作者、角色、Membership 和成员治理 UI | G-04～G-07 | 原因、确认、403、409 和结果刷新 |
+| G-08 | `plum_admin` | 接入创作者、角色和 Membership 治理 UI；保留 M1 成员治理 | G-04～G-06、M1 Staff | 原因、确认、403、409 和结果刷新 |
 | G-09 | 两仓库 | 执行治理契约、状态机、审计和回归测试 | G-03～G-08 | GOV-01～GOV-03、RBAC 通过 |
 
 - Character Takedown 应用服务。
@@ -446,7 +439,7 @@ M3 + M4 + M5 + Production Prerequisites
 
 - Capability 契约先于所有写接口。
 - Read API Contract 先于对应页面真实接入。
-- 数据库迁移先于依赖新表的后端版本重启。
+- 发布前先验证迁移兼容性和回滚条件；待处理迁移由后端启动流程执行，失败时保留旧服务运行。
 - 异地备份和恢复演练先于生产写操作开放。
 
 ## 6. 分支与交付策略
@@ -493,13 +486,11 @@ M3 + M4 + M5 + Production Prerequisites
 7. 完成 OpenAPI 差异、临时 PG 和前端 E2E 后，再进入官方角色与治理写操作。
 8. M4/M5 在共享鉴权、审计和写开关稳定后实施；生产部署严格执行 P-01～P-08。
 
-### 8.3 本计划确认后仍需外部提供的事项
+### 8.3 后续里程碑仍需外部提供的事项
 
-- 当前任务对 `/Users/suchong/workspace/ai4all/weixin_bot` 的可写权限。
-- 飞书应用已发布，Callback 已配置；上线时仍需把生产凭据安全写入 aws-sg 环境文件。
 - `Plum Official` 的名称、Handle、头像、展示文案和生产平台用户 ID。
-- 已确认的 Jack `open_id` 用于线上一次性 Admin Bootstrap；Operator 无需预先提供 `open_id`。
-- aws-sg 的部署、DNS/TLS、Secrets、备份和恢复执行权限或协作人。
+- M2 指标口径与用户数据脱敏规则的最终确认。
+- M4～M6 所需的 aws-sg 发布协作、异地备份恢复演练和专用验收对象。
 
 ## 9. 工期估算
 

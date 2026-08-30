@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
+import { visibleAdminModules } from "@/lib/admin/modules";
 import { getCurrentIdentity } from "@/lib/auth/session";
 import { AdminApiError } from "@/lib/bff/client";
 import { adminDataSourceMode } from "@/lib/bff/config";
@@ -15,8 +16,14 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
     throw error;
   }
   if (!identity) redirect("/login");
+  const dataSourceMode = adminDataSourceMode();
   const environmentLabel = process.env.NODE_ENV === "production"
     ? "Production"
-    : `Development · ${adminDataSourceMode() === "fixture" ? "Fixture" : "Remote"}`;
-  return <AdminShell identity={identity} environmentLabel={environmentLabel}>{children}</AdminShell>;
+    : `Development · ${dataSourceMode === "fixture" ? "Fixture" : "Remote"}`;
+  const navigation = visibleAdminModules(dataSourceMode, identity.capabilities);
+  return (
+    <AdminShell identity={identity} navigation={navigation} environmentLabel={environmentLabel}>
+      {children}
+    </AdminShell>
+  );
 }

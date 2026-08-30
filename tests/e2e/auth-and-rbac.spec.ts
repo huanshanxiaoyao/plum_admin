@@ -19,7 +19,7 @@ test("operator sees daily navigation and is denied advanced actions", async ({ p
   await expect(page.getByRole("heading", { name: "工作台" })).toBeVisible();
   await openNavigationIfNeeded(page);
   await expect(page.getByRole("link", { name: "角色管理" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "后台成员" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "后台成员" })).toHaveCount(0);
 
   await page.getByRole("link", { name: "角色管理" }).click();
   await expect(page.getByRole("heading", { name: "角色管理" })).toBeVisible();
@@ -32,10 +32,12 @@ test("operator sees daily navigation and is denied advanced actions", async ({ p
   await expect(page.getByText("Ada", { exact: true })).toHaveCount(0);
 
   await page.goto("/staff");
-  await expect(page.getByRole("heading", { name: "后台成员" })).toBeVisible();
-  await expect(page.getByRole("cell", { name: /Jack ou_accept_admin/ })).toBeVisible();
-  await expect(page.getByText("只读", { exact: true })).toHaveCount(3);
-  await expect(page.getByRole("button", { name: /禁用/ })).toHaveCount(0);
+  await expect(page).toHaveURL("/forbidden");
+  await expect(page.getByRole("heading", { name: "权限不足" })).toBeVisible();
+
+  const staffResponse = await page.request.get("/api/admin/admin-users");
+  expect(staffResponse.status()).toBe(403);
+  expect((await staffResponse.json()).error.code).toBe("admin_permission_denied");
 
   const response = await page.request.post("/api/admin/characters/char-01/restore");
   expect(response.status()).toBe(403);

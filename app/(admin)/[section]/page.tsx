@@ -4,6 +4,7 @@ import { ChevronRight, Filter, RotateCcw, Search } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentIdentity } from "@/lib/auth/session";
 import { listAdminResources } from "@/lib/admin/data-source";
+import { adminModuleForSection, isModuleAvailable } from "@/lib/admin/modules";
 import { StaffStatusAction } from "@/components/staff-status-action";
 import type {
   AdminListResponseMap,
@@ -15,6 +16,7 @@ import type {
   UserSummary,
 } from "@/lib/admin/contracts";
 import { AdminApiError } from "@/lib/bff/client";
+import { adminDataSourceMode } from "@/lib/bff/config";
 import styles from "./section.module.css";
 
 type StatusOption = { value: string; label: string };
@@ -231,10 +233,13 @@ export default async function SectionPage({
 }) {
   const { section } = await params;
   const config = SECTIONS[section];
-  if (!config) notFound();
+  const adminModule = adminModuleForSection(section);
+  if (!config || !adminModule) notFound();
 
   const identity = await getCurrentIdentity();
   if (!identity) redirect("/login");
+  if (!isModuleAvailable(adminModule, adminDataSourceMode())) notFound();
+  if (!identity.capabilities.includes(adminModule.capability)) redirect("/forbidden");
   const queryParams = await searchParams;
   const q = firstParam(queryParams.q)?.trim() || undefined;
   const statusValue = firstParam(queryParams.status)?.trim() || undefined;
