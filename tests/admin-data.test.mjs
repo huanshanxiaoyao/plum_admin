@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseListResponse } from "../lib/admin/contracts.ts";
-import { fixtureList } from "../lib/admin/fixtures.ts";
+import { parseListResponse } from "../features/admin-resources/contracts.ts";
+import { fixtureList } from "../features/admin-resources/fixtures.ts";
 import {
   adminApiOrigin,
   adminApiWritesEnabled,

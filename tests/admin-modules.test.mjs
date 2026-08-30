@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { adminModuleForSection, visibleAdminModules } from "../lib/admin/modules.ts";
+import { adminModuleForSection, visibleAdminModules } from "../features/admin-navigation/modules.ts";
 import { capabilitiesForRole } from "../lib/auth/capabilities.ts";
 
 function keys(mode, role) {

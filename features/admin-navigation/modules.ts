@@ -1,5 +1,5 @@
-import type { Capability } from "../auth/capabilities.ts";
-import type { AdminDataSourceMode } from "../bff/config.ts";
+import type { Capability } from "../../lib/auth/capabilities.ts";
+import type { AdminDataSourceMode } from "../../lib/bff/config.ts";
 
 export type AdminModuleKey =
   | "dashboard"
@@ -10,9 +10,11 @@ export type AdminModuleKey =
   | "audit"
   | "staff";
 
+export type AdminModuleSection = Exclude<AdminModuleKey, "dashboard">;
+
 export type AdminModule = {
   key: AdminModuleKey;
-  section: Exclude<AdminModuleKey, "dashboard"> | null;
+  section: AdminModuleSection | null;
   href: string;
   label: string;
   availability: "shipped" | "fixture";

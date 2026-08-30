@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Brand } from "@/components/brand";
+import { Brand } from "@/features/admin-shell/brand";
 import { getCurrentIdentity } from "@/lib/auth/session";
 import { isMockAuthEnabled } from "@/lib/auth/mock-identities";
 import { isFeishuAuthEnabled } from "@/lib/auth/auth-mode";
