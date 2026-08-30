@@ -1,4 +1,4 @@
-export type AdminListSection = "characters" | "creators" | "users" | "subscriptions";
+export type AdminListSection = "characters" | "creators" | "users" | "subscriptions" | "staff";
 
 export type PageInfo = {
   limit: number;
@@ -47,7 +47,6 @@ export type UserSummary = {
     status: "active" | "cancelled";
     billing_connected: false;
   };
-  wallet_balance_coins: number;
   character_count: number;
   last_active_at: string | null;
 };
@@ -59,7 +58,21 @@ export type SubscriptionSummary = {
   plan: "free" | "standard" | "premium";
   status: "active" | "cancelled";
   billing_connected: false;
-  wallet_balance_coins: number;
+  updated_at: string;
+};
+
+export type StaffSummary = {
+  open_id: string;
+  union_id: string | null;
+  tenant_key: string;
+  display_name: string;
+  en_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  role: "operator" | "admin";
+  status: "active" | "disabled";
+  created_at: string;
+  last_login_at: string;
   updated_at: string;
 };
 
@@ -68,6 +81,7 @@ export type AdminListResourceMap = {
   creators: CreatorSummary;
   users: UserSummary;
   subscriptions: SubscriptionSummary;
+  staff: StaffSummary;
 };
 
 export type AdminListResponseMap = {
@@ -138,7 +152,6 @@ function isUser(value: unknown): value is UserSummary {
       value.subscription.plan === "premium") &&
     (value.subscription.status === "active" || value.subscription.status === "cancelled") &&
     value.subscription.billing_connected === false &&
-    hasNumber(value, "wallet_balance_coins") &&
     hasNumber(value, "character_count") &&
     isNullableString(value.last_active_at)
   );
@@ -153,7 +166,24 @@ function isSubscription(value: unknown): value is SubscriptionSummary {
     (value.plan === "free" || value.plan === "standard" || value.plan === "premium") &&
     (value.status === "active" || value.status === "cancelled") &&
     value.billing_connected === false &&
-    hasNumber(value, "wallet_balance_coins") &&
+    hasString(value, "updated_at")
+  );
+}
+
+function isStaff(value: unknown): value is StaffSummary {
+  if (!isRecord(value)) return false;
+  return (
+    hasString(value, "open_id") &&
+    isNullableString(value.union_id) &&
+    hasString(value, "tenant_key") &&
+    hasString(value, "display_name") &&
+    isNullableString(value.en_name) &&
+    isNullableString(value.email) &&
+    isNullableString(value.avatar_url) &&
+    (value.role === "operator" || value.role === "admin") &&
+    (value.status === "active" || value.status === "disabled") &&
+    hasString(value, "created_at") &&
+    hasString(value, "last_login_at") &&
     hasString(value, "updated_at")
   );
 }
@@ -163,6 +193,7 @@ const ITEM_GUARDS = {
   creators: isCreator,
   users: isUser,
   subscriptions: isSubscription,
+  staff: isStaff,
 } as const;
 
 export function parseListResponse<Section extends AdminListSection>(

@@ -1,0 +1,87 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--canvas);
+}
+
+.status {
+  width: min(440px, 100%);
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.status > svg,
+.status > span {
+  color: var(--red);
+}
+
+.status > span {
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.status h1,
+.status p {
+  margin: 0;
+}
+
+.identity {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-subtle);
+}
+
+.identity div {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.identity dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.identity dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+.status h1 {
+  font-size: 23px;
+}
+
+.status p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.status button {
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 5px;
+  color: #fff;
+  background: var(--surface-strong);
+  cursor: pointer;
+}

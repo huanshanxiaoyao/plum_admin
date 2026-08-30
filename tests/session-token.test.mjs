@@ -25,3 +25,12 @@ test("tampered and expired sessions are rejected", async () => {
   assert.equal(await verifySessionToken(`${token}x`, SECRET, NOW + 1000), null);
   assert.equal(await verifySessionToken(token, SECRET, NOW + 8 * 60 * 60 * 1000), null);
 });
+
+test("session accepts a Feishu identity without email", async () => {
+  const identity = { ...OPERATOR, id: "ou_feishu_operator", email: "" };
+  const token = await createSessionToken(identity, SECRET, NOW);
+  assert.deepEqual(await verifySessionToken(token, SECRET, NOW + 1000), {
+    ...identity,
+    capabilities: ["operations.access"],
+  });
+});

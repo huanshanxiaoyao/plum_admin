@@ -42,7 +42,7 @@ Plum 已具备面向普通用户的角色浏览、对话、角色创建、媒体
 
 一期包含：
 
-- 员工登录、后台成员预置、Admin/Operator 两角色 RBAC。
+- 员工飞书登录自注册、按 `open_id` 禁用、Admin/Operator 两角色 RBAC。
 - 工作台中可由一期数据稳定计算的基础指标和最近操作。
 - Character、Work/草稿的列表、详情和版本摘要。
 - 官方角色表单创建、媒体上传、草稿保存、提交现有审核链路和发布。
@@ -93,7 +93,7 @@ Plum 已具备面向普通用户的角色浏览、对话、角色创建、媒体
 
 ### 4.3 RBAC 权限矩阵
 
-后端角色与 Capability 是唯一授权事实，前端只根据 `/admin/me` 返回的角色和 Capability 裁剪导航与操作入口。Operator 承担绝大多数日常工作；只有恢复已下架角色、管理 Plum Membership 和管理后台成员需要 Admin。
+后端角色与 Capability 是唯一授权事实，前端只根据 Plum 专属 `/admin/plum/me` 返回的角色和 Capability 裁剪导航与操作入口。Operator 承担绝大多数日常工作；只有恢复已下架角色、管理 Plum Membership 和管理后台成员需要 Admin。其他两个业务的后台身份与权限不属于本项目，也不能通过本后台访问。
 
 | 业务能力 | 交付阶段 | Operator | Admin |
 | --- | --- | --- | --- |
@@ -144,9 +144,13 @@ Plum 已具备面向普通用户的角色浏览、对话、角色创建、媒体
 
 #### FR-AUTH-01 员工登录
 
-- 一期使用飞书 OAuth 2.0 登录，认证实现保持 Provider 可替换。
-- 登录成功不代表自动获得后台权限；员工必须已存在于后台成员名单且状态为 Active。
-- 未授权账号显示明确的无权限页面，不泄露后台数据。
+- 一期使用飞书 OAuth v3 授权码流程登录，认证实现保持 Provider 可替换。
+- 使用同一飞书应用返回的 `open_id` 作为稳定员工身份；企业邮箱允许为空，不按邮箱域自动授权。
+- 登录流程不申请离线授权，不保存飞书 access/refresh token，也不要求 `auth:user_access_token:read`。
+- 飞书应用“可用范围”仅包含产品、运营和管理人员；只有范围内成员可以完成 OAuth。
+- 范围内成员首次登录时自动建立 Plum 后台员工记录，默认角色为 Operator、状态为 Active；不得因首次登录自动获得 Admin。
+- 保存飞书回调返回的 `open_id`、`union_id`、`tenant_key`、姓名和可选头像；邮箱只在无需额外敏感权限即可获得时保存，不作为授权依据。
+- 首个 Admin 通过受控的一次性 Bootstrap 建立；后续 Admin 只能由已有 Admin 授予。
 
 #### FR-AUTH-02 会话
 
@@ -414,13 +418,13 @@ Work/草稿视图展示 Draft、Pending Review、Rejected、Published、Archived
 
 #### FR-STAFF-01 成员列表
 
-- Admin 查看后台成员、邮箱、角色、状态和最近更新时间。
+- Operator 和 Admin 查看后台成员、飞书 `open_id`、可选邮箱、角色、状态、首次登录和最近登录时间。
 - 不显示任何服务端密钥或身份提供方 Token。
 
 #### FR-STAFF-02 权限管理
 
-- Admin 可以预先添加成员、修改角色、禁用成员。
-- 禁用后新请求立即被拒绝；已有会话应在短时间内失效。
+- Admin 可以按指定飞书 `open_id` 修改角色、禁用或恢复成员；一期不提供手工预注册入口。
+- 禁用后该成员的新登录和所有后续后台请求立即被拒绝；已有 Cookie 不构成继续访问的依据。
 - 不能移除系统中最后一个 Active Admin。
 
 ## 7. 关键业务流程
@@ -481,6 +485,9 @@ Work/草稿视图展示 Draft、Pending Review、Rejected、Published、Archived
 ### 10.1 通用验收
 
 - 未登录用户无法访问任意后台业务页面和 API。
+- 飞书回调拒绝 state 不匹配、签名篡改、过期或缺少 PKCE verifier 的请求。
+- 飞书应用可用范围内的新成员首次登录后自动创建为 Active Operator，重复登录不重复建记录并更新 `last_login_at`。
+- 不在飞书应用可用范围内的成员由飞书拒绝授权，后台不得使用邮箱域或通讯录导出绕过该边界。
 - 后台成员状态为 Disabled 时无法继续访问。
 - 前端隐藏和后端拒绝两层权限行为一致。
 - 所有一期后台写操作都能在审计页检索到。

@@ -39,7 +39,7 @@ test("acceptance fixtures support deterministic search and status filters", () =
 });
 
 test("fixture responses satisfy the runtime API contract", () => {
-  for (const section of ["characters", "creators", "users", "subscriptions"]) {
+  for (const section of ["characters", "creators", "users", "subscriptions", "staff"]) {
     const response = fixtureList(section, { limit: 50 });
     assert.equal(parseListResponse(section, response), response);
   }

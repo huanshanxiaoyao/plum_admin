@@ -1,5 +1,6 @@
 import type { AdminRole } from "./capabilities.ts";
 import type { AdminIdentity } from "./types.ts";
+import { adminAuthMode } from "./auth-mode.ts";
 
 const MOCK_IDENTITIES: Record<AdminRole, Omit<AdminIdentity, "capabilities">> = {
   operator: {
@@ -17,7 +18,7 @@ const MOCK_IDENTITIES: Record<AdminRole, Omit<AdminIdentity, "capabilities">> = 
 };
 
 export function isMockAuthEnabled(): boolean {
-  return process.env.NODE_ENV !== "production" && process.env.ADMIN_AUTH_MODE === "mock";
+  return process.env.NODE_ENV !== "production" && adminAuthMode() === "mock";
 }
 
 export function getMockIdentity(role: AdminRole) {

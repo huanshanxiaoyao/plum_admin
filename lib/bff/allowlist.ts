@@ -28,13 +28,8 @@ const RULES: readonly AllowRule[] = [
     capability: "membership.manage",
   },
   { methods: ["GET"], path: /^subscriptions$/, capability: DAILY },
-  { methods: ["GET"], path: /^users\/[^/]+\/wallet(?:\/ledger)?$/, capability: DAILY },
-  { methods: ["GET", "POST", "PATCH"], path: /^(?:tags|badges)(?:\/[^/]+)?$/, capability: DAILY },
-  { methods: ["PUT", "DELETE"], path: /^characters\/[^/]+\/badges\/[^/]+$/, capability: DAILY },
-  { methods: ["PATCH"], path: /^characters\/[^/]+\/feed-order$/, capability: DAILY },
-  { methods: ["GET", "POST"], path: /^moderation\/tasks(?:\/[^/]+(?:\/review)?)?$/, capability: DAILY },
   { methods: ["GET"], path: /^audit-events$/, capability: DAILY },
-  { methods: ["GET", "POST"], path: /^admin-users$/, capability: "staff.manage" },
+  { methods: ["GET"], path: /^admin-users$/, capability: DAILY },
   { methods: ["PATCH"], path: /^admin-users\/[^/]+$/, capability: "staff.manage" },
 ];
 

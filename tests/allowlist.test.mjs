@@ -6,6 +6,7 @@ test("daily routes resolve to operations access", () => {
   assert.equal(requiredCapability("GET", "characters"), "operations.access");
   assert.equal(requiredCapability("POST", "official/works/accept-01/submit"), "operations.access");
   assert.equal(requiredCapability("PATCH", "creators/pusr-01/control"), "operations.access");
+  assert.equal(requiredCapability("GET", "admin-users"), "operations.access");
 });
 
 test("three advanced route groups require admin capabilities", () => {
@@ -18,6 +19,9 @@ test("unknown paths and methods remain closed", () => {
   assert.equal(requiredCapability("DELETE", "users/pusr-01"), null);
   assert.equal(requiredCapability("GET", "../../health"), null);
   assert.equal(requiredCapability("POST", "arbitrary/proxy/path"), null);
+  assert.equal(requiredCapability("GET", "users/pusr-01/wallet"), null);
+  assert.equal(requiredCapability("GET", "moderation/tasks"), null);
+  assert.equal(requiredCapability("GET", "tags"), null);
 });
 
 test("backend paths reject traversal and encode each accepted segment", () => {
