@@ -16,16 +16,7 @@ export type CharacterSummary = AdminApiSchemas["AdminCharacterItem"];
 export type CharacterVersion = AdminApiSchemas["AdminCharacterVersionItem"];
 export type WorkSummary = AdminApiSchemas["AdminWorkItem"];
 
-export type CreatorSummary = {
-  platform_user_id: string;
-  profile_id: string;
-  display_name: string;
-  control_status: "active" | "restricted";
-  draft_count: number;
-  published_count: number;
-  takedown_count: number;
-  last_created_at: string | null;
-};
+export type CreatorSummary = AdminApiSchemas["AdminCreatorItem"];
 
 export type UserSummary = {
   platform_user_id: string;
@@ -85,6 +76,16 @@ export type WorkListQuery = {
   state?: WorkSummary["state"];
   moderation?: WorkSummary["moderation"];
   sort?: "updated_at.desc" | "updated_at.asc" | "created_at.desc" | "created_at.asc";
+  limit?: number;
+  cursor?: string;
+};
+
+export type CreatorListQuery = {
+  q?: string;
+  status?: CreatorSummary["control_status"];
+  from?: string;
+  to?: string;
+  sort?: "last_created_at.desc" | "created_at.desc";
   limit?: number;
   cursor?: string;
 };
@@ -208,16 +209,29 @@ function isWork(value: unknown): value is WorkSummary {
 }
 
 function isCreator(value: unknown): value is CreatorSummary {
-  if (!isRecord(value)) return false;
+  if (
+    !isRecord(value) ||
+    ["email", "phone", "mobile", "prompt", "prompt_text", "greeting", "content_json"].some((key) => key in value)
+  ) return false;
   return (
     hasString(value, "platform_user_id") &&
     hasString(value, "profile_id") &&
+    hasString(value, "handle") &&
     hasString(value, "display_name") &&
+    hasString(value, "profile_status") &&
     (value.control_status === "active" || value.control_status === "restricted") &&
-    hasNumber(value, "draft_count") &&
-    hasNumber(value, "published_count") &&
-    hasNumber(value, "takedown_count") &&
-    isNullableString(value.last_created_at)
+    isNonNegativeInteger(value.work_count) &&
+    isNonNegativeInteger(value.draft_count) &&
+    isNonNegativeInteger(value.published_count) &&
+    isNonNegativeInteger(value.rejected_count) &&
+    isNonNegativeInteger(value.takedown_count) &&
+    isNonNegativeInteger(value.interaction_count) &&
+    isNonNegativeInteger(value.like_count) &&
+    isNonNegativeInteger(value.favorite_count) &&
+    isUtcTimestamp(value.last_created_at) &&
+    (value.last_published_at === undefined || value.last_published_at === null || isUtcTimestamp(value.last_published_at)) &&
+    isUtcTimestamp(value.created_at) &&
+    isUtcTimestamp(value.updated_at)
   );
 }
 
@@ -312,3 +326,5 @@ export const parseCharacterResponse = (value: unknown) => parseSingle("character
 export const parseCharacterVersionListResponse = (value: unknown) => parseTypedList("character version", value, isCharacterVersion);
 export const parseWorkListResponse = (value: unknown) => parseTypedList("work", value, isWork);
 export const parseWorkResponse = (value: unknown) => parseSingle("work", value, isWork);
+export const parseCreatorListResponse = (value: unknown) => parseTypedList("creator", value, isCreator);
+export const parseCreatorResponse = (value: unknown) => parseSingle("creator", value, isCreator);

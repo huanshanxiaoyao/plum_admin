@@ -51,6 +51,22 @@ test("operator sees daily navigation and is denied advanced actions", async ({ p
   await expect(page.getByRole("heading", { name: "生命周期" })).toBeVisible();
   await expect(page.getByText("content_json", { exact: true })).toHaveCount(0);
 
+  await openNavigationIfNeeded(page);
+  await page.getByRole("link", { name: "创作者", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "创作者", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Mira Studio", exact: true })).toBeVisible();
+  await page.getByRole("searchbox").fill("North Window");
+  await page.getByRole("button", { name: "查询" }).click();
+  await expect(page).toHaveURL(/q=North\+Window/);
+  await expect(page.getByRole("link", { name: "North Window", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "North Window", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "North Window", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "创作产出" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "公开内容表现" })).toBeVisible();
+  await expect(page.getByText("资格受限", { exact: true })).toBeVisible();
+  await expect(page.getByText("content_json", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("prompt_text", { exact: true })).toHaveCount(0);
+
   await page.goto("/staff");
   await expect(page).toHaveURL("/forbidden");
   await expect(page.getByRole("heading", { name: "权限不足" })).toBeVisible();

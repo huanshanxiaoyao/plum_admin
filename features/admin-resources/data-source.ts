@@ -9,12 +9,15 @@ import type {
   AdminListSection,
   CharacterListQuery,
   CharacterVersionListQuery,
+  CreatorListQuery,
   WorkListQuery,
 } from "./contracts.ts";
 import {
   parseCharacterListResponse,
   parseCharacterResponse,
   parseCharacterVersionListResponse,
+  parseCreatorListResponse,
+  parseCreatorResponse,
   parseListResponse,
   parseWorkListResponse,
   parseWorkResponse,
@@ -23,6 +26,8 @@ import {
   fixtureCharacter,
   fixtureCharacterList,
   fixtureCharacterVersions,
+  fixtureCreator,
+  fixtureCreatorList,
   fixtureList,
   fixtureWork,
   fixtureWorkList,
@@ -85,6 +90,25 @@ function normalizeWorkQuery(query: WorkListQuery): WorkListQuery {
 function normalizeVersionQuery(query: CharacterVersionListQuery): CharacterVersionListQuery {
   return {
     sort: oneOf(query.sort, ["created_at.desc", "created_at.asc"]),
+    limit: limit(query.limit),
+    cursor: clean(query.cursor, 2048),
+  };
+}
+
+function dateAtBeijingMidnight(value: string | undefined): string | undefined {
+  const normalized = clean(value, 10);
+  return normalized && /^\d{4}-\d{2}-\d{2}$/.test(normalized)
+    ? `${normalized}T00:00:00+08:00`
+    : undefined;
+}
+
+function normalizeCreatorQuery(query: CreatorListQuery): CreatorListQuery {
+  return {
+    q: clean(query.q, 200),
+    status: oneOf(query.status, ["active", "restricted"]),
+    from: dateAtBeijingMidnight(query.from),
+    to: dateAtBeijingMidnight(query.to),
+    sort: oneOf(query.sort, ["last_created_at.desc", "created_at.desc"]),
     limit: limit(query.limit),
     cursor: clean(query.cursor, 2048),
   };
@@ -206,6 +230,29 @@ export async function getAdminWork(id: string) {
   }
   try {
     return parseWorkResponse(await adminApiGet(`works/${encodeURIComponent(id)}`));
+  } catch (error) {
+    unexpected(error);
+  }
+}
+
+export async function listAdminCreators(query: CreatorListQuery = {}) {
+  const normalized = normalizeCreatorQuery(query);
+  if (adminDataSourceMode() === "fixture") return fixtureCreatorList(normalized);
+  try {
+    return parseCreatorListResponse(await adminApiGet("creators", normalized));
+  } catch (error) {
+    unexpected(error);
+  }
+}
+
+export async function getAdminCreator(platformUserId: string) {
+  if (adminDataSourceMode() === "fixture") {
+    const response = fixtureCreator(platformUserId);
+    if (!response) throw new AdminApiError(404, "not_found", "Creator not found.");
+    return response;
+  }
+  try {
+    return parseCreatorResponse(await adminApiGet(`creators/${encodeURIComponent(platformUserId)}`));
   } catch (error) {
     unexpected(error);
   }

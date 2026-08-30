@@ -1,0 +1,53 @@
+.page, .detailPage { width: min(1240px, 100%); margin: 0 auto; }
+.pageHeader { min-height: 88px; display: flex; align-items: flex-start; border-bottom: 1px solid var(--line); }
+.pageHeader span, .detailHeader > div:first-child > span { color: var(--green); font-size: 10px; font-weight: 800; }
+.pageHeader h1, .detailHeader h1 { margin: 5px 0 4px; font-size: 24px; line-height: 1.15; }
+.pageHeader p, .detailHeader p { margin: 0; color: var(--muted); font-size: 10px; }
+.toolbar { min-width: 0; display: flex; align-items: center; gap: 6px; padding: 12px 0; overflow-x: auto; }
+.search, .control { height: 38px; display: flex; align-items: center; gap: 7px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--muted); background: var(--surface); }
+.search { width: min(290px, 32vw); flex: 0 0 auto; }
+.search input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 10px; }
+.control { gap: 5px; padding-right: 6px; }
+.control span { flex: 0 0 auto; font-size: 9px; }
+.control select, .control input { min-width: 0; max-width: 118px; border: 0; outline: 0; color: var(--ink); background: transparent; font-size: 9px; }
+.toolbar button, .reset { height: 38px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--muted-strong); background: var(--surface); font-size: 10px; text-decoration: none; }
+.toolbar .submit { color: #fff; border-color: var(--surface-strong); background: var(--surface-strong); cursor: pointer; }
+.table { min-width: 0; overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+.table table { width: 100%; min-width: 980px; border-collapse: collapse; table-layout: fixed; }
+.table th, .table td { min-width: 0; padding: 11px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+.table th { height: 42px; color: var(--muted); background: var(--surface-subtle); font-size: 9px; font-weight: 750; }
+.table td { height: 76px; color: var(--muted-strong); font-size: 10px; }
+.table th:first-child { width: 22%; } .table th:nth-child(2) { width: 13%; } .table th:last-child { width: 14%; }
+.table tbody tr:last-child td { border-bottom: 0; } .table tbody tr:hover td { background: #fbfcfa; }
+.identity, .metrics { min-width: 0; display: grid; gap: 3px; }
+.identity a, .metrics strong { overflow: hidden; color: var(--ink); font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.identity a { color: var(--green); text-decoration: none; } .identity a:hover { text-decoration: underline; }
+.identity span, .identity code, .metrics small { overflow: hidden; color: var(--muted); font-family: inherit; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.badgeStack { display: flex; flex-wrap: wrap; gap: 5px; }
+.badge { width: fit-content; max-width: 100%; display: inline-flex; align-items: center; min-height: 23px; padding: 0 7px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted-strong); background: var(--surface-subtle); font-size: 9px; font-weight: 700; white-space: nowrap; }
+.good { color: var(--green); border-color: #bcdac7; background: var(--green-soft); }
+.warn { color: var(--amber); border-color: #ead1aa; background: var(--amber-soft); }
+.muted { color: var(--muted-strong); }
+.empty { min-height: 300px; display: grid; place-content: center; justify-items: center; gap: 7px; color: var(--muted); }
+.emptyMark, .errorCode { width: 38px; height: 38px; display: grid; place-items: center; border: 1px dashed var(--line-strong); border-radius: 50%; font-size: 10px; }
+.errorCode { color: var(--red); border-color: #dfb7b4; background: var(--red-soft); }
+.empty strong { color: var(--muted-strong); font-size: 12px; } .empty small { font-size: 10px; }
+.pagination { min-height: 52px; display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 10px; }
+.pagination a, .pagination button { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); background: var(--surface); }
+.pagination button:disabled { opacity: .68; }
+.back { width: fit-content; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 18px; color: var(--muted-strong); font-size: 10px; text-decoration: none; }
+.detailHeader { min-height: 98px; display: flex; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); }
+.detailHeader > .badgeStack { align-items: flex-start; padding-top: 8px; }
+.band { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 28px; padding: 24px 0; border-bottom: 1px solid var(--line); }
+.band h2 { margin: 0; font-size: 13px; }
+.valueGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 28px; margin: 0; }
+.value { min-width: 0; display: grid; gap: 5px; }
+.value dt { color: var(--muted); font-size: 9px; }
+.value dd { min-width: 0; margin: 0; overflow-wrap: anywhere; color: var(--ink); font-size: 11px; }
+.related { display: flex; gap: 8px; padding-top: 24px; }
+.related a { min-height: 36px; display: inline-flex; align-items: center; gap: 7px; padding: 0 11px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--green); background: var(--surface); font-size: 10px; font-weight: 700; text-decoration: none; }
+.detailError { min-height: 420px; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--muted); }
+.detailError strong { color: var(--red); font-size: 13px; } .detailError span { font-size: 10px; }
+@media (max-width: 900px) { .toolbar { align-items: stretch; flex-wrap: wrap; overflow: visible; } .search { width: 100%; } .control { flex: 1 1 145px; } }
+@media (max-width: 720px) { .detailHeader { min-height: 116px; flex-direction: column; justify-content: flex-start; gap: 8px; } .detailHeader > .badgeStack { padding: 0 0 16px; } .band { grid-template-columns: 1fr; gap: 16px; } .valueGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .pageHeader { min-height: 96px; } .control, .toolbar button, .reset { flex-basis: 100%; width: 100%; } .control select, .control input { width: 100%; max-width: none; } .valueGrid { grid-template-columns: 1fr; } .related { align-items: stretch; flex-direction: column; } .related a { justify-content: center; } }
