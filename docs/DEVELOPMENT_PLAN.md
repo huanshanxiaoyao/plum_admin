@@ -73,7 +73,7 @@
 
 截至 2026-08-30：
 
-- 两个仓库均以 `main` 为当前集成主干；开发机仓库基线分别为 `plum_admin@8801bc1`、`ai4all_bridge@aa49be0`，这些是仓库基线，不替代生产发布记录中的不可变 SHA。
+- 两个仓库均以 `main` 为当前集成主干；PR-C 分支基线分别为 `plum_admin@f81dd49`、`ai4all_bridge@aa49be0`，这些是开发基线，不替代生产发布记录中的不可变 SHA。
 - M1 已部署到 `admin.plum.top`，真实飞书登录、首位 Admin、Operator 自注册、后台成员禁用/恢复和生产回调均已验证。
 - 生产写开关保持关闭；M2～M6 尚未交付的模块不得出现在生产导航或可访问路由中。
 
@@ -92,6 +92,7 @@
 | RBAC 权限矩阵 | 完成 | PRD §4.3、技术设计 §6.3 |
 | API 错误、分页、时间契约 | 完成 | 技术设计 §8.1 |
 | 验收样例 | 完成 | `docs/ACCEPTANCE_SAMPLES.md` |
+| M1 Admin OpenAPI 地基 | 完成 | 后端权威快照、前端生成类型和两仓库漂移门禁 |
 
 ### 2.2 M1 开工前
 
@@ -152,7 +153,7 @@ M1 所需的飞书应用发布与回调、`admin.plum.top` DNS/TLS、systemd/ngi
 
 状态：M1 身份链路已于 2026-08-30 部署并完成真实飞书登录联调。`plum_admin` 前端、Remote Identity BFF、员工列表和禁用/恢复交互已完成；后端 Plum 私有员工目录、登录自注册、按 `open_id` 禁用/恢复、最后一个 Active Admin 保护和隔离测试已完成。Migration 129、首个真实 Admin Bootstrap、Operator 自注册与错误占位身份停用均已验证；生产写开关仍保持关闭。
 
-在后端仓库并行开发期间，`plum_admin` 已先完成角色、创作者、用户和订阅的本地 API Contract、确定性 Fixture 及只读列表。该工作属于 M3 前置准备，不代表 M2 真实 Admin API 或 M3 联调退出门槛已经完成。
+在后端仓库并行开发期间，`plum_admin` 已先完成角色、创作者、用户和订阅的本地确定性 Fixture 及只读列表。PR-C 已为 M1 四个操作建立后端权威 OpenAPI、前端生成类型和漂移门禁；尚未交付的 M2 资源仍是手写原型类型，不代表真实 Admin API 或 M3 联调退出门槛已经完成。
 
 预计：2～3 个工作日。
 

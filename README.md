@@ -46,10 +46,26 @@ Mock 登录仅在 `NODE_ENV` 不是 `production` 且 `ADMIN_AUTH_MODE=mock` 时�
 - `app/` 只负责 Next.js 路由、Layout 和 Route Handler；后台业务 URL 使用显式目录，不使用业务 catch-all。
 - `features/` 按后台能力和业务域组织页面、组件与列表定义；每个资源模块维护自己的列、状态和展示映射。
 - `features/admin-sections/` 统一处理列表鉴权、查询参数、分页、空态和错误态。
-- `features/admin-resources/` 暂存共享 API Contract、数据源和 Fixture；PR-C 将在这里接入后端契约生成。
+- `contracts/` 保存从后端同步的 Plum Admin OpenAPI 快照及自动生成的 TypeScript 类型；生成文件不手改。
+- `features/admin-resources/` 保存数据源、Fixture 和运行时响应 Guard，并引用生成类型约束已交付资源。
 - `lib/` 只放 Auth、BFF 和服务端基础设施，不反向依赖 `features/` 或 `app/`。
 
 依赖方向固定为 `app -> features -> lib`，架构测试会阻止反向引用。
+
+## API 契约
+
+后端仓库的 `docs/products/plum/openapi/admin_v1.json` 是权威来源。本仓库提交其逐字节副本
+`contracts/plum-admin-v1.openapi.json`，并由 `openapi-typescript` 生成
+`contracts/generated/admin-api.ts`。同步后执行：
+
+```bash
+npm run contract:generate
+npm run contract:check
+```
+
+`contract:check` 已纳入 `npm run verify`，生成类型过期会直接失败。当前快照只允许 M1 的
+`session`、`me` 和 `admin-users` 四个操作；后端新增 M2 路径时必须先显式加入 Admin 契约，
+再同步快照和生成类型。生成类型负责编译期漂移，现有运行时 Guard 继续拒绝不可信远端响应。
 
 ## 权限
 

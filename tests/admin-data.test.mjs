@@ -47,6 +47,10 @@ test("fixture responses satisfy the runtime API contract", () => {
 
 test("runtime contract rejects malformed and payment-connected responses", () => {
   assert.throws(() => parseListResponse("characters", { data: [], page: {}, meta: {} }), /Invalid/);
+  const staff = fixtureList("staff", { limit: 50 });
+  const staffWithoutCount = structuredClone(staff);
+  delete staffWithoutCount.meta.count;
+  assert.throws(() => parseListResponse("staff", staffWithoutCount), /Invalid/);
   const subscriptions = fixtureList("subscriptions", { limit: 50 });
   const invalid = structuredClone(subscriptions);
   invalid.data[0].billing_connected = true;

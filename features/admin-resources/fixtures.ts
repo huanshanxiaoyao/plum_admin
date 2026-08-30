@@ -184,6 +184,9 @@ export function fixtureList<Section extends AdminListSection>(
   return {
     data,
     page: { limit: query.limit, next_cursor: null, has_more: false },
-    meta: { request_id: "00000000-0000-4000-8000-000000000001" },
+    meta: {
+      request_id: "00000000-0000-4000-8000-000000000001",
+      ...(section === "staff" ? { count: filtered.length } : {}),
+    },
   } as AdminListResponseMap[Section];
 }

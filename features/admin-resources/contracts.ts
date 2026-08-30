@@ -1,10 +1,10 @@
+import type { components as AdminApiComponents } from "../../contracts/generated/admin-api.ts";
+
+type AdminApiSchemas = AdminApiComponents["schemas"];
+
 export type AdminListSection = "characters" | "creators" | "users" | "subscriptions" | "staff";
 
-export type PageInfo = {
-  limit: number;
-  next_cursor: string | null;
-  has_more: boolean;
-};
+export type PageInfo = AdminApiSchemas["PageInfo"];
 
 export type ListResponse<T> = {
   data: T[];
@@ -61,20 +61,7 @@ export type SubscriptionSummary = {
   updated_at: string;
 };
 
-export type StaffSummary = {
-  open_id: string;
-  union_id: string | null;
-  tenant_key: string;
-  display_name: string;
-  en_name: string | null;
-  email: string | null;
-  avatar_url: string | null;
-  role: "operator" | "admin";
-  status: "active" | "disabled";
-  created_at: string;
-  last_login_at: string;
-  updated_at: string;
-};
+export type StaffSummary = AdminApiSchemas["AdminUserItem"];
 
 export type AdminListResourceMap = {
   characters: CharacterSummary;
@@ -208,6 +195,7 @@ export function parseListResponse<Section extends AdminListSection>(
     !isNullableString(value.page.next_cursor) ||
     typeof value.page.has_more !== "boolean" ||
     !hasString(value.meta, "request_id") ||
+    (section === "staff" && !hasNumber(value.meta, "count")) ||
     !value.data.every(ITEM_GUARDS[section])
   ) {
     throw new TypeError(`Invalid ${section} list response payload`);
