@@ -9,9 +9,9 @@ Plum 内部管理后台。当前处于 M1：飞书登录、两角色 RBAC、后�
 以下内容仍是 M1 的接入项；完成前不得部署生产登录：
 
 - 将后端 M1 Commit 和前端 M1 Commit 发布到 aws-sg。
-- 使用首批成员的飞书 `open_id` 预置 `admin_users`；邮箱允许为空。
+- 使用 Jack 在当前飞书应用下的 `open_id` 一次性 Bootstrap 首个 Admin；其他可用范围内成员首次登录自动注册为 Active Operator。
 - 配置生产 BFF Token、Session Secret 和飞书 OAuth Secret。
-- 完成 Disabled/未知成员、Admin/Operator 和旧业务兼容的线上只读联调验收。
+- 完成飞书可用范围、Disabled、Admin/Operator 和旧业务兼容的线上只读联调验收。
 
 ## 本地启动
 
