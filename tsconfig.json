@@ -18,6 +18,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
+    "tsBuildInfoFile": ".cache/typescript/tsconfig.tsbuildinfo",
     "paths": {
       "@/*": [
         "./*"
@@ -32,12 +33,12 @@
   },
   "include": [
     "next-env.d.ts",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
+    ".cache/next/types/**/*.ts",
+    ".cache/next/dev/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next-e2e/types/**/*.ts",
-    ".next-e2e/dev/types/**/*.ts"
+    ".cache/next-e2e/types/**/*.ts",
+    ".cache/next-e2e/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

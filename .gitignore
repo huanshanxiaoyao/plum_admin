@@ -1,7 +1,11 @@
 # dependencies
 /node_modules
 
-# next.js
+# generated caches and test artifacts
+/.cache/
+/.artifacts/
+
+# legacy generated locations; npm run clean removes these
 /.next/
 /.next-e2e/
 /out/
