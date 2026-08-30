@@ -1,0 +1,21 @@
+[Unit]
+Description=Plum Admin Frontend (production)
+After=network-online.target ai4all-bridge-backend.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=__PLUM_ADMIN_DIR__
+Environment=NODE_ENV=production
+Environment=PATH=__NODE_BIN_DIR__:/usr/bin:/bin
+# Next.js loads __PLUM_ADMIN_DIR__/.env itself. Do not duplicate secrets here.
+ExecStart=__NODE_BIN_DIR__/npm run start -- -H 127.0.0.1 -p 3001
+Restart=always
+RestartSec=3
+UMask=0077
+StandardOutput=append:/var/log/apps/plum-admin-frontend.out.log
+StandardError=append:/var/log/apps/plum-admin-frontend.err.log
+SyslogIdentifier=plum-admin-frontend
+
+[Install]
+WantedBy=default.target

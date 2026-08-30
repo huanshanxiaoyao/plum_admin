@@ -1,5 +1,5 @@
 export const FEISHU_AUTHORIZE_ENDPOINT = "https://accounts.feishu.cn/open-apis/authen/v1/authorize";
-export const FEISHU_TOKEN_ENDPOINT = "https://accounts.feishu.cn/oauth/v3/token";
+export const FEISHU_TOKEN_ENDPOINT = "https://open.feishu.cn/open-apis/authen/v2/oauth/token";
 export const FEISHU_USER_INFO_ENDPOINT = "https://open.feishu.cn/open-apis/authen/v1/user_info";
 
 export type FeishuOAuthConfig = {
@@ -76,20 +76,20 @@ export async function exchangeFeishuCode(
   codeVerifier: string,
   fetcher: typeof fetch = fetch,
 ): Promise<string> {
-  const body = new URLSearchParams({
+  const body = {
     grant_type: "authorization_code",
     client_id: config.clientId,
     client_secret: config.clientSecret,
     code,
     redirect_uri: config.redirectUri,
     code_verifier: codeVerifier,
-  });
+  };
   let response: Response;
   try {
     response = await fetcher(FEISHU_TOKEN_ENDPOINT, {
       method: "POST",
-      headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded" },
-      body,
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify(body),
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
     });

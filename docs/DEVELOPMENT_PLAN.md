@@ -21,7 +21,7 @@
 - 无标签、Badge 和 Feed 排序管理。
 - 无普通明文访问入口。
 - 角色下架允许 Operator；角色恢复仅允许 Admin。
-- 员工登录使用飞书 OAuth v3、随机 state 和 S256 PKCE，以 `open_id` 为稳定身份，邮箱允许为空。
+- 员工登录使用飞书 OAuth 授权码流程、随机 state 和 S256 PKCE，以 `open_id` 为稳定身份，邮箱允许为空。
 - 飞书应用可用范围仅包含产品、运营和管理人员；范围内成员首次登录自注册为 Active Operator，Admin 只能受控授予。
 - Admin 可以按指定 `open_id` 禁用或恢复成员，禁用对已有会话的后续请求立即生效。
 - 生产域名使用 `admin.plum.top`。
@@ -155,7 +155,7 @@
 
 ### M1：管理前端基础与 Admin Identity
 
-状态：开发完成，待部署联调。`plum_admin` 前端基础、飞书 OAuth v3、Remote Identity BFF、员工列表和禁用/恢复交互已完成；后端 Plum 私有员工目录、登录自注册、按 `open_id` 禁用/恢复、最后一个 Active Admin 保护和隔离测试已完成。线上迁移、首个 Admin Bootstrap 与真实飞书登录验收待执行。
+状态：M1 身份链路已于 2026-08-30 部署并完成真实飞书登录联调。`plum_admin` 前端、Remote Identity BFF、员工列表和禁用/恢复交互已完成；后端 Plum 私有员工目录、登录自注册、按 `open_id` 禁用/恢复、最后一个 Active Admin 保护和隔离测试已完成。Migration 129、首个真实 Admin Bootstrap、Operator 自注册与错误占位身份停用均已验证；生产写开关仍保持关闭。
 
 在后端仓库并行开发期间，`plum_admin` 已先完成角色、创作者、用户和订阅的本地 API Contract、确定性 Fixture 及只读列表。该工作属于 M3 前置准备，不代表 M2 真实 Admin API 或 M3 联调退出门槛已经完成。
 
@@ -170,7 +170,7 @@
 | I-03 | `ai4all_bridge` | 解析并校验员工 ID、规范化邮箱和 Request ID Header | I-02 | 非法 Header 返回稳定 401/422 |
 | I-04 | `ai4all_bridge` | 新增 `plum_admin_users`，实现 OAuth 登录原子自注册和四个 Capability | I-03 | 首登、重登、Admin、Operator、Disabled 矩阵 |
 | I-05 | `ai4all_bridge` | 实现 `/admin/plum/me` 响应和统一错误 Envelope | I-04 | Plum 新契约与其他产品旧契约隔离测试 |
-| I-06 | `plum_admin` | 完成飞书 OAuth v3、state/PKCE、Provider Adapter、Callback 和 HttpOnly Session | 飞书应用方案 | 已完成；Auth 单测通过，Mock 仅开发可用 |
+| I-06 | `plum_admin` | 完成飞书 OAuth 授权码流程、state/PKCE、Provider Adapter、Callback 和 HttpOnly Session | 飞书应用方案 | 已完成；Auth 单测通过，Mock 仅开发可用 |
 | I-07 | `plum_admin` | BFF 附加服务 Token、员工 Header、Request ID 和 CSRF 防护 | I-05、I-06 | 浏览器 Bundle 无服务 Token |
 | I-08 | `plum_admin` | 依据 `/admin/plum/me` 渲染导航、403 和 Disabled 状态 | I-05 | 两角色 UI/路由测试 |
 
