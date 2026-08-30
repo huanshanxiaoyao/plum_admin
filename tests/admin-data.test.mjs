@@ -1,7 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseListResponse } from "../features/admin-resources/contracts.ts";
-import { fixtureList } from "../features/admin-resources/fixtures.ts";
+import {
+  parseCharacterListResponse,
+  parseCharacterResponse,
+  parseCharacterVersionListResponse,
+  parseListResponse,
+  parseWorkListResponse,
+  parseWorkResponse,
+} from "../features/admin-resources/contracts.ts";
+import {
+  fixtureCharacter,
+  fixtureCharacterList,
+  fixtureCharacterVersions,
+  fixtureList,
+  fixtureWork,
+  fixtureWorkList,
+} from "../features/admin-resources/fixtures.ts";
 import {
   adminApiOrigin,
   adminApiWritesEnabled,
@@ -43,6 +57,36 @@ test("fixture responses satisfy the runtime API contract", () => {
     const response = fixtureList(section, { limit: 50 });
     assert.equal(parseListResponse(section, response), response);
   }
+  assert.equal(parseCharacterListResponse(fixtureCharacterList({ limit: 50 })).data.length, 5);
+  assert.equal(parseCharacterResponse(fixtureCharacter("char_accept_official_active")).data.display_name, "Ada");
+  assert.equal(parseCharacterVersionListResponse(fixtureCharacterVersions("char_accept_official_active", { limit: 50 })).data.length, 3);
+  assert.equal(parseWorkListResponse(fixtureWorkList({ limit: 50 })).data.length, 6);
+  assert.equal(parseWorkResponse(fixtureWork("work_accept_official_active")).data.display_name, "Ada");
+});
+
+test("content fixtures support compound filters and cursor pagination", () => {
+  const firstPage = fixtureCharacterList({ source: "ugc", rating: "general", limit: 2 });
+  assert.deepEqual(firstPage.data.map((item) => item.display_name), ["Sol", "Ember"]);
+  assert.equal(firstPage.page.has_more, true);
+  const secondPage = fixtureCharacterList({ source: "ugc", rating: "general", limit: 2, cursor: firstPage.page.next_cursor });
+  assert.deepEqual(secondPage.data.map((item) => item.display_name), ["Ione"]);
+
+  const works = fixtureWorkList({ owner: "North Window", moderation: "pending_review", limit: 50 });
+  assert.deepEqual(works.data.map((item) => item.display_name), ["Haru"]);
+});
+
+test("runtime content contracts reject private text and draft JSON", () => {
+  const character = structuredClone(fixtureCharacter("char_accept_official_active"));
+  character.data.prompt_text = "must not cross the admin boundary";
+  assert.throws(() => parseCharacterResponse(character), /Invalid/);
+
+  const work = structuredClone(fixtureWork("work_accept_official_active"));
+  work.data.content_json = { private: true };
+  assert.throws(() => parseWorkResponse(work), /Invalid/);
+
+  const versions = structuredClone(fixtureCharacterVersions("char_accept_official_active", { limit: 50 }));
+  versions.data[0].greeting = "must not cross the admin boundary";
+  assert.throws(() => parseCharacterVersionListResponse(versions), /Invalid/);
 });
 
 test("runtime contract rejects malformed and payment-connected responses", () => {
