@@ -91,19 +91,18 @@ const CREATORS: AdminListResourceMap["creators"][] = [
 ];
 
 const USERS: AdminListResourceMap["users"][] = [
-  ["pusr_accept_official", "Plum Official", "o***@users.invalid", "active", "free", "active", 0, 2],
-  ["pusr_accept_creator_active", "Mira Studio", "c***@users.invalid", "active", "standard", "active", 120, 4],
-  ["pusr_accept_creator_restricted", "North Window", "n***@users.invalid", "active", "premium", "active", 35, 1],
-  ["pusr_accept_member_free", "Rowan", "m***@users.invalid", "active", "free", "active", 8, 0],
-  ["pusr_accept_member_disabled", "Jules", "j***@users.invalid", "disabled", "free", "active", 20, 0],
-  ["pusr_accept_subscription_cancelled", "Sage", "s***@users.invalid", "active", "premium", "cancelled", 5, 0],
-].map(([platform_user_id, display_name, masked_login, membership_status, plan, status, wallet, characters], index) => ({
+  ["pusr_accept_official", "Plum Official", "o***@users.invalid", "active", "free", "active", 2],
+  ["pusr_accept_creator_active", "Mira Studio", "c***@users.invalid", "active", "standard", "active", 4],
+  ["pusr_accept_creator_restricted", "North Window", "n***@users.invalid", "active", "premium", "active", 1],
+  ["pusr_accept_member_free", "Rowan", "m***@users.invalid", "active", "free", "active", 0],
+  ["pusr_accept_member_disabled", "Jules", "j***@users.invalid", "disabled", "free", "active", 0],
+  ["pusr_accept_subscription_cancelled", "Sage", "s***@users.invalid", "active", "premium", "cancelled", 0],
+].map(([platform_user_id, display_name, masked_login, membership_status, plan, status, characters], index) => ({
   platform_user_id,
   display_name,
   masked_login,
   membership_status,
   subscription: { plan, status, billing_connected: false },
-  wallet_balance_coins: wallet,
   character_count: characters,
   last_active_at: index === 4 ? null : `2026-08-${String(28 - index).padStart(2, "0")}T04:00:00.000Z`,
 })) as AdminListResourceMap["users"][];
@@ -113,7 +112,6 @@ const SUBSCRIPTIONS: AdminListResourceMap["subscriptions"][] = USERS.map((user, 
   platform_user_id: user.platform_user_id,
   display_name: user.display_name,
   ...user.subscription,
-  wallet_balance_coins: user.wallet_balance_coins,
   updated_at: `2026-08-${String(28 - index).padStart(2, "0")}T01:00:00.000Z`,
 }));
 

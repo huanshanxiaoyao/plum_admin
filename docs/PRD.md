@@ -93,7 +93,7 @@ Plum 已具备面向普通用户的角色浏览、对话、角色创建、媒体
 
 ### 4.3 RBAC 权限矩阵
 
-后端角色与 Capability 是唯一授权事实，前端只根据 `/admin/me` 返回的角色和 Capability 裁剪导航与操作入口。Operator 承担绝大多数日常工作；只有恢复已下架角色、管理 Plum Membership 和管理后台成员需要 Admin。
+后端角色与 Capability 是唯一授权事实，前端只根据 Plum 专属 `/admin/plum/me` 返回的角色和 Capability 裁剪导航与操作入口。Operator 承担绝大多数日常工作；只有恢复已下架角色、管理 Plum Membership 和管理后台成员需要 Admin。其他两个业务的后台身份与权限不属于本项目，也不能通过本后台访问。
 
 | 业务能力 | 交付阶段 | Operator | Admin |
 | --- | --- | --- | --- |
@@ -144,9 +144,11 @@ Plum 已具备面向普通用户的角色浏览、对话、角色创建、媒体
 
 #### FR-AUTH-01 员工登录
 
-- 一期使用飞书 OAuth 2.0 登录，认证实现保持 Provider 可替换。
+- 一期使用飞书 OAuth v3 授权码流程登录，认证实现保持 Provider 可替换。
+- 使用同一飞书应用返回的 `open_id` 作为稳定员工身份；企业邮箱允许为空，不按邮箱域自动授权。
+- 登录流程不申请离线授权，不保存飞书 access/refresh token，也不要求 `auth:user_access_token:read`。
 - 登录成功不代表自动获得后台权限；员工必须已存在于后台成员名单且状态为 Active。
-- 未授权账号显示明确的无权限页面，不泄露后台数据。
+- 未授权账号显示明确的无权限页面和本人的 `open_id`，便于联系 Admin 预置，但不泄露后台数据。
 
 #### FR-AUTH-02 会话
 
@@ -414,7 +416,7 @@ Work/草稿视图展示 Draft、Pending Review、Rejected、Published、Archived
 
 #### FR-STAFF-01 成员列表
 
-- Admin 查看后台成员、邮箱、角色、状态和最近更新时间。
+- Admin 查看后台成员、飞书 `open_id`、可选邮箱、角色、状态和最近更新时间。
 - 不显示任何服务端密钥或身份提供方 Token。
 
 #### FR-STAFF-02 权限管理
@@ -481,6 +483,8 @@ Work/草稿视图展示 Draft、Pending Review、Rejected、Published、Archived
 ### 10.1 通用验收
 
 - 未登录用户无法访问任意后台业务页面和 API。
+- 飞书回调拒绝 state 不匹配、签名篡改、过期或缺少 PKCE verifier 的请求。
+- 未预置成员登录后只看到拒绝页及本人 `open_id`，不会被自动创建或授予角色。
 - 后台成员状态为 Disabled 时无法继续访问。
 - 前端隐藏和后端拒绝两层权限行为一致。
 - 所有一期后台写操作都能在审计页检索到。

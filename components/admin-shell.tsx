@@ -5,15 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   BadgeCheck,
-  BookOpenCheck,
   ChevronDown,
   CircleUserRound,
   ClipboardList,
-  Coins,
   House,
   LogOut,
   Menu,
-  Tags,
+  ReceiptText,
   Users,
   UsersRound,
   X,
@@ -36,9 +34,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { href: "/characters", label: "角色管理", icon: BadgeCheck },
   { href: "/creators", label: "创作者", icon: UsersRound },
   { href: "/users", label: "用户", icon: CircleUserRound },
-  { href: "/subscriptions", label: "订阅与钱包", icon: Coins },
-  { href: "/moderation", label: "内容审核", icon: BookOpenCheck },
-  { href: "/taxonomy", label: "标签与 Badge", icon: Tags },
+  { href: "/subscriptions", label: "用户订阅", icon: ReceiptText },
   { href: "/audit", label: "操作审计", icon: ClipboardList },
   { href: "/staff", label: "后台成员", icon: Users, adminOnly: true },
 ];
@@ -67,7 +63,9 @@ export function AdminShell({
     router.refresh();
   }
 
-  const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || identity.role === "admin");
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !item.adminOnly || identity.capabilities.includes("staff.manage"),
+  );
 
   return (
     <div className={styles.shell}>

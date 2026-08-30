@@ -21,7 +21,7 @@
 - 无标签、Badge 和 Feed 排序管理。
 - 无普通明文访问入口。
 - 角色下架允许 Operator；角色恢复仅允许 Admin。
-- 员工登录使用飞书 OAuth 2.0。
+- 员工登录使用飞书 OAuth v3、随机 state 和 S256 PKCE，以 `open_id` 为稳定身份，邮箱允许为空。
 - 生产域名使用 `admin.plum.top`。
 - RBAC 仅包含 Operator 和 Admin；一期不建设通用审批流。
 
@@ -39,7 +39,7 @@
 
 | 能力组 | Method | Path | 权限 | 阶段 |
 | --- | --- | --- | --- | --- |
-| 身份 | GET | `/admin/me` | Active member | M1 |
+| 身份 | GET | `/admin/plum/me` | Active member | M1 |
 | 工作台 | GET | `/admin/plum/overview` | `operations.access` | M2 |
 | Character | GET | `/admin/plum/characters` | `operations.access` | M2 |
 | Character | GET | `/admin/plum/characters/{id}` | `operations.access` | M2 |
@@ -70,9 +70,9 @@
 
 截至 2026-08-30：
 
-- `plum_admin` 位于 `main`，已关联 `git@github.com:huanshanxiaoyao/plum_admin.git`，但尚无首个 Commit；现有工程文件均未跟踪。
-- `ai4all_bridge` 位于 `main`，工作区干净，基线 Commit 为 `15fb987`。
-- 用户确认 GATE-0 后，需先审阅 `plum_admin` 当前文件并获得明确授权，再创建初始 Commit；之后两个仓库分别使用 `codex/` 前缀短分支开发。
+- `plum_admin` 当前开发分支为 `codex/phase1-admin`，初始提交为 `922e4f9`；M1 改动尚未提交。
+- `ai4all_bridge` 当前开发分支为 `codex/phase1-admin-api`，已对齐 `origin/main@882d711`；M1 改动尚未提交。
+- 线上后端已由运维切换到 `main`，旧未跟踪探查脚本已删除；正式部署仍必须使用评审后的不可变 Commit SHA。
 - 未经明确授权，不 Commit、Push 或创建 PR。
 
 ## 2. 前置依赖总表
@@ -85,7 +85,7 @@
 | 本地 Git 初始化和远端关联 | 完成 | `main` + `origin` |
 | PRD | 完成 | `docs/PRD.md` |
 | 技术设计 | 完成 | `docs/TECHNICAL_DESIGN.md` |
-| 一期范围草案 | 待本轮确认 | PRD §3、§12 和本文 §1 |
+| 一期范围冻结 | 完成 | PRD §3、§12 和本文 §1 |
 | 六项业务决策 | 完成 | PRD §12 |
 | RBAC 权限矩阵 | 完成 | PRD §4.3、技术设计 §6.3 |
 | API 错误、分页、时间契约 | 完成 | 技术设计 §8.1 |
@@ -97,12 +97,12 @@
 | --- | --- | --- | --- |
 | Node.js/npm 版本 | 工程 | 与 `plum_chat` 生产版本兼容，并在 CI 固定 | 工程构建 |
 | 后端隔离测试环境 | 工程 | `pytest-postgresql` 可启动，完整 Migration 模板和每测试数据库克隆可用 | 后端自动化测试 |
-| 飞书应用方案 | 产品/工程 | 确定使用新建或既有飞书应用 | 登录实现 |
-| 首批后台成员 | 产品 | 至少 1 Admin、2 Operator，覆盖日常操作和并发验收 | RBAC UAT |
+| 飞书应用方案 | 产品/工程 | 已发布；本地与生产 Callback 已配置 | 已完成 |
+| 首批后台成员 | 产品 | 提供同一飞书应用下至少 1 Admin、2 Operator 的 `open_id` | RBAC UAT |
 | 官方创作者账号规格 | 产品 | 名称、Handle、头像和公开展示文案 | 官方角色流程 |
-| `plum_admin` 初始 Commit | 用户/工程 | 审阅当前未跟踪文件并显式批准提交范围 | 分支和 PR 交付 |
+| `plum_admin` 初始 Commit | 用户/工程 | 初始提交 `922e4f9` | 已完成 |
 
-M1 可以使用本地 Mock Provider 和验收成员继续开发，但飞书应用方案必须在真实 OAuth 联调前确定。开发机现有数据库不作为 M1 或后续里程碑的验收输入。
+飞书 OAuth 实现已完成；提供首批 `open_id` 后才能预置生产成员并执行真实登录 UAT。开发机现有数据库不作为 M1 或后续里程碑的验收输入。
 
 ### 2.3 M2/M3 联调前
 
@@ -119,7 +119,7 @@ M1 可以使用本地 Mock Provider 和验收成员继续开发，但飞书应�
 
 | 依赖 | Owner | 要求 | 阻塞项 |
 | --- | --- | --- | --- |
-| 飞书 OAuth 凭据 | 飞书应用管理员 | Redirect URI、Client ID、Client Secret | 生产登录 |
+| 飞书 OAuth 凭据 | 飞书应用管理员 | 应用已发布且两个 Redirect URI 已配置；生产 Secret 仍需安全写入 aws-sg | 生产登录 |
 | DNS | 域名管理员 | `admin.plum.top` 指向 aws-sg | 公网访问 |
 | TLS | 运维 | `admin.plum.top` 有效证书和自动续期 | HTTPS |
 | systemd/nginx 权限 | 运维 | 可安装用户级服务和 nginx vhost | 服务上线 |
@@ -137,7 +137,7 @@ M1 可以使用本地 Mock Provider 和验收成员继续开发，但飞书应�
 
 ### M0：需求与契约冻结
 
-状态：待用户确认本文；确认后完成。
+状态：已完成。
 
 产物：
 
@@ -152,7 +152,7 @@ M1 可以使用本地 Mock Provider 和验收成员继续开发，但飞书应�
 
 ### M1：管理前端基础与 Admin Identity
 
-状态：进行中。`plum_admin` 前端基础切片已完成；飞书 OAuth、后端 Admin Identity 和真实联调待完成。
+状态：进行中。`plum_admin` 前端基础、飞书 OAuth v3、后端 Plum Admin Identity、Remote Identity BFF 和隔离测试已完成；不可变 Commit、首批成员预置与线上只读联调待完成。
 
 在后端仓库并行开发期间，`plum_admin` 已先完成角色、创作者、用户和订阅的本地 API Contract、确定性 Fixture 及只读列表。该工作属于 M3 前置准备，不代表 M2 真实 Admin API 或 M3 联调退出门槛已经完成。
 
@@ -162,14 +162,14 @@ M1 可以使用本地 Mock Provider 和验收成员继续开发，但飞书应�
 
 | ID | 仓库 | 任务 | 依赖 | 交付物/验证 |
 | --- | --- | --- | --- | --- |
-| I-01 | `ai4all_bridge` | 盘点 `/admin/me` 在 Plum、Central、Standalone 组合中的路由注册，设计单路由兼容方案 | M0 | Route Inventory 测试；无重复注册 |
-| I-02 | `ai4all_bridge` | 新增 `ADMIN_BFF_TOKEN` 配置、恒定时间比较和冲突校验 | I-01 | 正确/缺失/错误 Token 测试 |
+| I-01 | `ai4all_bridge` | 新增 Plum 专属 `/admin/plum/me`，保留其他产品 `/admin/me` 不变 | M0 | Route Inventory 测试；两个端点各注册一次 |
+| I-02 | `ai4all_bridge` | 新增 `PLUM_ADMIN_BFF_TOKEN` 配置、恒定时间比较和冲突校验 | I-01 | 正确/缺失/错误 Token 测试 |
 | I-03 | `ai4all_bridge` | 解析并校验员工 ID、规范化邮箱和 Request ID Header | I-02 | 非法 Header 返回稳定 401/422 |
 | I-04 | `ai4all_bridge` | 从 `admin_users` 加载 Active 成员并映射四个 Capability | I-03 | Admin、Operator、Disabled、Unknown 矩阵 |
-| I-05 | `ai4all_bridge` | 实现兼容的 `/admin/me` 响应和统一错误 Envelope | I-04 | 新 BFF 与旧 Token 兼容测试 |
-| I-06 | `plum_admin` | 完成飞书 Provider Adapter、Callback 校验和 HttpOnly Session | 飞书应用方案 | Auth 单测；Mock Provider 仅开发可用 |
+| I-05 | `ai4all_bridge` | 实现 `/admin/plum/me` 响应和统一错误 Envelope | I-04 | Plum 新契约与其他产品旧契约隔离测试 |
+| I-06 | `plum_admin` | 完成飞书 OAuth v3、state/PKCE、Provider Adapter、Callback 和 HttpOnly Session | 飞书应用方案 | 已完成；Auth 单测通过，Mock 仅开发可用 |
 | I-07 | `plum_admin` | BFF 附加服务 Token、员工 Header、Request ID 和 CSRF 防护 | I-05、I-06 | 浏览器 Bundle 无服务 Token |
-| I-08 | `plum_admin` | 依据 `/admin/me` 渲染导航、403 和 Disabled 状态 | I-05 | 两角色 UI/路由测试 |
+| I-08 | `plum_admin` | 依据 `/admin/plum/me` 渲染导航、403 和 Disabled 状态 | I-05 | 两角色 UI/路由测试 |
 
 `plum_admin`：
 
@@ -179,14 +179,14 @@ M1 可以使用本地 Mock Provider 和验收成员继续开发，但飞书应�
 - 实现飞书 Auth Provider Adapter；开发环境允许显式 Mock Identity。
 - 实现 HttpOnly Session 和 CSRF 防护。
 - 实现显式路径 Allowlist 的 BFF Client。
-- 根据 `/admin/me` 返回的 Capability 渲染导航。
+- 根据 `/admin/plum/me` 返回的 Capability 渲染导航。
 
 `ai4all_bridge`：
 
-- 增加 `ADMIN_BFF_TOKEN` 配置和冲突校验。
+- 增加 `PLUM_ADMIN_BFF_TOKEN` 配置和冲突校验。
 - 实现 BFF 服务鉴权与员工 Header 解析。
 - 从 `admin_users` 读取状态和角色。
-- 实现代码内 Capability 映射和 `/admin/me`。
+- 实现代码内 Capability 映射和 `/admin/plum/me`。
 - 保持旧 Admin/Staff/Reviewer Token 兼容。
 
 测试：
@@ -196,7 +196,7 @@ M1 可以使用本地 Mock Provider 和验收成员继续开发，但飞书应�
 - 无 BFF Token、错误 Token 和伪造 Role Header 拒绝。
 - 浏览器 Bundle 不包含服务端 Token。
 
-退出门槛：`/admin/me` 契约、两角色 Capability、Disabled/Unknown 拒绝、旧 Token 兼容和浏览器密钥排除测试通过；验收样例中后续 Moderation 场景不作为一期门槛。
+退出门槛：`/admin/plum/me` 契约、两角色 Capability、Disabled/Unknown 拒绝、其他产品路由兼容和浏览器密钥排除测试通过；验收样例中后续 Moderation 场景不作为一期门槛。
 
 ### M2：只读 Admin API
 
@@ -253,7 +253,7 @@ M1 可以使用本地 Mock Provider 和验收成员继续开发，但飞书应�
 
 | ID | 仓库 | 任务 | 依赖 | 交付物/验证 |
 | --- | --- | --- | --- | --- |
-| U-01 | `plum_admin` | 将 `/admin/me` 从 Mock 切换为可配置 Remote BFF | I-07 | Fixture/Remote 两种模式均可测 |
+| U-01 | `plum_admin` | 将 `/admin/plum/me` 从 Mock 切换为可配置 Remote BFF | I-07 | Fixture/Remote 两种模式均可测 |
 | U-02 | `plum_admin` | 接入 Overview 和统一 Loading/Empty/Error 状态 | R-07 | 无伪造指标；后端失败可恢复 |
 | U-03 | `plum_admin` | 接入 Character 与 Work/草稿双视图、详情和版本 | R-03 | URL 筛选、Cursor、深链恢复 |
 | U-04 | `plum_admin` | 接入 Creator 列表与详情 | R-04 | 作品摘要、状态和空态一致 |
@@ -474,7 +474,7 @@ M3 + M4 + M5 + Production Prerequisites
 | Gate | 确认内容 | 通过后允许 |
 | --- | --- | --- |
 | GATE-0 | 本文一期范围、API、数据策略和工期 | 创建两仓库开发分支并开始 M1 |
-| GATE-1 | `/admin/me`、RBAC 和 OpenAPI 契约 | M2/M3 真实数据接入 |
+| GATE-1 | `/admin/plum/me`、RBAC 和 OpenAPI 契约 | M2/M3 真实数据接入 |
 | GATE-2 | 官方账号规格、治理状态和 Migration | M4/M5 写能力实现 |
 | GATE-3 | 只读 UAT、备份恢复、专用验收对象 | 开启线上写 UAT |
 | GATE-4 | 写 UAT、审计、监控和回滚结果 | 一期正式开放 |
@@ -482,9 +482,9 @@ M3 + M4 + M5 + Production Prerequisites
 ### 8.2 GATE-0 通过后的实际开工顺序
 
 1. 获取 `weixin_bot` 写权限，分别检查两个仓库状态并创建 `codex/` 前缀短分支。
-2. 在后端先完成 I-01 路由注册与兼容性测试，解决现有 `/admin/me` 冲突风险。
+2. 在后端先完成 I-01 Plum 专属路由注册与兼容性测试，保持现有 `/admin/me` 不变。
 3. 实现 I-02～I-05，同时在前端完成 I-06 的真实 OAuth Adapter。
-4. `/admin/me` 契约稳定后完成 I-07、I-08，并提交 GATE-1 评审材料。
+4. `/admin/plum/me` 契约稳定后完成 I-07、I-08，并提交 GATE-1 评审材料。
 5. 以 Character/Work 为第一条纵向切片完成 R-01～R-03、U-01～U-03。
 6. 依次完成 Creator、User、Subscription、Audit、Admin User 的 Read API 和 UI。
 7. 完成 OpenAPI 差异、临时 PG 和前端 E2E 后，再进入官方角色与治理写操作。
@@ -493,9 +493,9 @@ M3 + M4 + M5 + Production Prerequisites
 ### 8.3 本计划确认后仍需外部提供的事项
 
 - 当前任务对 `/Users/suchong/workspace/ai4all/weixin_bot` 的可写权限。
-- 飞书应用选择及 OAuth 配置负责人。
+- 飞书应用已发布，Callback 已配置；上线时仍需把生产凭据安全写入 aws-sg 环境文件。
 - `Plum Official` 的名称、Handle、头像、展示文案和生产平台用户 ID。
-- 首批至少 1 名 Admin、2 名 Operator 的飞书身份。
+- 首批至少 1 名 Admin、2 名 Operator 在同一飞书应用下的 `open_id`。
 - aws-sg 的部署、DNS/TLS、Secrets、备份和恢复执行权限或协作人。
 
 ## 9. 工期估算
@@ -518,7 +518,7 @@ M3 + M4 + M5 + Production Prerequisites
 
 | 风险 | 预防 | 回滚/降级 |
 | --- | --- | --- |
-| 现有 `/admin/me` 路由冲突 | I-01 先做部署组合测试，保留旧 Token 契约 | 不挂载新 Router，前端保持 Fixture |
+| 多产品后台边界混淆 | Plum 固定 `/admin/plum/*` 和独立 Token；Route Inventory 保护旧 `/admin/me` | 不挂载 Plum Admin Router，前端保持 Fixture |
 | Admin 查询拖慢用户服务 | Keyset、Limit、查询数量门禁、独立超时 | 关闭 Overview/高成本字段或回滚后端 |
 | 跨产品数据泄露 | Repository 固定 `app_id=plum`，加入反向样例 | 关闭 Admin 路由并轮换 BFF Token |
 | 开发数据库数据不完整 | 所有断言使用临时 PG 和合成 Fixture | 不补写开发库，修复 Fixture/Migration |

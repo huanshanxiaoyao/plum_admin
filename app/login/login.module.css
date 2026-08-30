@@ -88,6 +88,8 @@
   color: #fff;
   background: var(--surface-strong);
   cursor: pointer;
+  font-size: 13px;
+  text-decoration: none;
 }
 
 .submit:hover:not(:disabled) {

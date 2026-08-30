@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronRight, Filter, RotateCcw, Search } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentIdentity } from "@/lib/auth/session";
+import type { Capability } from "@/lib/auth/capabilities";
 import { listAdminResources } from "@/lib/admin/data-source";
 import type {
   AdminListResponseMap,
@@ -24,7 +25,7 @@ type SectionConfig = {
   searchPlaceholder: string;
   columns: readonly string[];
   statusOptions?: readonly StatusOption[];
-  adminOnly?: boolean;
+  requiredCapability?: Capability;
 };
 
 const SECTIONS: Record<string, SectionConfig> = {
@@ -55,7 +56,7 @@ const SECTIONS: Record<string, SectionConfig> = {
     title: "用户",
     description: "Plum Membership 用户",
     searchPlaceholder: "搜索平台用户 ID 或显示名称",
-    columns: ["用户", "Membership", "订阅", "钱包", "角色数", "最近活跃"],
+    columns: ["用户", "Membership", "订阅", "角色数", "最近活跃"],
     statusOptions: [
       { value: "active", label: "Active" },
       { value: "disabled", label: "Disabled" },
@@ -63,28 +64,14 @@ const SECTIONS: Record<string, SectionConfig> = {
   },
   subscriptions: {
     eyebrow: "ENTITLEMENTS",
-    title: "订阅与钱包",
-    description: "方案记录与 Coin 流水",
+    title: "用户订阅",
+    description: "订阅方案与当前状态（只读）",
     searchPlaceholder: "搜索平台用户 ID 或显示名称",
-    columns: ["用户", "方案", "状态", "支付连接", "余额", "更新时间"],
+    columns: ["用户", "方案", "状态", "支付连接", "更新时间"],
     statusOptions: [
       { value: "active", label: "Active" },
       { value: "cancelled", label: "Cancelled" },
     ],
-  },
-  moderation: {
-    eyebrow: "MODERATION",
-    title: "内容审核",
-    description: "审核队列与历史结论",
-    searchPlaceholder: "搜索任务或资源 ID",
-    columns: ["任务", "内容", "来源", "领取人", "状态", "更新时间"],
-  },
-  taxonomy: {
-    eyebrow: "TAXONOMY",
-    title: "标签与 Badge",
-    description: "展示分类与基础排序",
-    searchPlaceholder: "搜索编码或展示名称",
-    columns: ["编码", "展示名称", "类型", "状态", "排序", "更新时间"],
   },
   audit: {
     eyebrow: "AUDIT",
@@ -99,7 +86,7 @@ const SECTIONS: Record<string, SectionConfig> = {
     description: "Operator 与 Admin",
     searchPlaceholder: "搜索姓名或企业邮箱",
     columns: ["成员", "邮箱", "角色", "状态", "最近登录", "更新时间"],
-    adminOnly: true,
+    requiredCapability: "staff.manage",
   },
 };
 
@@ -172,7 +159,6 @@ function userRows(items: UserSummary[]): ReactNode[][] {
       <strong>{item.subscription.plan}</strong>
       <small>{item.subscription.status}</small>
     </div>,
-    `${item.wallet_balance_coins.toLocaleString("zh-CN")} Coin`,
     item.character_count.toLocaleString("zh-CN"),
     formatDateTime(item.last_active_at),
   ]);
@@ -184,7 +170,6 @@ function subscriptionRows(items: SubscriptionSummary[]): ReactNode[][] {
     <strong className={styles.plan} key={`${item.id}-plan`}>{item.plan}</strong>,
     status(item.status === "active" ? "Active" : "Cancelled", item.status === "active" ? "good" : "muted"),
     status("未接支付", "warn"),
-    `${item.wallet_balance_coins.toLocaleString("zh-CN")} Coin`,
     formatDateTime(item.updated_at),
   ]);
 }
@@ -226,7 +211,10 @@ export default async function SectionPage({
 
   const identity = await getCurrentIdentity();
   if (!identity) redirect("/login");
-  if (config.adminOnly && identity.role !== "admin") redirect("/forbidden");
+  if (
+    config.requiredCapability &&
+    !identity.capabilities.includes(config.requiredCapability)
+  ) redirect("/forbidden");
 
   const queryParams = await searchParams;
   const q = firstParam(queryParams.q)?.trim() || undefined;

@@ -1,17 +1,17 @@
 # Plum Admin
 
-Plum 内部管理后台。当前处于 M1：工程基础、Mock Identity、两角色 RBAC 和后台工作台。
+Plum 内部管理后台。当前处于 M1：飞书登录、两角色 RBAC、后台工作台和 Plum Admin Identity。
 
 ## M1 状态
 
-已完成管理前端工程基础、开发环境 Mock Identity、签名 HttpOnly Session、两角色 Capability、显式路径白名单 BFF、CSRF 防护和基础后台界面。
+已完成管理前端工程基础、开发环境 Mock Identity、飞书 OAuth v3 + PKCE、签名 HttpOnly Session、两角色 Capability、显式路径白名单 BFF、CSRF 防护和基础后台界面。
 
-以下内容仍是 M1 的接入项，当前代码不能用于生产登录：
+以下内容仍是 M1 的接入项；完成前不得部署生产登录：
 
-- 创建或确认飞书应用，并提供 OAuth Client、Secret 和 Redirect URI。
-- 在 `ai4all_bridge` 增加独立 `ADMIN_BFF_TOKEN`、员工 Header 校验和新后台专用 `/admin/me`。
-- 由后端按员工身份读取 `admin_users` 的角色和状态；不能信任前端 Session 中的角色。
-- 完成真实飞书登录、Disabled/未知成员拒绝和两角色联调验收。
+- 将后端 M1 Commit 和前端 M1 Commit 发布到 aws-sg。
+- 使用首批成员的飞书 `open_id` 预置 `admin_users`；邮箱允许为空。
+- 配置生产 BFF Token、Session Secret 和飞书 OAuth Secret。
+- 完成 Disabled/未知成员、Admin/Operator 和旧业务兼容的线上只读联调验收。
 
 ## 本地启动
 
@@ -27,6 +27,8 @@ npm run dev -- --port 3001
 打开 `http://localhost:3001`，选择 Operator 或 Admin 模拟身份。
 
 Mock 登录仅在 `NODE_ENV` 不是 `production` 且 `ADMIN_AUTH_MODE=mock` 时启用。生产环境必须配置飞书 OAuth 和长度不少于 32 字符的 `ADMIN_SESSION_SECRET`。
+
+飞书登录使用 OAuth v3 授权码流程、随机 `state` 和 S256 PKCE。后台仅短暂使用飞书 access token 获取 `open_id`，回调结束即丢弃；不请求 `offline_access`，也不需要配置 `auth:user_access_token:read`。`open_id` 是后台成员的稳定主身份，企业邮箱不是前置条件。
 
 ## 数据源
 

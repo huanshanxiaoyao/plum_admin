@@ -36,7 +36,7 @@ export async function listAdminResources<Section extends AdminListSection>(
 
   const identity = await getCurrentIdentity();
   if (!identity) throw new AdminApiError(401, "admin_unauthenticated", "Sign in to continue.");
-  const token = process.env.ADMIN_BFF_TOKEN?.trim();
+  const token = process.env.PLUM_ADMIN_BFF_TOKEN?.trim();
   if (!token) throw new AdminApiError(503, "dependency_unavailable", "Admin API is not configured.");
 
   const url = new URL(`/admin/plum/${RESOURCE_PATHS[section]}`, adminApiOrigin());

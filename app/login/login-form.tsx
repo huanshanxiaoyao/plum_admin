@@ -2,15 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ShieldCheck, UserRoundCog } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, LogIn, ShieldCheck, UserRoundCog } from "lucide-react";
 import type { AdminRole } from "@/lib/auth/capabilities";
 import styles from "./login.module.css";
 
-export function LoginForm({ mockEnabled }: { mockEnabled: boolean }) {
+export function LoginForm({
+  mockEnabled,
+  feishuEnabled,
+  initialError,
+}: {
+  mockEnabled: boolean;
+  feishuEnabled: boolean;
+  initialError?: string;
+}) {
   const router = useRouter();
   const [role, setRole] = useState<AdminRole>("operator");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError ?? null);
 
   async function signIn() {
     setPending(true);
@@ -28,6 +37,19 @@ export function LoginForm({ mockEnabled }: { mockEnabled: boolean }) {
       setError(caught instanceof Error ? caught.message : "登录失败，请稍后重试。");
       setPending(false);
     }
+  }
+
+  if (feishuEnabled) {
+    return (
+      <div className={styles.form}>
+        {error && <p className={styles.error}>{error}</p>}
+        <Link className={styles.submit} href="/api/auth/feishu/start" prefetch={false}>
+          <span>使用飞书登录</span>
+          <LogIn size={18} />
+        </Link>
+        <span className={styles.environment}>FEISHU ORGANIZATION ACCOUNT</span>
+      </div>
+    );
   }
 
   if (!mockEnabled) {

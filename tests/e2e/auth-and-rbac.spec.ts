@@ -56,5 +56,15 @@ test("mobile navigation opens without covering the account control", async ({ pa
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "打开导航" }).click();
   await expect(page.getByRole("navigation", { name: "主导航" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "内容审核" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "用户订阅" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "内容审核" })).toHaveCount(0);
+});
+
+test("disabled member state can clear the session and return to login", async ({ page }) => {
+  await signIn(page, "operator");
+  await page.goto("/access-denied?code=admin_user_disabled");
+  await expect(page.getByRole("heading", { name: "无法访问 Plum 后台" })).toBeVisible();
+  await expect(page.getByText("该后台成员已被停用。", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "退出并重新登录" }).click();
+  await expect(page).toHaveURL("/login");
 });

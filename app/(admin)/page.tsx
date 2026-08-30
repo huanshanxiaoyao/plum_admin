@@ -2,9 +2,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   BadgeCheck,
-  BookOpenCheck,
   CircleAlert,
-  CircleCheck,
   Clock3,
   Plus,
   UsersRound,
@@ -15,7 +13,7 @@ import styles from "./dashboard.module.css";
 const METRICS = [
   { label: "Plum 有效用户", icon: UsersRound },
   { label: "Active Character", icon: BadgeCheck },
-  { label: "待人工审核", icon: BookOpenCheck },
+  { label: "有效订阅", icon: CircleAlert },
   { label: "受限创作者", icon: CircleAlert },
 ] as const;
 
@@ -58,23 +56,22 @@ export default function DashboardPage() {
         <section className={styles.dataSection}>
           <header>
             <div>
-              <BookOpenCheck size={18} />
-              <h2>待处理审核</h2>
+              <UsersRound size={18} />
+              <h2>创作者概览</h2>
             </div>
-            <Link href="/moderation">
+            <Link href="/creators">
               查看全部 <ArrowRight size={15} />
             </Link>
           </header>
           <div className={styles.tableHeader}>
-            <span>内容</span>
-            <span>来源</span>
-            <span>状态</span>
-            <span>更新时间</span>
+            <span>创作者</span>
+            <span>资格</span>
+            <span>作品</span>
+            <span>最近创作</span>
           </div>
           <div className={styles.empty}>
-            <CircleCheck size={22} />
-            <strong>暂无待处理数据</strong>
             <span>--</span>
+            <strong>尚未同步创作者数据</strong>
           </div>
         </section>
 

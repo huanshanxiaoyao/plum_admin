@@ -18,6 +18,9 @@ test("unknown paths and methods remain closed", () => {
   assert.equal(requiredCapability("DELETE", "users/pusr-01"), null);
   assert.equal(requiredCapability("GET", "../../health"), null);
   assert.equal(requiredCapability("POST", "arbitrary/proxy/path"), null);
+  assert.equal(requiredCapability("GET", "users/pusr-01/wallet"), null);
+  assert.equal(requiredCapability("GET", "moderation/tasks"), null);
+  assert.equal(requiredCapability("GET", "tags"), null);
 });
 
 test("backend paths reject traversal and encode each accepted segment", () => {

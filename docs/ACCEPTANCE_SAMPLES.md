@@ -29,18 +29,21 @@
 
 ## 3. 后台成员样例
 
-| Admin User ID | Email | Role | Status | 用途 |
+以下 `open_id` 均为合成值，只用于临时 PostgreSQL 和测试；生产成员必须使用飞书实际返回、且属于当前应用的 `open_id`。
+
+| Feishu Open ID | Email | Role | Status | 用途 |
 | --- | --- | --- | --- | --- |
-| `adm_accept_operator` | `operator@plum-admin.invalid` | `operator` | `active` | 日常查询、官方角色和内容治理 |
-| `adm_accept_operator_2` | `operator-2@plum-admin.invalid` | `operator` | `active` | 并发和第二 Operator 验证 |
-| `adm_accept_admin` | `admin@plum-admin.invalid` | `admin` | `active` | 恢复角色、Membership 和成员管理 |
-| `adm_accept_disabled` | `disabled@plum-admin.invalid` | `operator` | `disabled` | 禁用成员验证 |
+| `ou_accept_operator` | 空 | `operator` | `active` | 日常查询、官方角色和内容治理 |
+| `ou_accept_operator_2` | 空 | `operator` | `active` | 并发和第二 Operator 验证 |
+| `ou_accept_admin` | 空 | `admin` | `active` | 恢复角色、Membership 和成员管理 |
+| `ou_accept_disabled` | 空 | `operator` | `disabled` | 禁用成员验证 |
 
 预期：
 
-- 三个 Active 成员的 `/admin/me` 返回各自 Capability。
+- 三个 Active 成员的 `/admin/plum/me` 返回各自 Capability。
+- `X-Admin-User-Id` 只传上述 `open_id`、`X-Admin-Email` 为空时仍可解析成员。
 - Disabled 成员登录成功后，业务 API 返回 `403 admin_user_disabled`。
-- 不在表中的飞书用户返回 403，且不会被自动写成 Operator 或 Admin。
+- 不在表中的飞书用户返回 403，拒绝页显示本人 `open_id`，且不会被自动写成 Operator 或 Admin。
 
 ## 4. 平台用户样例
 
@@ -84,7 +87,7 @@
   "status": "restricted",
   "reason": "repeated_policy_review",
   "internal_note": "Repeated policy review",
-  "updated_by_admin_user_id": "adm_accept_operator",
+  "updated_by_admin_user_id": "ou_accept_operator",
   "restricted_at": "2026-08-27T08:00:00.000Z",
   "updated_at": "2026-08-27T08:00:00.000Z"
 }
@@ -206,13 +209,13 @@ Character 详情样例：
 
 | Task ID | Resource | Assigned Operator | Status |
 | --- | --- | --- | --- |
-| `mod_accept_assigned` | `work_accept_creator_pending` | `adm_accept_operator_2` | claimed |
+| `mod_accept_assigned` | `work_accept_creator_pending` | `ou_accept_operator_2` | claimed |
 | `mod_accept_unassigned` | unrelated fixture work | none | pending |
 
 预期：
 
-- `adm_accept_operator_2` 可以读取和决策 `mod_accept_assigned`。
-- `adm_accept_operator` 可以领取并决策 `mod_accept_unassigned`。
+- `ou_accept_operator_2` 可以读取和决策 `mod_accept_assigned`。
+- `ou_accept_operator` 可以领取并决策 `mod_accept_unassigned`。
 - 已被其他人领取的任务不能被静默覆盖；冲突时返回 409。
 
 ## 10. RBAC 验收场景
@@ -230,7 +233,7 @@ Character 详情样例：
 | RBAC-09 | 一期 | Admin | Restore Character, Manage Membership and Staff | 200，二次确认并写审计 |
 | RBAC-10 | 一期 | Disabled member | Any Business API | 403 `admin_user_disabled` |
 
-高级操作升级采用人工协作而非后台审批单：Operator 被拒绝后联系 Admin；Admin 使用自己的会话执行。审计事件的操作者必须是 `adm_accept_admin`，不能记录为提出请求的 Operator。
+高级操作升级采用人工协作而非后台审批单：Operator 被拒绝后联系 Admin；Admin 使用自己的会话执行。审计事件的操作者必须是 `ou_accept_admin`，不能记录为提出请求的 Operator。
 
 ## 11. API 契约验收场景
 

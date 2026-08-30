@@ -25,7 +25,7 @@ Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 
 
 一期实现：
 
-- 飞书 OAuth 后台会话、BFF 服务身份、`/admin/me` 和两角色 Capability。
+- 飞书 OAuth 后台会话、Plum BFF 服务身份、`/admin/plum/me` 和两角色 Capability。
 - 工作台一期指标。
 - Character、Version、Work/草稿、Creator、Plum User、Subscription 和 Admin User 的 Admin Read API。
 - 官方角色媒体、草稿、提交现有审核链路和发布 Wrapper。
@@ -227,28 +227,31 @@ lib/
 
 ### 6.1 登录链路
 
-一期使用飞书 OAuth 2.0；认证模块保留 Provider Adapter 边界，未来替换身份提供方不改变后端 Admin Identity 契约：
+一期使用飞书 OAuth v3 授权码流程；认证模块保留 Provider Adapter 边界，未来替换身份提供方不改变后端 Admin Identity 契约：
 
 1. 员工访问 `admin.plum.top`。
-2. Next.js 发起 Provider 登录。
-3. Callback 校验 state、nonce、issuer、audience 和邮箱。
-4. Next.js 建立 Secure、HttpOnly 后台会话。
-5. 首次访问业务页面时，BFF 调用后端 `/admin/me`。
-6. 后端按员工稳定 ID 或规范化邮箱查询 `admin_users`。
-7. 只有 `status=active` 的预置成员可以继续访问。
+2. `GET /api/auth/feishu/start` 生成随机 `state`、PKCE verifier/challenge；签名交易写入 10 分钟、HttpOnly、SameSite=Lax Cookie。
+3. 浏览器跳转 `https://accounts.feishu.cn/open-apis/authen/v1/authorize`，不主动请求普通 OpenAPI Scope 或 `offline_access`。
+4. `GET /api/auth/feishu/callback` 校验 state、Cookie 签名和过期时间，携带 PKCE verifier 调用 `POST /oauth/v3/token`。
+5. Next.js 用短期 access token 调用 `GET /open-apis/authen/v1/user_info`，提取同一飞书应用下的 `open_id` 和可选邮箱。
+6. Callback 立即调用后端 `/admin/plum/me`；后端按 `open_id` 查询 `admin_users`，角色、状态和 Capability 均以后端返回为准。
+7. 只有 `status=active` 的预置成员才建立 8 小时 Secure、HttpOnly、SameSite=Strict 后台会话；回调结束即丢弃飞书 Token。
+8. 未预置成员使用 5 分钟签名 HttpOnly Cookie 在拒绝页展示本人的 `open_id`，不创建伪造 Session。
 
 禁止根据邮箱域名自动授予 `operator` 或 `admin` 权限。
 
-现有 `app/products/zhaoxi/api/admin_accounts.py` 已定义旧 `/admin/me`，且只在部分部署组合注册。实施一期前必须先对 Plum、Central 和 Standalone 组合执行 Route Inventory 测试，确保 `/admin/me` 只注册一次。对外路径保持 `/admin/me`；新 BFF 身份与旧共享 Token 通过组合根的兼容 Adapter 分流，不让 Plum Admin Identity 导入赵夕产品内部实现，也不破坏旧调用方的响应契约。
+飞书 Token v3 与 `user_info` 不要求普通 OpenAPI 权限。本流程不使用 `auth:user_access_token:read`；该权限不是 `auth:user.id:read` 的替代项，也不是本登录链路的前置依赖。
+
+后端同时服务三个业务，Plum Admin 必须保持产品级隔离。现有 `app/products/zhaoxi/api/admin_accounts.py` 的旧 `/admin/me` 保持路径、Token 和响应契约不变；Plum 新身份固定使用 `/admin/plum/me`，由 `app/products/plum/manifest.py` 注册。组合根只负责调用 Plum Admin Router Installer，不让 Plum Admin Identity 导入其他产品实现。Route Inventory 测试必须证明两个端点各注册一次。
 
 ### 6.2 BFF 到后端身份
 
-新增独立的 `ADMIN_BFF_TOKEN`，仅存在于 `plum_admin` 和 FastAPI 的服务端环境：
+新增 Plum 独立的 `PLUM_ADMIN_BFF_TOKEN`，仅存在于 `plum_admin` 和 FastAPI 的服务端环境：
 
 ```http
-Authorization: Bearer <ADMIN_BFF_TOKEN>
-X-Admin-User-Id: <provider-stable-id>
-X-Admin-Email: <normalized-email>
+Authorization: Bearer <PLUM_ADMIN_BFF_TOKEN>
+X-Admin-User-Id: <feishu-open-id>
+X-Admin-Email: <normalized-email-or-empty-string>
 X-Request-Id: <uuid>
 ```
 
@@ -470,7 +473,7 @@ sort=created_at.desc
 
 | Method | Path | Capability | 说明 |
 | --- | --- | --- | --- |
-| GET | `/admin/me` | Active member | 当前员工、角色和 Capability |
+| GET | `/admin/plum/me` | Active member | 当前 Plum 后台员工、角色和 Capability |
 | GET | `/admin/plum/overview` | `operations.access` | 工作台指标和待处理摘要 |
 
 ### 8.3 角色
@@ -648,21 +651,21 @@ plum-admin-frontend.service
 `plum_admin` 至少需要：
 
 ```text
-ADMIN_BACKEND_ORIGIN=http://127.0.0.1:8180
+ADMIN_API_ORIGIN=http://127.0.0.1:8180
 ADMIN_DATA_SOURCE=remote
-ADMIN_BFF_TOKEN=...
+PLUM_ADMIN_BFF_TOKEN=...
 ADMIN_API_WRITE_ENABLED=false
 ADMIN_SESSION_SECRET=...
-ADMIN_AUTH_PROVIDER=lark
-ADMIN_AUTH_CLIENT_ID=...
-ADMIN_AUTH_CLIENT_SECRET=...
-ADMIN_AUTH_ISSUER=...
+ADMIN_AUTH_MODE=feishu
+FEISHU_CLIENT_ID=...
+FEISHU_CLIENT_SECRET=...
+FEISHU_REDIRECT_URI=https://admin.plum.top/api/auth/feishu/callback
 ```
 
 FastAPI 增加：
 
 ```text
-ADMIN_BFF_TOKEN=...
+PLUM_ADMIN_BFF_TOKEN=...
 PLUM_OFFICIAL_CREATOR_PLATFORM_USER_ID=...
 PLUM_ADMIN_WRITES_ENABLED=false
 ```
@@ -687,7 +690,7 @@ PLUM_ADMIN_WRITES_ENABLED=false
 
 ## 13. 可观测性
 
-- 后台 Next.js 提供 `/health`，不依赖业务查询即可返回进程健康。
+- 后台 Next.js 提供 `/api/health`，不依赖业务查询即可返回进程健康。
 - FastAPI Admin API 记录 Request ID、员工 ID、路由、状态码和耗时，不记录敏感 Body。
 - 监控登录失败率、401/403、5xx、查询延迟和写操作失败。
 - 工作台聚合查询设置独立超时，避免慢查询拖垮用户侧连接池。

@@ -47,7 +47,6 @@ export type UserSummary = {
     status: "active" | "cancelled";
     billing_connected: false;
   };
-  wallet_balance_coins: number;
   character_count: number;
   last_active_at: string | null;
 };
@@ -59,7 +58,6 @@ export type SubscriptionSummary = {
   plan: "free" | "standard" | "premium";
   status: "active" | "cancelled";
   billing_connected: false;
-  wallet_balance_coins: number;
   updated_at: string;
 };
 
@@ -138,7 +136,6 @@ function isUser(value: unknown): value is UserSummary {
       value.subscription.plan === "premium") &&
     (value.subscription.status === "active" || value.subscription.status === "cancelled") &&
     value.subscription.billing_connected === false &&
-    hasNumber(value, "wallet_balance_coins") &&
     hasNumber(value, "character_count") &&
     isNullableString(value.last_active_at)
   );
@@ -153,7 +150,6 @@ function isSubscription(value: unknown): value is SubscriptionSummary {
     (value.plan === "free" || value.plan === "standard" || value.plan === "premium") &&
     (value.status === "active" || value.status === "cancelled") &&
     value.billing_connected === false &&
-    hasNumber(value, "wallet_balance_coins") &&
     hasString(value, "updated_at")
   );
 }
