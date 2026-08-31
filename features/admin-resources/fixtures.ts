@@ -6,6 +6,8 @@ import type {
   CharacterVersion,
   CharacterVersionListQuery,
   CharacterVersionListResponse,
+  CreatorListQuery,
+  CreatorSummary,
   ListResponse,
   SingleResponse,
   WorkListQuery,
@@ -151,31 +153,61 @@ const CREATORS: AdminListResourceMap["creators"][] = [
     platform_user_id: "pusr_accept_official",
     profile_id: "profile_accept_official",
     display_name: "Plum Official",
+    handle: "plum-official",
+    profile_status: "active",
     control_status: "active",
+    work_count: 2,
     draft_count: 1,
     published_count: 1,
+    rejected_count: 0,
     takedown_count: 0,
+    interaction_count: 12840,
+    like_count: 963,
+    favorite_count: 411,
     last_created_at: "2026-08-28T03:15:42.123Z",
+    last_published_at: "2026-08-22T03:15:42.123Z",
+    created_at: "2026-08-14T03:15:42.123Z",
+    updated_at: "2026-08-28T03:15:42.123Z",
   },
   {
     platform_user_id: "pusr_accept_creator_active",
     profile_id: "profile_accept_creator_active",
     display_name: "Mira Studio",
+    handle: "mira-studio-accept",
+    profile_status: "active",
     control_status: "active",
+    work_count: 5,
     draft_count: 1,
     published_count: 2,
+    rejected_count: 0,
     takedown_count: 1,
+    interaction_count: 2100,
+    like_count: 260,
+    favorite_count: 95,
     last_created_at: "2026-08-27T09:20:00.000Z",
+    last_published_at: "2026-08-21T09:20:00.000Z",
+    created_at: "2026-08-15T09:20:00.000Z",
+    updated_at: "2026-08-27T09:20:00.000Z",
   },
   {
     platform_user_id: "pusr_accept_creator_restricted",
     profile_id: "profile_accept_creator_restricted",
     display_name: "North Window",
+    handle: "north-window-accept",
+    profile_status: "active",
     control_status: "restricted",
+    work_count: 1,
     draft_count: 1,
     published_count: 0,
+    rejected_count: 1,
     takedown_count: 0,
+    interaction_count: 0,
+    like_count: 0,
+    favorite_count: 0,
     last_created_at: "2026-08-23T10:00:00.000Z",
+    last_published_at: null,
+    created_at: "2026-08-15T10:00:00.000Z",
+    updated_at: "2026-08-29T08:00:00.000Z",
   },
 ];
 
@@ -340,4 +372,25 @@ export function fixtureCharacterVersions(id: string, query: CharacterVersionList
 export function fixtureWork(id: string): SingleResponse<WorkSummary> | null {
   const work = WORKS.find((item) => item.id === id);
   return work ? { data: work, meta: { request_id: "00000000-0000-4000-8000-000000000001" } } : null;
+}
+
+function creatorDate(value: string): string {
+  return /^\d{4}-\d{2}-\d{2}T/.test(value) ? value.slice(0, 10) : value;
+}
+
+export function fixtureCreatorList(query: CreatorListQuery): ListResponse<CreatorSummary> {
+  const filtered = CREATORS.filter((item) =>
+    includesSearch(item, query.q) &&
+    (!query.status || item.control_status === query.status) &&
+    (!query.from || creatorDate(item.created_at) >= creatorDate(query.from)) &&
+    (!query.to || creatorDate(item.created_at) < creatorDate(query.to)));
+  const sortField = query.sort === "created_at.desc" ? "created_at" : "last_created_at";
+  const sorted = [...filtered].sort((left, right) =>
+    right[sortField].localeCompare(left[sortField]) || right.platform_user_id.localeCompare(left.platform_user_id));
+  return fixturePage(sorted, query.limit ?? 50, query.cursor);
+}
+
+export function fixtureCreator(platformUserId: string): SingleResponse<CreatorSummary> | null {
+  const creator = CREATORS.find((item) => item.platform_user_id === platformUserId);
+  return creator ? { data: creator, meta: { request_id: "00000000-0000-4000-8000-000000000001" } } : null;
 }

@@ -4,6 +4,8 @@ import {
   parseCharacterListResponse,
   parseCharacterResponse,
   parseCharacterVersionListResponse,
+  parseCreatorListResponse,
+  parseCreatorResponse,
   parseListResponse,
   parseWorkListResponse,
   parseWorkResponse,
@@ -12,6 +14,8 @@ import {
   fixtureCharacter,
   fixtureCharacterList,
   fixtureCharacterVersions,
+  fixtureCreator,
+  fixtureCreatorList,
   fixtureList,
   fixtureWork,
   fixtureWorkList,
@@ -62,6 +66,8 @@ test("fixture responses satisfy the runtime API contract", () => {
   assert.equal(parseCharacterVersionListResponse(fixtureCharacterVersions("char_accept_official_active", { limit: 50 })).data.length, 3);
   assert.equal(parseWorkListResponse(fixtureWorkList({ limit: 50 })).data.length, 6);
   assert.equal(parseWorkResponse(fixtureWork("work_accept_official_active")).data.display_name, "Ada");
+  assert.equal(parseCreatorListResponse(fixtureCreatorList({ limit: 50 })).data.length, 3);
+  assert.equal(parseCreatorResponse(fixtureCreator("pusr_accept_creator_active")).data.display_name, "Mira Studio");
 });
 
 test("content fixtures support compound filters and cursor pagination", () => {
@@ -73,6 +79,15 @@ test("content fixtures support compound filters and cursor pagination", () => {
 
   const works = fixtureWorkList({ owner: "North Window", moderation: "pending_review", limit: 50 });
   assert.deepEqual(works.data.map((item) => item.display_name), ["Haru"]);
+
+  const creators = fixtureCreatorList({
+    q: "studio",
+    status: "active",
+    from: "2026-08-15T00:00:00+08:00",
+    to: "2026-08-16T00:00:00+08:00",
+    limit: 50,
+  });
+  assert.deepEqual(creators.data.map((item) => item.display_name), ["Mira Studio"]);
 });
 
 test("runtime content contracts reject private text and draft JSON", () => {
@@ -87,6 +102,12 @@ test("runtime content contracts reject private text and draft JSON", () => {
   const versions = structuredClone(fixtureCharacterVersions("char_accept_official_active", { limit: 50 }));
   versions.data[0].greeting = "must not cross the admin boundary";
   assert.throws(() => parseCharacterVersionListResponse(versions), /Invalid/);
+
+  for (const privateField of ["email", "phone", "prompt_text", "content_json"]) {
+    const creator = structuredClone(fixtureCreator("pusr_accept_creator_active"));
+    creator.data[privateField] = privateField === "content_json" ? { private: true } : "must not cross";
+    assert.throws(() => parseCreatorResponse(creator), /Invalid/);
+  }
 });
 
 test("runtime contract rejects malformed and payment-connected responses", () => {

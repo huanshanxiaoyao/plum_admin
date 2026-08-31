@@ -98,6 +98,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/plum/creators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Creators
+         * @description List users who own at least one Plum Work, with aggregate performance metadata.
+         */
+        get: operations["admin_creators_admin_plum_creators_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/creators/{platform_user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Creator
+         * @description Return one Creator public profile and aggregate content performance metadata.
+         */
+        get: operations["admin_creator_admin_plum_creators__platform_user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/plum/me": {
         parameters: {
             query?: never;
@@ -276,6 +316,69 @@ export interface components {
             data: components["schemas"]["AdminCharacterVersionItem"][];
             meta: components["schemas"]["ResponseMeta"];
             page: components["schemas"]["PageInfo"];
+        };
+        /** AdminCreatorItem */
+        AdminCreatorItem: {
+            /**
+             * Control Status
+             * @enum {string}
+             */
+            control_status: "active" | "restricted";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Display Name */
+            display_name: string;
+            /** Draft Count */
+            draft_count: number;
+            /** Favorite Count */
+            favorite_count: number;
+            /** Handle */
+            handle: string;
+            /** Interaction Count */
+            interaction_count: number;
+            /**
+             * Last Created At
+             * Format: date-time
+             */
+            last_created_at: string;
+            /** Last Published At */
+            last_published_at?: string | null;
+            /** Like Count */
+            like_count: number;
+            /** Platform User Id */
+            platform_user_id: string;
+            /** Profile Id */
+            profile_id: string;
+            /** Profile Status */
+            profile_status: string;
+            /** Published Count */
+            published_count: number;
+            /** Rejected Count */
+            rejected_count: number;
+            /** Takedown Count */
+            takedown_count: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Work Count */
+            work_count: number;
+        };
+        /** AdminCreatorListResponse */
+        AdminCreatorListResponse: {
+            /** Data */
+            data: components["schemas"]["AdminCreatorItem"][];
+            meta: components["schemas"]["ResponseMeta"];
+            page: components["schemas"]["PageInfo"];
+        };
+        /** AdminCreatorResponse */
+        AdminCreatorResponse: {
+            data: components["schemas"]["AdminCreatorItem"];
+            meta: components["schemas"]["ResponseMeta"];
         };
         /** AdminError */
         AdminError: {
@@ -924,6 +1027,188 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminCharacterVersionListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_creators_admin_plum_creators_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: string;
+                from?: string | null;
+                to?: string | null;
+                sort?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCreatorListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_creator_admin_plum_creators__platform_user_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                platform_user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCreatorResponse"];
                 };
             };
             /** @description Bad Request */

@@ -43,7 +43,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
     section: "creators",
     href: "/creators",
     label: "创作者",
-    availability: "fixture",
+    availability: "shipped",
     capability: "operations.access",
   },
   {
