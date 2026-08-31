@@ -22,6 +22,7 @@ import {
   parseListResponse,
   parseUserListResponse,
   parseUserResponse,
+  parseOverviewResponse,
   parseWorkListResponse,
   parseWorkResponse,
 } from "./contracts.ts";
@@ -36,6 +37,7 @@ import {
   fixtureUserList,
   fixtureWork,
   fixtureWorkList,
+  fixtureOverview,
 } from "./fixtures.ts";
 
 const RESOURCE_PATHS: Record<AdminListSection, string> = {
@@ -293,6 +295,15 @@ export async function getAdminUser(platformUserId: string) {
   }
   try {
     return parseUserResponse(await adminApiGet(`users/${encodeURIComponent(platformUserId)}`));
+  } catch (error) {
+    unexpected(error);
+  }
+}
+
+export async function getAdminOverview() {
+  if (adminDataSourceMode() === "fixture") return fixtureOverview();
+  try {
+    return parseOverviewResponse(await adminApiGet("overview"));
   } catch (error) {
     unexpected(error);
   }

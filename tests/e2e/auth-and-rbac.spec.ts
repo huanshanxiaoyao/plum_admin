@@ -17,6 +17,9 @@ async function openNavigationIfNeeded(page: import("@playwright/test").Page) {
 test("operator sees daily navigation and is denied advanced actions", async ({ page }) => {
   await signIn(page, "operator");
   await expect(page.getByRole("heading", { name: "工作台" })).toBeVisible();
+  await expect(page.getByText("5", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("近 7 日更新 Work")).toBeVisible();
+  await expect(page.getByRole("link", { name: "查看角色" })).toBeVisible();
   await openNavigationIfNeeded(page);
   await expect(page.getByRole("link", { name: "角色管理" })).toBeVisible();
   await expect(page.getByRole("link", { name: "后台成员" })).toHaveCount(0);
@@ -94,8 +97,8 @@ test("operator sees daily navigation and is denied advanced actions", async ({ p
   expect((await staffResponse.json()).error.code).toBe("admin_permission_denied");
 
   const response = await page.request.post("/api/admin/characters/char-01/restore");
-  expect(response.status()).toBe(403);
-  expect((await response.json()).error.code).toBe("admin_permission_denied");
+  expect(response.status()).toBe(404);
+  expect((await response.json()).error.code).toBe("resource_not_found");
 });
 
 test("admin sees staff management and passes capability enforcement", async ({ page }) => {
@@ -108,8 +111,8 @@ test("admin sees staff management and passes capability enforcement", async ({ p
   await expect(page.getByRole("button", { name: /恢复/ })).toBeVisible();
 
   const response = await page.request.post("/api/admin/characters/char-01/restore");
-  expect(response.status()).toBe(503);
-  expect((await response.json()).error.code).toBe("dependency_unavailable");
+  expect(response.status()).toBe(404);
+  expect((await response.json()).error.code).toBe("resource_not_found");
 });
 
 test("mobile navigation opens without covering the account control", async ({ page }) => {

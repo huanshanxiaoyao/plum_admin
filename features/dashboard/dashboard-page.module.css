@@ -29,24 +29,6 @@
   font-size: 11px;
 }
 
-.primaryAction {
-  height: 38px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 13px;
-  border-radius: 5px;
-  color: #fff;
-  background: var(--surface-strong);
-  font-size: 12px;
-  font-weight: 650;
-  text-decoration: none;
-}
-
-.primaryAction:hover {
-  background: #2a3b30;
-}
-
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -67,8 +49,10 @@
 }
 
 .metric > div {
+  min-width: 0;
   display: grid;
   align-content: space-between;
+  gap: 12px;
 }
 
 .metric span,
@@ -106,112 +90,104 @@
 }
 
 .dataSection,
-.activitySection {
+.windowSection {
   min-width: 0;
   border-top: 2px solid var(--surface-strong);
   background: var(--surface);
 }
 
 .dataSection > header,
-.activitySection > header {
+.windowSection > header {
   height: 54px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 0 16px;
   border: 1px solid var(--line);
   border-top: 0;
 }
 
-.dataSection header > div,
-.activitySection header > div,
-.dataSection header a,
-.activitySection header a {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .dataSection h2,
-.activitySection h2 {
+.windowSection h2 {
   margin: 0;
   font-size: 13px;
 }
 
-.dataSection header a,
-.activitySection header a {
-  color: var(--green);
-  font-size: 10px;
-  font-weight: 650;
+.resourceList {
+  display: grid;
+  border: 1px solid var(--line);
+  border-top: 0;
+}
+
+.resourceList a {
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  color: var(--ink);
   text-decoration: none;
 }
 
-.tableHeader {
-  min-height: 38px;
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  align-items: center;
-  padding: 0 16px;
-  border: 1px solid var(--line);
-  border-top: 0;
-  color: var(--muted);
+.resourceList a + a {
+  border-top: 1px solid var(--line);
+}
+
+.resourceList a:hover {
   background: var(--surface-subtle);
-  font-size: 9px;
-  font-weight: 700;
 }
 
-.empty {
-  min-height: 222px;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 7px;
-  border: 1px solid var(--line);
-  border-top: 0;
+.resourceList a > svg:first-child {
+  color: var(--green);
+}
+
+.resourceList a > svg:last-child {
   color: var(--muted);
 }
 
-.empty strong {
-  color: var(--muted-strong);
+.resourceList span {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.resourceList strong {
   font-size: 11px;
 }
 
-.empty span {
-  font-size: 10px;
+.resourceList small {
+  color: var(--muted);
+  font-size: 9px;
 }
 
-.emptyActivity {
-  min-height: 260px;
-  display: flex;
-  align-items: flex-start;
-  gap: 11px;
-  padding: 21px 18px;
+.windowSection dl {
+  margin: 0;
+  padding: 10px 16px;
   border: 1px solid var(--line);
   border-top: 0;
 }
 
-.activityMark {
-  width: 9px;
-  height: 9px;
-  margin-top: 3px;
-  border: 2px solid var(--surface);
-  border-radius: 50%;
-  background: var(--line-strong);
-  box-shadow: 0 0 0 1px var(--line-strong);
-}
-
-.emptyActivity div {
+.windowSection dl div {
+  min-height: 50px;
   display: grid;
-  gap: 5px;
+  align-content: center;
+  gap: 4px;
 }
 
-.emptyActivity strong {
-  font-size: 11px;
+.windowSection dl div + div {
+  border-top: 1px solid var(--line);
 }
 
-.emptyActivity small {
+.windowSection dt {
   color: var(--muted);
   font-size: 9px;
+}
+
+.windowSection dd {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 650;
 }
 
 .connection {
@@ -242,7 +218,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--amber);
+  background: var(--green);
 }
 
 @media (max-width: 1050px) {
@@ -253,40 +229,20 @@
   .columns {
     grid-template-columns: 1fr;
   }
-
-  .emptyActivity {
-    min-height: 130px;
-  }
 }
 
 @media (max-width: 560px) {
-  .pageHeader {
-    align-items: stretch;
-    flex-direction: column;
-    margin-bottom: 20px;
-  }
-
-  .primaryAction {
-    justify-content: center;
-  }
-
   .metrics {
     grid-template-columns: 1fr;
   }
 
-  .metric {
-    min-height: 105px;
-  }
-
-  .tableHeader {
-    grid-template-columns: 2fr 1fr;
-  }
-
-  .tableHeader span:nth-child(n + 3) {
-    display: none;
+  .connection {
+    flex-wrap: wrap;
+    padding-block: 10px;
   }
 
   .connection code {
-    display: none;
+    width: 100%;
+    margin-left: 15px;
   }
 }

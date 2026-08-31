@@ -7,18 +7,24 @@ test("daily routes resolve to operations access", () => {
   assert.equal(requiredCapability("GET", "characters/char-01"), "operations.access");
   assert.equal(requiredCapability("GET", "characters/char-01/versions"), "operations.access");
   assert.equal(requiredCapability("GET", "works/work-01"), "operations.access");
-  assert.equal(requiredCapability("POST", "official/works/accept-01/submit"), "operations.access");
-  assert.equal(requiredCapability("PATCH", "creators/pusr-01/control"), "operations.access");
+  assert.equal(requiredCapability("GET", "creators/pusr-01"), "operations.access");
+  assert.equal(requiredCapability("GET", "users/pusr-01"), "operations.access");
+  assert.equal(requiredCapability("GET", "overview"), "operations.access");
 });
 
-test("three advanced route groups require admin capabilities", () => {
-  assert.equal(requiredCapability("POST", "characters/char-01/restore"), "character.restore");
-  assert.equal(requiredCapability("POST", "users/pusr-01/membership/disable"), "membership.manage");
+test("staff management remains the only phase-one write route", () => {
   assert.equal(requiredCapability("GET", "admin-users"), "staff.manage");
   assert.equal(requiredCapability("PATCH", "admin-users/adm-01"), "staff.manage");
 });
 
-test("unknown paths and methods remain closed", () => {
+test("phase-one-excluded and unknown routes remain closed", () => {
+  assert.equal(requiredCapability("POST", "official/works/accept-01/submit"), null);
+  assert.equal(requiredCapability("POST", "characters/char-01/takedown"), null);
+  assert.equal(requiredCapability("POST", "characters/char-01/restore"), null);
+  assert.equal(requiredCapability("PATCH", "creators/pusr-01/control"), null);
+  assert.equal(requiredCapability("POST", "users/pusr-01/membership/disable"), null);
+  assert.equal(requiredCapability("GET", "subscriptions"), null);
+  assert.equal(requiredCapability("GET", "audit-events"), null);
   assert.equal(requiredCapability("DELETE", "users/pusr-01"), null);
   assert.equal(requiredCapability("GET", "../../health"), null);
   assert.equal(requiredCapability("POST", "arbitrary/proxy/path"), null);

@@ -9,6 +9,7 @@ import type {
   CreatorListQuery,
   CreatorSummary,
   ListResponse,
+  OverviewResponse,
   SingleResponse,
   UserListQuery,
   UserSummary,
@@ -430,4 +431,27 @@ export function fixtureUserList(query: UserListQuery): ListResponse<UserSummary>
 export function fixtureUser(platformUserId: string): SingleResponse<UserSummary> | null {
   const user = USERS.find((item) => item.platform_user_id === platformUserId);
   return user ? { data: user, meta: { request_id: "00000000-0000-4000-8000-000000000001" } } : null;
+}
+
+export function fixtureOverview(): OverviewResponse {
+  const generatedAt = "2026-08-31T12:00:00.000Z";
+  const windowStartedAt = "2026-08-24T12:00:00.000Z";
+  return {
+    data: {
+      active_membership_count: USERS.filter((item) => item.membership_status === "active").length,
+      active_public_character_count: CHARACTERS.filter(
+        (item) => item.status === "active" && item.visibility === "public",
+      ).length,
+      creator_count: CREATORS.length,
+      works_updated_last_7_days: WORKS.filter(
+        (item) => item.updated_at >= windowStartedAt && item.updated_at < generatedAt,
+      ).length,
+      window_started_at: windowStartedAt,
+      generated_at: generatedAt,
+    },
+    meta: {
+      request_id: "00000000-0000-4000-8000-000000000001",
+      timezone: "Asia/Shanghai",
+    },
+  };
 }

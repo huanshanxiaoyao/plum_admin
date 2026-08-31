@@ -155,6 +155,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/plum/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Overview
+         * @description Return the four frozen phase-one metrics and their rolling time window.
+         */
+        get: operations["admin_overview_admin_plum_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/plum/session": {
         parameters: {
             query?: never;
@@ -463,6 +483,32 @@ export interface components {
             data: components["schemas"]["AdminIdentity"];
             meta: components["schemas"]["ResponseMeta"];
         };
+        /** AdminOverviewData */
+        AdminOverviewData: {
+            /** Active Membership Count */
+            active_membership_count: number;
+            /** Active Public Character Count */
+            active_public_character_count: number;
+            /** Creator Count */
+            creator_count: number;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Window Started At
+             * Format: date-time
+             */
+            window_started_at: string;
+            /** Works Updated Last 7 Days */
+            works_updated_last_7_days: number;
+        };
+        /** AdminOverviewResponse */
+        AdminOverviewResponse: {
+            data: components["schemas"]["AdminOverviewData"];
+            meta: components["schemas"]["OverviewResponseMeta"];
+        };
         /** AdminProductUserItem */
         AdminProductUserItem: {
             /** Character Count */
@@ -683,6 +729,16 @@ export interface components {
             count: number;
             /** Request Id */
             request_id: string;
+        };
+        /** OverviewResponseMeta */
+        OverviewResponseMeta: {
+            /** Request Id */
+            request_id: string;
+            /**
+             * Timezone
+             * @constant
+             */
+            timezone: "Asia/Shanghai";
         };
         /** PageInfo */
         PageInfo: {
@@ -1423,6 +1479,83 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_overview_admin_plum_overview_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminOverviewResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
