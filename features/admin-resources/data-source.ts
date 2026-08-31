@@ -10,6 +10,7 @@ import type {
   CharacterListQuery,
   CharacterVersionListQuery,
   CreatorListQuery,
+  UserListQuery,
   WorkListQuery,
 } from "./contracts.ts";
 import {
@@ -19,6 +20,8 @@ import {
   parseCreatorListResponse,
   parseCreatorResponse,
   parseListResponse,
+  parseUserListResponse,
+  parseUserResponse,
   parseWorkListResponse,
   parseWorkResponse,
 } from "./contracts.ts";
@@ -29,6 +32,8 @@ import {
   fixtureCreator,
   fixtureCreatorList,
   fixtureList,
+  fixtureUser,
+  fixtureUserList,
   fixtureWork,
   fixtureWorkList,
 } from "./fixtures.ts";
@@ -109,6 +114,18 @@ function normalizeCreatorQuery(query: CreatorListQuery): CreatorListQuery {
     from: dateAtBeijingMidnight(query.from),
     to: dateAtBeijingMidnight(query.to),
     sort: oneOf(query.sort, ["last_created_at.desc", "created_at.desc"]),
+    limit: limit(query.limit),
+    cursor: clean(query.cursor, 2048),
+  };
+}
+
+function normalizeUserQuery(query: UserListQuery): UserListQuery {
+  return {
+    q: clean(query.q, 200),
+    status: oneOf(query.status, ["active", "disabled"]),
+    created_from: dateAtBeijingMidnight(query.created_from),
+    created_to: dateAtBeijingMidnight(query.created_to),
+    sort: oneOf(query.sort, ["last_activity_at.desc", "created_at.desc"]),
     limit: limit(query.limit),
     cursor: clean(query.cursor, 2048),
   };
@@ -253,6 +270,29 @@ export async function getAdminCreator(platformUserId: string) {
   }
   try {
     return parseCreatorResponse(await adminApiGet(`creators/${encodeURIComponent(platformUserId)}`));
+  } catch (error) {
+    unexpected(error);
+  }
+}
+
+export async function listAdminUsers(query: UserListQuery = {}) {
+  const normalized = normalizeUserQuery(query);
+  if (adminDataSourceMode() === "fixture") return fixtureUserList(normalized);
+  try {
+    return parseUserListResponse(await adminApiGet("users", normalized));
+  } catch (error) {
+    unexpected(error);
+  }
+}
+
+export async function getAdminUser(platformUserId: string) {
+  if (adminDataSourceMode() === "fixture") {
+    const response = fixtureUser(platformUserId);
+    if (!response) throw new AdminApiError(404, "not_found", "User not found.");
+    return response;
+  }
+  try {
+    return parseUserResponse(await adminApiGet(`users/${encodeURIComponent(platformUserId)}`));
   } catch (error) {
     unexpected(error);
   }

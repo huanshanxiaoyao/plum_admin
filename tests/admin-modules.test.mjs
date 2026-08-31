@@ -8,8 +8,8 @@ function keys(mode, role) {
 }
 
 test("remote mode exposes only shipped modules allowed by RBAC", () => {
-  assert.deepEqual(keys("remote", "operator"), ["dashboard", "characters", "creators"]);
-  assert.deepEqual(keys("remote", "admin"), ["dashboard", "characters", "creators", "staff"]);
+  assert.deepEqual(keys("remote", "operator"), ["dashboard", "characters", "creators", "users"]);
+  assert.deepEqual(keys("remote", "admin"), ["dashboard", "characters", "creators", "users", "staff"]);
 });
 
 test("fixture mode keeps prototype modules without exposing staff to operators", () => {

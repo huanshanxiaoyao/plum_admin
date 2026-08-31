@@ -21,7 +21,7 @@ Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 
 
 主要后端新增内容是 Admin 聚合查询、员工身份入口、权限依赖和官方创作者代理操作。管理后台不建立独立业务数据库。
 
-当前实现已完成 Character/Version/Work/Creator 只读模型、筛选绑定的 Keyset Cursor、后端权威 OpenAPI 和对应 Remote UI，等待生产部署和只读 UAT。User/Membership 与 Overview 将继续沿用同一契约先行的纵向切片方式交付；官方角色写链路尚未实现，治理写操作已移至后续。
+当前实现已完成 Character/Version/Work/Creator/User Membership 只读模型、筛选绑定的 Keyset Cursor、后端权威 OpenAPI 和对应 Remote UI，等待生产部署和只读 UAT。Overview 将继续沿用同一契约先行的纵向切片方式交付；官方角色写链路尚未实现，治理写操作已移至后续。
 
 ### 1.1 一期技术边界
 
@@ -227,7 +227,7 @@ lib/
 - `features/admin-resources` 保存未交付模块的本地 Fixture、数据源和运行时 Guard；M1 Staff 类型直接引用生成 Schema，后续资源随 M2 契约逐项替换手写类型。
 - `lib` 只保存 Auth、BFF 和服务端基础设施，不允许反向依赖 `features` 或 `app`；架构测试固化该规则。
 
-前端可以在非生产 Fixture 模式保留 `users`、`subscriptions` 和 `audit` 原型页，用于并行开发和验收。生产 Remote 模式只显示后端真实 API 已交付的模块：当前为工作台基础壳、`characters`/`works`/`creators`，以及仅 Admin 可见的 `staff`；未交付模块不显示导航，直接访问返回 404。`subscriptions`、`audit`、`moderation`、`taxonomy` 仅表示长期目录方向，一期不创建 Remote 导航或空接口。
+前端可以在非生产 Fixture 模式保留 `subscriptions` 和 `audit` 原型页，用于未来范围的并行设计。生产 Remote 模式只显示后端真实 API 已交付的模块：当前为工作台基础壳、`characters`/`works`/`creators`/`users`，以及仅 Admin 可见的 `staff`；未交付模块不显示导航，直接访问返回 404。`subscriptions`、`audit`、`moderation`、`taxonomy` 仅表示长期目录方向，一期不创建 Remote 导航或空接口。
 
 ### 5.3 BFF 规则
 
@@ -452,7 +452,7 @@ CREATE TABLE plum_creator_controls (
 
 #### 8.1.2.1 OpenAPI 版本与漂移门禁
 
-- 后端显式导出 `docs/products/plum/openapi/admin_v1.json`，当前仅包含 `POST /session`、`GET /me`、`GET /admin-users` 和 `PATCH /admin-users/{open_id}`。
+- 后端显式导出 `docs/products/plum/openapi/admin_v1.json`，当前包含身份/成员接口，以及 Character、Version、Work、Creator 和 User/Membership 只读接口。
 - `/admin/plum/*` 下的评测、记忆和模型配置等历史控制面不属于新后台契约；导出器使用显式路径集合，不能按前缀整体收录。
 - 前端 vendoring 同一 JSON 并生成 TypeScript 类型。Identity、Capability、Staff 和分页结构引用生成 Schema，远端 JSON 仍必须经过运行时 Guard。
 - 后端 PR 先更新响应模型、聚焦契约测试和快照；前端 PR 再同步 JSON、重新生成并通过 `contract:check`。新增 M2 路径必须显式加入导出集合，避免偶然扩大 BFF 表面。

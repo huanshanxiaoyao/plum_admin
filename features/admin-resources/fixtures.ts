@@ -10,6 +10,8 @@ import type {
   CreatorSummary,
   ListResponse,
   SingleResponse,
+  UserListQuery,
+  UserSummary,
   WorkListQuery,
   WorkListResponse,
   WorkSummary,
@@ -212,29 +214,43 @@ const CREATORS: AdminListResourceMap["creators"][] = [
 ];
 
 const USERS: AdminListResourceMap["users"][] = [
-  ["pusr_accept_official", "Plum Official", "o***@users.invalid", "active", "free", "active", 2],
-  ["pusr_accept_creator_active", "Mira Studio", "c***@users.invalid", "active", "standard", "active", 4],
-  ["pusr_accept_creator_restricted", "North Window", "n***@users.invalid", "active", "premium", "active", 1],
-  ["pusr_accept_member_free", "Rowan", "m***@users.invalid", "active", "free", "active", 0],
-  ["pusr_accept_member_disabled", "Jules", "j***@users.invalid", "disabled", "free", "active", 0],
-  ["pusr_accept_subscription_cancelled", "Sage", "s***@users.invalid", "active", "premium", "cancelled", 0],
-].map(([platform_user_id, display_name, masked_login, membership_status, plan, status, characters], index) => ({
+  ["pusr_accept_official", "Plum Official", "o***@users.invalid", "active", "profile_accept_official", "plum-official", true, 2, 2],
+  ["pusr_accept_creator_active", "Mira Studio", "c***@users.invalid", "active", "profile_accept_creator_active", "mira-studio-accept", true, 5, 4],
+  ["pusr_accept_creator_restricted", "North Window", "138****8000", "active", "profile_accept_creator_restricted", "north-window-accept", true, 1, 1],
+  ["pusr_accept_member_free", "Rowan", "m***@users.invalid", "active", null, null, false, 0, 0],
+  ["pusr_accept_member_disabled", "Jules", "j***@users.invalid", "disabled", null, null, false, 0, 0],
+  ["pusr_accept_subscription_cancelled", "Sage", "s***@users.invalid", "active", null, null, false, 0, 0],
+].map(([platform_user_id, display_name, masked_login_identifier, membership_status, profile_id, profile_handle, is_creator, work_count, character_count], index) => ({
   platform_user_id,
   display_name,
-  masked_login,
+  masked_login_identifier,
   membership_status,
-  subscription: { plan, status, billing_connected: false },
-  character_count: characters,
-  last_active_at: index === 4 ? null : `2026-08-${String(28 - index).padStart(2, "0")}T04:00:00.000Z`,
+  profile_id,
+  profile_handle,
+  is_creator,
+  work_count,
+  character_count,
+  last_activity_at: index === 4 ? null : `2026-08-${String(28 - index).padStart(2, "0")}T04:00:00.000Z`,
+  created_at: `2026-08-${String(14 + index).padStart(2, "0")}T03:00:00.000Z`,
+  updated_at: `2026-08-${String(28 - index).padStart(2, "0")}T05:00:00.000Z`,
 })) as AdminListResourceMap["users"][];
 
-const SUBSCRIPTIONS: AdminListResourceMap["subscriptions"][] = USERS.map((user, index) => ({
+const SUBSCRIPTIONS: AdminListResourceMap["subscriptions"][] = [
+  ["pusr_accept_official", "Plum Official", "free", "active"],
+  ["pusr_accept_creator_active", "Mira Studio", "standard", "active"],
+  ["pusr_accept_creator_restricted", "North Window", "premium", "active"],
+  ["pusr_accept_member_free", "Rowan", "free", "active"],
+  ["pusr_accept_member_disabled", "Jules", "free", "active"],
+  ["pusr_accept_subscription_cancelled", "Sage", "premium", "cancelled"],
+].map(([platform_user_id, display_name, plan, status], index) => ({
   id: `sub_accept_${String(index + 1).padStart(2, "0")}`,
-  platform_user_id: user.platform_user_id,
-  display_name: user.display_name,
-  ...user.subscription,
+  platform_user_id,
+  display_name,
+  plan,
+  status,
+  billing_connected: false,
   updated_at: `2026-08-${String(28 - index).padStart(2, "0")}T01:00:00.000Z`,
-}));
+})) as AdminListResourceMap["subscriptions"][];
 
 const STAFF: AdminListResourceMap["staff"][] = [
   {
@@ -393,4 +409,25 @@ export function fixtureCreatorList(query: CreatorListQuery): ListResponse<Creato
 export function fixtureCreator(platformUserId: string): SingleResponse<CreatorSummary> | null {
   const creator = CREATORS.find((item) => item.platform_user_id === platformUserId);
   return creator ? { data: creator, meta: { request_id: "00000000-0000-4000-8000-000000000001" } } : null;
+}
+
+export function fixtureUserList(query: UserListQuery): ListResponse<UserSummary> {
+  const from = query.created_from?.slice(0, 10);
+  const to = query.created_to?.slice(0, 10);
+  const filtered = USERS.filter((item) =>
+    includesSearch(item, query.q) &&
+    (!query.status || item.membership_status === query.status) &&
+    (!from || item.created_at.slice(0, 10) >= from) &&
+    (!to || item.created_at.slice(0, 10) < to));
+  const sorted = [...filtered].sort((left, right) => {
+    const leftValue = query.sort === "created_at.desc" ? left.created_at : left.last_activity_at ?? "";
+    const rightValue = query.sort === "created_at.desc" ? right.created_at : right.last_activity_at ?? "";
+    return rightValue.localeCompare(leftValue) || right.platform_user_id.localeCompare(left.platform_user_id);
+  });
+  return fixturePage(sorted, query.limit ?? 50, query.cursor);
+}
+
+export function fixtureUser(platformUserId: string): SingleResponse<UserSummary> | null {
+  const user = USERS.find((item) => item.platform_user_id === platformUserId);
+  return user ? { data: user, meta: { request_id: "00000000-0000-4000-8000-000000000001" } } : null;
 }

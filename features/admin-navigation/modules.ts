@@ -51,7 +51,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
     section: "users",
     href: "/users",
     label: "用户",
-    availability: "fixture",
+    availability: "shipped",
     capability: "operations.access",
   },
   {
