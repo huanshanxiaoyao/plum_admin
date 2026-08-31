@@ -67,6 +67,24 @@ test("operator sees daily navigation and is denied advanced actions", async ({ p
   await expect(page.getByText("content_json", { exact: true })).toHaveCount(0);
   await expect(page.getByText("prompt_text", { exact: true })).toHaveCount(0);
 
+  await openNavigationIfNeeded(page);
+  await page.getByRole("link", { name: "用户", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "用户", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Rowan", exact: true })).toBeVisible();
+  await page.getByRole("searchbox").fill("Jules");
+  await page.getByLabel("Membership 状态").selectOption("disabled");
+  await page.getByRole("button", { name: "查询" }).click();
+  await expect(page).toHaveURL(/q=Jules/);
+  await expect(page.getByRole("link", { name: "Jules", exact: true })).toBeVisible();
+  await expect(page.getByText("j***@users.invalid", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Jules", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Jules", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "身份与 Membership" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "公开资料与创作" })).toBeVisible();
+  await expect(page.locator("main").getByText("Subscription", { exact: true })).toHaveCount(0);
+  await expect(page.locator("main").getByText("Wallet", { exact: true })).toHaveCount(0);
+  await expect(page.locator("main").getByText(/@users\.invalid/, { exact: false })).toHaveText(/\*\*\*@users\.invalid/);
+
   await page.goto("/staff");
   await expect(page).toHaveURL("/forbidden");
   await expect(page.getByRole("heading", { name: "权限不足" })).toBeVisible();

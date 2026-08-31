@@ -7,6 +7,8 @@ import {
   parseCreatorListResponse,
   parseCreatorResponse,
   parseListResponse,
+  parseUserListResponse,
+  parseUserResponse,
   parseWorkListResponse,
   parseWorkResponse,
 } from "../features/admin-resources/contracts.ts";
@@ -17,6 +19,8 @@ import {
   fixtureCreator,
   fixtureCreatorList,
   fixtureList,
+  fixtureUser,
+  fixtureUserList,
   fixtureWork,
   fixtureWorkList,
 } from "../features/admin-resources/fixtures.ts";
@@ -68,6 +72,8 @@ test("fixture responses satisfy the runtime API contract", () => {
   assert.equal(parseWorkResponse(fixtureWork("work_accept_official_active")).data.display_name, "Ada");
   assert.equal(parseCreatorListResponse(fixtureCreatorList({ limit: 50 })).data.length, 3);
   assert.equal(parseCreatorResponse(fixtureCreator("pusr_accept_creator_active")).data.display_name, "Mira Studio");
+  assert.equal(parseUserListResponse(fixtureUserList({ limit: 50 })).data.length, 6);
+  assert.equal(parseUserResponse(fixtureUser("pusr_accept_member_free")).data.display_name, "Rowan");
 });
 
 test("content fixtures support compound filters and cursor pagination", () => {
@@ -88,6 +94,15 @@ test("content fixtures support compound filters and cursor pagination", () => {
     limit: 50,
   });
   assert.deepEqual(creators.data.map((item) => item.display_name), ["Mira Studio"]);
+
+  const users = fixtureUserList({
+    q: "rowan",
+    status: "active",
+    created_from: "2026-08-17T00:00:00+08:00",
+    created_to: "2026-08-18T00:00:00+08:00",
+    limit: 50,
+  });
+  assert.deepEqual(users.data.map((item) => item.platform_user_id), ["pusr_accept_member_free"]);
 });
 
 test("runtime content contracts reject private text and draft JSON", () => {
@@ -107,6 +122,12 @@ test("runtime content contracts reject private text and draft JSON", () => {
     const creator = structuredClone(fixtureCreator("pusr_accept_creator_active"));
     creator.data[privateField] = privateField === "content_json" ? { private: true } : "must not cross";
     assert.throws(() => parseCreatorResponse(creator), /Invalid/);
+  }
+
+  for (const privateField of ["email", "phone", "mobile", "subscription", "wallet", "ledger", "prompt_text", "content_json"]) {
+    const user = structuredClone(fixtureUser("pusr_accept_member_free"));
+    user.data[privateField] = privateField === "content_json" ? { private: true } : "must not cross";
+    assert.throws(() => parseUserResponse(user), /Invalid/);
   }
 });
 

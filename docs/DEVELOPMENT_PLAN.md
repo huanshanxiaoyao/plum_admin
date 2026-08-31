@@ -57,8 +57,8 @@
 | Work | GET | `/admin/plum/works/{id}` | 已合入，待生产 UAT |
 | Creator | GET | `/admin/plum/creators` | 已合入，待生产 UAT |
 | Creator | GET | `/admin/plum/creators/{id}` | 已合入，待生产 UAT |
-| User | GET | `/admin/plum/users` | 下一项 |
-| User | GET | `/admin/plum/users/{id}` | 下一项 |
+| User | GET | `/admin/plum/users` | 代码完成，待生产 UAT |
+| User | GET | `/admin/plum/users/{id}` | 代码完成，待生产 UAT |
 | Overview | GET | `/admin/plum/overview` | 待开发 |
 | Official | POST | `/admin/plum/official/media/uploads` | 待开发 |
 | Official | POST | `/admin/plum/official/works` | 待开发 |
@@ -98,9 +98,11 @@
 - 前端列表/详情、作品关联、桌面和窄屏 E2E。
 - Creator Control、内部备注和治理数据库变更不在一期。
 
-## 5. 剩余里程碑
+## 5. 当前与剩余里程碑
 
-### M2-C User/Membership 只读：当前开发项
+### M2-C User/Membership 只读：代码完成，待生产 UAT
+
+后端 API、Plum 隔离查询、OpenAPI、前端 Remote 列表/详情、运行时敏感字段拒绝和桌面/窄屏 E2E 均已完成。本节保留实现要求作为生产 UAT 的核对基线。
 
 #### 后端任务
 
@@ -232,7 +234,7 @@ Official 写切片额外要求：固定 Official Owner 和专用对象就绪后�
 
 - 用户确认并合并本轮两个仓库 PR。
 - AWS Agent 记录现有生产 SHA，更新两个仓库 `main`，后端先、前端后部署。
-- 用户使用真实飞书 Operator/Admin 完成 Character、Work、Creator 只读 UAT。
+- 用户使用真实飞书 Operator/Admin 完成 Character、Work、Creator、User/Membership 只读 UAT。
 
 ### M3 开始前
 
@@ -248,9 +250,9 @@ Official 写切片额外要求：固定 Official Owner 和专用对象就绪后�
 
 ## 9. 下一步顺序
 
-1. 完成本次瘦身范围文档 PR。
-2. 完成 M2-C User/Membership 后端与前端纵向切片。
-3. 部署并验收 M2-A/B/C 的只读模块。
+1. 已完成本次瘦身范围文档 PR。
+2. 已完成 M2-C User/Membership 后端与前端纵向切片代码。
+3. 部署并验收 M2-A/B/C 的只读模块，这是当前下一步。
 4. 实现 M2-D 精简 Overview。
 5. 用户确认 Official Owner 和表单后，实施 M3。
 6. 完成 M4 最小审计和一期收口。

@@ -18,19 +18,7 @@ export type WorkSummary = AdminApiSchemas["AdminWorkItem"];
 
 export type CreatorSummary = AdminApiSchemas["AdminCreatorItem"];
 
-export type UserSummary = {
-  platform_user_id: string;
-  display_name: string;
-  masked_login: string;
-  membership_status: "active" | "disabled";
-  subscription: {
-    plan: "free" | "standard" | "premium";
-    status: "active" | "cancelled";
-    billing_connected: false;
-  };
-  character_count: number;
-  last_active_at: string | null;
-};
+export type UserSummary = AdminApiSchemas["AdminProductUserItem"];
 
 export type SubscriptionSummary = {
   id: string;
@@ -86,6 +74,16 @@ export type CreatorListQuery = {
   from?: string;
   to?: string;
   sort?: "last_created_at.desc" | "created_at.desc";
+  limit?: number;
+  cursor?: string;
+};
+
+export type UserListQuery = {
+  q?: string;
+  status?: UserSummary["membership_status"];
+  created_from?: string;
+  created_to?: string;
+  sort?: "last_activity_at.desc" | "created_at.desc";
   limit?: number;
   cursor?: string;
 };
@@ -236,19 +234,34 @@ function isCreator(value: unknown): value is CreatorSummary {
 }
 
 function isUser(value: unknown): value is UserSummary {
-  if (!isRecord(value) || !isRecord(value.subscription)) return false;
+  if (
+    !isRecord(value) ||
+    [
+      "email",
+      "phone",
+      "mobile",
+      "subscription",
+      "wallet",
+      "ledger",
+      "prompt",
+      "prompt_text",
+      "greeting",
+      "content_json",
+    ].some((key) => key in value)
+  ) return false;
   return (
     hasString(value, "platform_user_id") &&
     hasString(value, "display_name") &&
-    hasString(value, "masked_login") &&
+    hasString(value, "masked_login_identifier") &&
     (value.membership_status === "active" || value.membership_status === "disabled") &&
-    (value.subscription.plan === "free" ||
-      value.subscription.plan === "standard" ||
-      value.subscription.plan === "premium") &&
-    (value.subscription.status === "active" || value.subscription.status === "cancelled") &&
-    value.subscription.billing_connected === false &&
-    hasNumber(value, "character_count") &&
-    isNullableString(value.last_active_at)
+    isOptionalNullableString(value.profile_id) &&
+    isOptionalNullableString(value.profile_handle) &&
+    typeof value.is_creator === "boolean" &&
+    isNonNegativeInteger(value.work_count) &&
+    isNonNegativeInteger(value.character_count) &&
+    (value.last_activity_at === undefined || value.last_activity_at === null || isUtcTimestamp(value.last_activity_at)) &&
+    isUtcTimestamp(value.created_at) &&
+    isUtcTimestamp(value.updated_at)
   );
 }
 
@@ -328,3 +341,5 @@ export const parseWorkListResponse = (value: unknown) => parseTypedList("work", 
 export const parseWorkResponse = (value: unknown) => parseSingle("work", value, isWork);
 export const parseCreatorListResponse = (value: unknown) => parseTypedList("creator", value, isCreator);
 export const parseCreatorResponse = (value: unknown) => parseSingle("creator", value, isCreator);
+export const parseUserListResponse = (value: unknown) => parseTypedList("user", value, isUser);
+export const parseUserResponse = (value: unknown) => parseSingle("user", value, isUser);

@@ -1,6 +1,5 @@
-import { AdminSectionPage, type AdminSectionPageProps } from "@/features/admin-sections/admin-section-page";
-import { usersSection } from "@/features/users/list-definition";
+import { UserListPage, type UserListPageProps } from "@/features/users/user-pages";
 
-export default function UsersPage({ searchParams }: AdminSectionPageProps) {
-  return <AdminSectionPage definition={usersSection} searchParams={searchParams} />;
+export default function UsersPage({ searchParams }: UserListPageProps) {
+  return <UserListPage searchParams={searchParams} />;
 }
