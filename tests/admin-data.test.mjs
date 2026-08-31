@@ -11,6 +11,7 @@ import {
   parseUserResponse,
   parseWorkListResponse,
   parseWorkResponse,
+  parseOverviewResponse,
 } from "../features/admin-resources/contracts.ts";
 import {
   fixtureCharacter,
@@ -23,6 +24,7 @@ import {
   fixtureUserList,
   fixtureWork,
   fixtureWorkList,
+  fixtureOverview,
 } from "../features/admin-resources/fixtures.ts";
 import {
   adminApiOrigin,
@@ -74,6 +76,7 @@ test("fixture responses satisfy the runtime API contract", () => {
   assert.equal(parseCreatorResponse(fixtureCreator("pusr_accept_creator_active")).data.display_name, "Mira Studio");
   assert.equal(parseUserListResponse(fixtureUserList({ limit: 50 })).data.length, 6);
   assert.equal(parseUserResponse(fixtureUser("pusr_accept_member_free")).data.display_name, "Rowan");
+  assert.equal(parseOverviewResponse(fixtureOverview()).data.active_membership_count, 5);
 });
 
 test("content fixtures support compound filters and cursor pagination", () => {
@@ -129,6 +132,10 @@ test("runtime content contracts reject private text and draft JSON", () => {
     user.data[privateField] = privateField === "content_json" ? { private: true } : "must not cross";
     assert.throws(() => parseUserResponse(user), /Invalid/);
   }
+
+  const overview = structuredClone(fixtureOverview());
+  overview.data.subscription = { active: 5 };
+  assert.throws(() => parseOverviewResponse(overview), /Invalid/);
 });
 
 test("runtime contract rejects malformed and payment-connected responses", () => {

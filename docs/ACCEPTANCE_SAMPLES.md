@@ -1,7 +1,7 @@
 # Plum 管理后台验收样例
 
-- 文档版本：v0.4
-- 文档状态：瘦身一期样例已冻结
+- 文档版本：v0.6
+- 文档状态：纯只读一期样例已冻结
 - 更新时间：2026-08-31
 - 关联 PRD：[Plum 管理后台产品需求文档](./PRD.md)
 - 关联技术设计：[Plum 管理后台技术设计](./TECHNICAL_DESIGN.md)
@@ -32,7 +32,7 @@
 
 | Feishu Open ID | Email | Role | Status | 用途 |
 | --- | --- | --- | --- | --- |
-| `ou_accept_operator` | 空 | `operator` | `active` | 日常查询和官方角色工作 |
+| `ou_accept_operator` | 空 | `operator` | `active` | 日常只读查询 |
 | `ou_accept_operator_2` | 空 | `operator` | `active` | 并发和第二 Operator 验证 |
 | `ou_accept_admin` | 空 | `admin` | `active` | 后台成员管理 |
 | `ou_accept_disabled` | 空 | `operator` | `disabled` | 禁用成员验证 |
@@ -50,7 +50,7 @@
 
 | Platform User ID | Display Name | Plum Membership | Subscription | Wallet | 说明 |
 | --- | --- | --- | --- | --- | --- |
-| `pusr_accept_official` | Plum Official | active | free/active | 0 Coin | 固定官方创作者账号 |
+| `pusr_accept_official` | Plum Official | active | free/active | 0 Coin | 已有官方内容的只读样例 |
 | `pusr_accept_creator_active` | Mira Studio | active | standard/active | 120 Coin | 正常 UGC 创作者 |
 | `pusr_accept_creator_restricted` | North Window | active | premium/active | 35 Coin | 被暂停创作但仍可聊天 |
 | `pusr_accept_member_free` | Rowan | active | free/active | 8 Coin | 普通 Plum 用户 |
@@ -150,6 +150,8 @@ Character 详情样例：
 
 ## 7. Work 和草稿样例
 
+一期只验证列表、详情和筛选。Official Draft 写操作保留为后续验收场景。
+
 | Work/Draft ID | Owner | Name | State | Moderation | Published Character |
 | --- | --- | --- | --- | --- | --- |
 | `work_accept_official_active` | Plum Official | Ada | published | approved | `char_accept_official_active` |
@@ -161,8 +163,8 @@ Character 详情样例：
 
 - `/admin/plum/works` 可以按 Owner、State 和 Moderation 筛选。
 - Rejected 和 Pending Review 项不会出现在 `/admin/plum/characters`。
-- Operator 只能通过官方 Work 写接口修改 `work_accept_official_draft`，不能编辑 UGC Work。
-- 客户端提交 `owner_platform_user_id` 时返回 `422 validation_failed`，不能覆盖固定官方 Owner。
+- 一期页面不提供修改 Official 或 UGC Work 的入口。
+- 后续官方 Work 写接口仍必须拒绝客户端覆盖 `owner_platform_user_id`。
 
 ## 8. 订阅和钱包样例
 
@@ -209,7 +211,7 @@ Character 详情样例：
 
 ## 9. Moderation 样例
 
-**交付阶段：后续，不作为一期验收或 Fixture 要求。** 一期官方角色仍需通过现有审核链路，但不建设任务领取和人工决策页面。
+**交付阶段：后续，不作为一期验收或 Fixture 要求。** 官方角色和独立审核工作台均不属于一期。
 
 | Task ID | Resource | Assigned Operator | Status |
 | --- | --- | --- | --- |
@@ -227,7 +229,7 @@ Character 详情样例：
 | 编号 | 阶段 | 身份 | 操作 | 预期 |
 | --- | --- | --- | --- | --- |
 | RBAC-01 | 一期 | Operator | GET Character/Work/Creator/User | 200，敏感字段脱敏 |
-| RBAC-02 | 一期 | Operator | Create and Publish Approved Official Work | 201/200，Owner 固定为 Official |
+| RBAC-02 | 后续 | Operator | Create and Publish Approved Official Work | 正式实施时重新确认权限；Owner 必须由服务端固定 |
 | RBAC-03 | 后续 | Operator | Takedown Active UGC Character | 后续治理范围 |
 | RBAC-04 | 后续 | Operator | Restrict or Restore Creator | 后续治理范围 |
 | RBAC-05 | 后续 | Operator | Claim and Review Moderation Task | 200，遵循审核状态机 |
@@ -278,11 +280,19 @@ GET /admin/plum/users?created_from=2026-08-27T00:00:00%2B08:00&created_to=2026-0
 
 预期后端按 UTC 区间 `[2026-08-26T16:00:00.000Z, 2026-08-27T16:00:00.000Z)` 查询，响应中的所有时间使用 `Z`。
 
-### API-04 幂等发布
+### API-04 Overview
+
+请求 `GET /admin/plum/overview`，预期只返回 Active Plum Membership、Active Public Character、Creator、近 7 日更新 Work 四项非负整数，以及滚动窗口起点、生成时间和 `meta.timezone=Asia/Shanghai`。响应不得出现 Subscription、Wallet、Moderation、Official 操作或审计摘要；实现只进行一次数据库往返。
+
+### API-05 幂等发布
+
+**交付阶段：后续，不作为一期验收。**
 
 使用同一个 `Idempotency-Key: accept-official-publish-001` 连续提交两次 `work_accept_official_draft` 的同一 Revision。两次返回相同 Character ID，只生成一个 Character Version 和一个有效发布结果。
 
-### API-05 并发冲突
+### API-06 并发冲突
+
+**交付阶段：后续，不作为一期验收。**
 
 两个 Operator 同时编辑官方草稿 Revision 3。第一个保存成功生成 Revision 4；第二个返回 `409 revision_conflict`，不得覆盖 Revision 4。
 
@@ -318,7 +328,6 @@ GET /admin/plum/users?created_from=2026-08-27T00:00:00%2B08:00&created_to=2026-0
 - 后台 Next.js 停止时，`https://plum.top` 仍可访问和聊天。
 - 角色、创作者、用户列表各执行一页查询时不存在按行追加的 N+1 SQL。
 - 普通后台响应和日志中不出现完整登录标识、Cookie、Bearer Token、Prompt 或聊天正文。
-- 一期官方角色写入产生最小审计事件；审计失败时业务写入回滚。
 - 角色分页在第一页读取后插入一个排序更靠前的新角色，继续翻页不重复或跳过原快照位置之后的既有记录。
 - `limit=0`、`limit=201`、损坏 Cursor 和无 Offset 时间分别返回稳定的 400 错误码。
 

@@ -20,6 +20,9 @@ export type CreatorSummary = AdminApiSchemas["AdminCreatorItem"];
 
 export type UserSummary = AdminApiSchemas["AdminProductUserItem"];
 
+export type OverviewData = AdminApiSchemas["AdminOverviewData"];
+export type OverviewResponse = AdminApiSchemas["AdminOverviewResponse"];
+
 export type SubscriptionSummary = {
   id: string;
   platform_user_id: string;
@@ -296,6 +299,20 @@ function isStaff(value: unknown): value is StaffSummary {
   );
 }
 
+function isOverviewData(value: unknown): value is OverviewData {
+  if (
+    !isRecord(value) ||
+    ["subscription", "wallet", "ledger", "audit", "moderation", "official"].some((key) => key in value)
+  ) return false;
+  return isNonNegativeInteger(value.active_membership_count) &&
+    isNonNegativeInteger(value.active_public_character_count) &&
+    isNonNegativeInteger(value.creator_count) &&
+    isNonNegativeInteger(value.works_updated_last_7_days) &&
+    isUtcTimestamp(value.window_started_at) &&
+    isUtcTimestamp(value.generated_at) &&
+    String(value.window_started_at) < String(value.generated_at);
+}
+
 const ITEM_GUARDS = {
   characters: isCharacter,
   creators: isCreator,
@@ -343,3 +360,15 @@ export const parseCreatorListResponse = (value: unknown) => parseTypedList("crea
 export const parseCreatorResponse = (value: unknown) => parseSingle("creator", value, isCreator);
 export const parseUserListResponse = (value: unknown) => parseTypedList("user", value, isUser);
 export const parseUserResponse = (value: unknown) => parseSingle("user", value, isUser);
+export function parseOverviewResponse(value: unknown): OverviewResponse {
+  if (
+    !isRecord(value) ||
+    !isOverviewData(value.data) ||
+    !isRecord(value.meta) ||
+    value.meta.timezone !== "Asia/Shanghai" ||
+    !isResponseMeta(value.meta)
+  ) {
+    throw new TypeError("Invalid overview response payload");
+  }
+  return value as OverviewResponse;
+}

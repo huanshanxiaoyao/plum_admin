@@ -177,8 +177,8 @@ curl -fsSI https://admin.plum.top/
 ss -ltn | rg ':3001|:8180|:80|:443'
 ```
 
-验收至少覆盖：真实飞书登录、Admin/Operator 导航差异、Disabled 用户立即拒绝、其他产品旧 Admin 路由不变、
-访问日志不包含 OAuth 查询参数。前后端写开关继续保持 `false`。只读发布不要求新增备份设施或恢复演练；官方角色写链路实现后，必须先准备固定 Official Owner 和专用验收对象，验证幂等、Revision 乐观锁和最小审计，再经过显式审批逐项开启双写开关。
+验收至少覆盖：真实飞书登录、Admin/Operator 导航差异、Disabled 用户立即拒绝、Character/Work/Creator/User 只读查询、Overview 四项指标和统计窗口、一期外写路径不可用、其他产品旧 Admin 路由不变、
+访问日志不包含 OAuth 查询参数。纯只读一期内前后端业务写开关始终保持 `false`。只读发布不要求新增备份设施或恢复演练；官方角色和其他业务写能力已移至后续，不能在一期部署窗口临时开启。
 
 把 `ai4all_bridge/deploy/systemd/ai4all-monitor-health.service` 和 timer 安装到同一运行用户的
 `~/.config/systemd/user/`。该 service 应同时检查：

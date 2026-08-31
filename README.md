@@ -1,15 +1,15 @@
 # Plum Admin
 
-Plum 内部管理后台。M1 飞书登录、两角色 RBAC、后台成员管理和 Plum Admin Identity 已完成生产交付；Character/Work/Creator/User Membership 只读纵向切片已经完成，等待生产部署和只读 UAT。
+Plum 内部管理后台。M1 飞书登录、两角色 RBAC、后台成员管理和 Plum Admin Identity 已完成生产交付；Character/Work/Creator/User Membership 与 Overview 只读纵向切片已经完成，等待生产部署和只读 UAT。
 
 ## 当前状态
 
 已完成管理前端工程基础、开发环境 Mock Identity、飞书 OAuth 授权码流程 + PKCE、签名 HttpOnly Session、两角色 Capability、显式路径白名单 BFF、CSRF 防护和基础后台界面。
 
 M1 身份链路已于 2026-08-30 在 `admin.plum.top` 完成真实飞书登录、Operator 自注册和首位 Admin 验证。
-生产写开关继续保持关闭。官方角色写链路实现后，必须使用固定 Official Owner、专用验收对象、幂等键、Revision 乐观锁和前后端双写开关完成独立 UAT，才能逐项开放。
+一期是纯只读业务范围，生产业务写开关始终保持关闭。官方角色及其他业务写能力已移至后续，需重新确认需求和安全设计后单独立项。
 
-生产 Remote 模式只显示已经有真实后端 API 的模块：工作台基础壳、Character/Work/Creator/User，以及仅 Admin 可见的后台成员。Subscription 和通用 Audit 页面仅保留为非生产 Fixture 原型，不属于一期。已交付列表支持详情、筛选和绑定筛选条件的 Cursor 分页；运行时响应校验会拒绝 Prompt、Greeting、Intro、`content_json`、Subscription、Wallet、完整手机号和邮箱等私有信息。
+生产 Remote 模式只显示已经有真实后端 API 的模块：真实指标工作台、Character/Work/Creator/User，以及仅 Admin 可见的后台成员。Subscription 和通用 Audit 页面仅保留为非生产 Fixture 原型，不属于一期。已交付列表支持详情、筛选和绑定筛选条件的 Cursor 分页；运行时响应校验会拒绝 Prompt、Greeting、Intro、`content_json`、Subscription、Wallet、完整手机号和邮箱等私有信息。
 
 新机器安装、配置、首位 Admin、监控和回滚步骤见
 [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)。
@@ -65,7 +65,7 @@ npm run contract:check
 
 `contract:check` 已纳入 `npm run verify`，生成类型过期会直接失败。当前快照包含 M1 的
 `session`、`me`、`admin-users`，以及已交付的 `characters`、`character versions`、`works`、
-`creators` 和 `users` 只读操作；后端新增路径时必须先显式加入 Admin 契约，再同步快照和生成类型。
+`creators`、`users` 和 `overview` 只读操作；后端新增路径时必须先显式加入 Admin 契约，再同步快照和生成类型。
 生成类型负责编译期漂移，现有运行时 Guard 继续拒绝不可信远端响应。
 
 ## 权限

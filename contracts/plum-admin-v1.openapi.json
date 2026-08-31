@@ -535,6 +535,68 @@
         "title": "AdminIdentityResponse",
         "type": "object"
       },
+      "AdminOverviewData": {
+        "properties": {
+          "active_membership_count": {
+            "minimum": 0.0,
+            "title": "Active Membership Count",
+            "type": "integer"
+          },
+          "active_public_character_count": {
+            "minimum": 0.0,
+            "title": "Active Public Character Count",
+            "type": "integer"
+          },
+          "creator_count": {
+            "minimum": 0.0,
+            "title": "Creator Count",
+            "type": "integer"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "window_started_at": {
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "title": "Window Started At",
+            "type": "string"
+          },
+          "works_updated_last_7_days": {
+            "minimum": 0.0,
+            "title": "Works Updated Last 7 Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "active_membership_count",
+          "active_public_character_count",
+          "creator_count",
+          "works_updated_last_7_days",
+          "window_started_at",
+          "generated_at"
+        ],
+        "title": "AdminOverviewData",
+        "type": "object"
+      },
+      "AdminOverviewResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminOverviewData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/OverviewResponseMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "AdminOverviewResponse",
+        "type": "object"
+      },
       "AdminProductUserItem": {
         "properties": {
           "character_count": {
@@ -1145,6 +1207,25 @@
           "count"
         ],
         "title": "ListResponseMeta",
+        "type": "object"
+      },
+      "OverviewResponseMeta": {
+        "properties": {
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "timezone": {
+            "const": "Asia/Shanghai",
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "timezone"
+        ],
+        "title": "OverviewResponseMeta",
         "type": "object"
       },
       "PageInfo": {
@@ -2509,6 +2590,122 @@
         "summary": "Admin Me",
         "tags": [
           "plum-admin"
+        ]
+      }
+    },
+    "/admin/plum/overview": {
+      "get": {
+        "description": "Return the four frozen phase-one metrics and their rolling time window.",
+        "operationId": "admin_overview_admin_plum_overview_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOverviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Overview",
+        "tags": [
+          "plum-admin-overview"
         ]
       }
     },

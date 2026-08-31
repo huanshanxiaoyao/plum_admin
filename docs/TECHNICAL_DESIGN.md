@@ -1,14 +1,14 @@
 # Plum 管理后台技术设计
 
-- 文档版本：v0.9
-- 文档状态：瘦身一期范围已冻结；M1 已生产交付，只读模块持续交付
+- 文档版本：v1.1
+- 文档状态：纯只读一期代码已完成；等待生产部署和 UAT 收口
 - 更新时间：2026-08-31
 - 关联 PRD：[Plum 管理后台产品需求文档](./PRD.md)
 - 实施范围：长期技术蓝图；本文明确标注一期实现和后续预留
 
 ## 1. 设计摘要
 
-Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 FastAPI 后端。浏览器不持有后端 Admin Token，不直接访问数据库。FastAPI 继续作为业务事实的唯一入口；一期只接入角色、创作者、用户/Membership 和官方角色发布链路，Subscription、Wallet、治理和独立审核工作台属于后续能力。
+Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 FastAPI 后端。浏览器不持有后端 Admin Token，不直接访问数据库。FastAPI 继续作为业务事实的唯一入口；一期只接入角色、创作者、用户/Membership 和 Overview 的只读链路，官方角色、Subscription、Wallet、治理和独立审核工作台属于后续能力。
 
 方案优先复用现有能力：
 
@@ -19,9 +19,9 @@ Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 
 - Plum 专属 `plum_admin_users`、共享审计和既有临时明文授权能力。
 - 已有 Moderation Admin API。
 
-主要后端新增内容是 Admin 聚合查询、员工身份入口、权限依赖和官方创作者代理操作。管理后台不建立独立业务数据库。
+一期主要后端新增内容是 Admin 聚合查询、员工身份入口和权限依赖。管理后台不建立独立业务数据库。
 
-当前实现已完成 Character/Version/Work/Creator/User Membership 只读模型、筛选绑定的 Keyset Cursor、后端权威 OpenAPI 和对应 Remote UI，等待生产部署和只读 UAT。Overview 将继续沿用同一契约先行的纵向切片方式交付；官方角色写链路尚未实现，治理写操作已移至后续。
+当前实现已完成 Character/Version/Work/Creator/User Membership 与 Overview 只读模型、筛选绑定的 Keyset Cursor、后端权威 OpenAPI 和对应 Remote UI；BFF 只保留一期 GET 路由及后台成员管理 GET/PATCH。代码已通过 PostgreSQL 聚合测试、契约门禁和桌面/移动端 E2E，等待生产部署和只读 UAT。官方角色和所有业务治理写操作均已移至后续。
 
 ### 1.1 一期技术边界
 
@@ -30,13 +30,12 @@ Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 
 - 飞书 OAuth 后台会话、Plum BFF 服务身份、`/admin/plum/me` 和两角色 Capability。
 - 工作台一期指标。
 - Character、Version、Work/草稿、Creator、Plum User/Membership 和 Admin User 的 Admin Read API。
-- 官方角色媒体、草稿、提交现有审核链路和发布 Wrapper。
-- 官方角色写操作的最小审计。
-- 前后端契约测试、隔离数据库测试、线上只读联调和受控写操作 UAT。
+- 前后端契约测试、隔离数据库测试和线上只读 UAT。
 
 后续预留但一期不实现：
 
 - Subscription、Wallet、Ledger、支付和财务能力。
+- 官方角色媒体、草稿、审核提交、发布 Wrapper 和对应最小审计。
 - Character 下架/恢复、Creator Control、内部备注和 Plum Membership 管理。
 - 通用审计查询工作台。
 - 新建备份基础设施和恢复演练；现有备份、代码回滚记录和发布安全继续执行。
@@ -98,8 +97,8 @@ admin.plum.top
 - 后台请求可归因到具体员工。
 - 由后端执行 RBAC，不依赖前端按钮可见性。
 - 列表查询支持稳定分页、筛选和规模增长。
-- 写操作具备幂等、并发冲突和审计语义。
-- 官方角色继续使用现有创作者发布内核。
+- 后续写操作实施时必须具备幂等、并发冲突和审计语义。
+- 后续官方角色仍应使用现有创作者发布内核。
 
 ### 3.2 非目标
 
@@ -117,7 +116,7 @@ admin.plum.top
 - 前后端保持独立仓库、独立构建和独立发布，不建设共享运行时代码包。双方只依赖版本化 API 契约，包括资源结构、稳定 ID、状态枚举、Capability、错误、分页、时间、幂等和并发语义。
 - 后端 `docs/products/plum/openapi/admin_v1.json` 是 Plum Admin 契约的唯一权威来源；前端只提交快照副本和生成类型，不从后端源码或运行中服务生成。
 - 本地开发需要真实联调时，通过服务端 BFF 访问已部署的 HTTPS Admin API，不启动本地 `weixin_bot`。浏览器不得直接访问远端 API。
-- 单元测试、CI 和确定性验收 Fixture 不访问线上服务。远端写请求默认关闭，只有在明确的联调或发布窗口通过配置显式开启。
+- 单元测试、CI 和确定性验收 Fixture 不访问线上服务。一期远端业务写请求始终关闭；后续写能力必须重新评审后才能通过配置开启。
 - `plum_admin` 与 FastAPI 部署在同一线上节点时，可以通过 loopback 或私网地址调用后端 API；这仍是 API 边界，并可避免不必要的公网回环。
 - 后端是员工状态、RBAC 和所有业务规则的最终裁决方。前端 Session、导航和按钮可见性不构成授权依据。
 
@@ -357,7 +356,9 @@ Repository 只返回 Admin Read Model，不将整行数据库对象直接序列�
 
 ### 7.3 官方角色身份策略
 
-现有媒体资产强制以 `owner_platform_user_id` 隔离，而 `plum_works` 又支持 `system` Work。为了最小化共享媒体模型改造，一期采用一个经过验证的 Plum 官方创作者账号：
+**交付阶段：后续。** 本节仅保留候选设计，不构成一期配置、实现或验收要求。
+
+现有媒体资产强制以 `owner_platform_user_id` 隔离，而 `plum_works` 又支持 `system` Work。为了最小化共享媒体模型改造，后续可采用一个经过验证的 Plum 官方创作者账号：
 
 - 后端配置 `PLUM_OFFICIAL_CREATOR_PLATFORM_USER_ID`。
 - 该用户拥有 Active Plum Membership 和固定 Public Profile，例如 `Plum Official`。
@@ -365,7 +366,7 @@ Repository 只返回 Admin Read Model，不将整行数据库对象直接序列�
 - 浏览器不能提交或覆盖 owner ID。
 - 所有员工操作仍记录真实 Admin User，而不是把官方创作者账号当作员工身份。
 
-该方案复用媒体 owner、草稿、审核和发布不变量。若未来要求官方内容无真人权利主体，再单独设计系统媒体所有权迁移，不在一期放宽 `media_assets.owner_platform_user_id`。
+该方案复用媒体 owner、草稿、审核和发布不变量。正式实施前仍需重新确认 Owner、表单、媒体限制和审核口径；若未来要求官方内容无真人权利主体，再单独设计系统媒体所有权迁移。
 
 ### 7.4 创作者控制
 
@@ -507,17 +508,17 @@ sort=created_at.desc
 
 ### 8.2 身份与工作台
 
-**交付阶段：一期。** 工作台只聚合一期资源，不返回 Moderation、Wallet、Tag 或 Badge 指标。
+**交付阶段：一期。** 工作台只聚合一期只读资源，不返回 Official 操作、Moderation、Wallet、Tag、Badge 或审计指标。
 
 | Method | Path | Capability | 说明 |
 | --- | --- | --- | --- |
 | POST | `/admin/plum/session` | Valid BFF + Feishu identity | 首次登录自注册或更新登录资料，并返回权威身份 |
 | GET | `/admin/plum/me` | Active member | 当前 Plum 后台员工、角色和 Capability |
-| GET | `/admin/plum/overview` | `operations.access` | 工作台指标和待处理摘要 |
+| GET | `/admin/plum/overview` | `operations.access` | 工作台指标和最近更新摘要 |
 
 ### 8.3 角色
 
-**交付阶段：一期。** `submit` 仅复用现有审核链路，不包含独立审核任务管理 API。
+**交付阶段：一期只读。** 官方角色和其他业务写接口属于后续。
 
 | Method | Path | Capability | 说明 |
 | --- | --- | --- | --- |
@@ -526,12 +527,8 @@ sort=created_at.desc
 | GET | `/admin/plum/characters/{id}/versions` | `operations.access` | 不可变版本列表 |
 | GET | `/admin/plum/works` | `operations.access` | Work、草稿和审核状态分页列表 |
 | GET | `/admin/plum/works/{id}` | `operations.access` | Work 和草稿详情 |
-| POST | `/admin/plum/official/media/uploads` | `operations.access` | 官方角色立绘上传 |
-| POST | `/admin/plum/official/works` | `operations.access` | 创建官方草稿 |
-| PATCH | `/admin/plum/official/works/{id}` | `operations.access` | 保存官方草稿 |
-| POST | `/admin/plum/official/works/{id}/submit` | `operations.access` | 提交审核和发布 |
 
-`submit` 复用现有 Creation 发布用例，并保持相同的审核状态和幂等结果。`takedown` 和 `restore` 为后续治理接口，不进入一期 Router 或 BFF Allowlist。
+后续候选接口包括 `/admin/plum/official/*`、`takedown` 和 `restore`。它们不进入一期 API 清单、生产导航或可用能力承诺；一期收口前删除 BFF Allowlist 中已有的预留路径，正式实施时重新完成契约和安全评审。
 
 ### 8.4 创作者
 
@@ -567,7 +564,7 @@ sort=created_at.desc
 
 ### 8.6 标签、Badge、审核和审计
 
-**交付阶段：本节接口均为后续。** 一期官方角色写链路仍必须通过 Audit Helper 写入最小事件，但不交付通用查询路由和页面。
+**交付阶段：本节接口均为后续。** 一期不交付官方角色写链路、业务写审计或通用审计查询路由和页面。
 
 | Method | Path | Capability | 说明 |
 | --- | --- | --- | --- |
@@ -613,6 +610,8 @@ sort=created_at.desc
 - 发布使用现有 Idempotency Key，网络重试不产生第二个 Character Version。
 
 ## 10. 审计设计
+
+**交付阶段：后续。** 一期仅沿用已交付的员工身份和后台成员管理审计，不新增官方角色或治理写操作审计能力。
 
 复用 `admin_access_events`，所有写操作和敏感读取统一通过一个 Audit Helper 写入：
 
@@ -728,8 +727,7 @@ PLUM_ADMIN_WRITES_ENABLED=false
 8. 安装 nginx 配置并执行 `nginx -t`。
 9. Reload nginx。
 10. 完成登录、只读查询、403 和跨产品隔离 UAT。
-11. 官方角色链路实现后，准备固定 Official Owner 和专用验收对象，确认幂等键、Revision 乐观锁和最小审计，再先开后端写开关、后开前端写开关。
-12. 只验证专用官方角色对象；任一异常立即关闭写开关。治理写操作不属于一期，不得在线上试运行。
+11. 确认前后端业务写开关均保持关闭，Official、治理和其他后续接口未作为一期生产能力开放。
 
 数据库迁移失败时不得停止仍在运行的旧服务。
 
@@ -737,9 +735,9 @@ PLUM_ADMIN_WRITES_ENABLED=false
 
 - 后台 Next.js 提供 `/api/health`，不依赖业务查询即可返回进程健康。
 - FastAPI Admin API 记录 Request ID、员工 ID、路由、状态码和耗时，不记录敏感 Body。
-- 监控登录失败率、401/403、5xx、查询延迟和写操作失败。
+- 监控登录失败率、401/403、5xx 和查询延迟。
 - 工作台聚合查询设置独立超时，避免慢查询拖垮用户侧连接池。
-- 对 Admin API 设置独立限流键，上传和导出使用更低限额。
+- 对 Admin API 设置独立限流键；后续上传和导出能力需另设更低限额。
 - 将 `plum_admin` 加入 aws-sg 健康检查和日志轮转。
 
 ## 14. 测试策略
@@ -747,8 +745,8 @@ PLUM_ADMIN_WRITES_ENABLED=false
 ### 14.1 前端
 
 - Capability 到导航和按钮的映射测试。
+- BFF Allowlist 对一期外业务写路径保持关闭的测试。
 - 表格筛选、URL 恢复、分页和空态测试。
-- 表单校验、重复提交和 409 冲突测试。
 - 登录过期、403 和后端不可用测试。
 - 桌面和窄屏关键页面的 Playwright 截图测试。
 
@@ -760,20 +758,17 @@ PLUM_ADMIN_WRITES_ENABLED=false
 - BFF Token 无效、员工不存在、员工禁用的鉴权测试。
 - 所有用户查询固定 Plum Membership 的跨产品隔离测试。
 - 角色列表分页稳定性和无 N+1 查询测试。
-- 官方角色 owner 不可由客户端覆盖。
-- 官方媒体上传保持 owner 隔离。
-- 发布幂等、Revision 冲突和审核失败测试。
-- 每个写操作的审计存在性和敏感字段排除测试。
+- Overview 聚合口径、时间边界和空数据测试。
 
 ### 14.3 生产冒烟
 
-生产冒烟分为只读和官方角色写操作两道门。只读验证可在后端部署后立即执行；写操作必须等待专用 Official Owner、专用验收对象和两层写开关批准。不得选择任意真实用户、创作者或 Character 做验证。
+一期生产冒烟只验证身份、RBAC 和只读能力，不执行任何业务写请求，也不修改真实用户、创作者、Work 或 Character。
 
 - 未登录访问跳转登录。
 - 非成员登录后显示无权限。
-- Operator 能创建并发布通过现有审核链路的专用官方角色，且产生最小审计事件。
+- Operator 能查看 Character、Work、Creator、User 和 Overview，但不能管理后台成员。
 - Operator 管理后台成员时返回 403；Admin 可以管理后台成员。
-- Character、Creator 和 Membership 治理接口不可访问。
+- Official、Character、Creator 和 Membership 业务写接口不可作为一期生产能力访问。
 - 后台停止后 `https://plum.top` 仍正常。
 
 ## 15. 安全风险与控制
@@ -786,7 +781,7 @@ PLUM_ADMIN_WRITES_ENABLED=false
 | 管理 API 被任意代理 | BFF 路径 allowlist；nginx 不直通整个 `/admin` |
 | 跨产品用户泄露 | 后端固定 `app_id=plum`，加入隔离契约测试 |
 | 批量查询拖垮生产 | Keyset 分页、最大 Limit、索引、查询超时 |
-| 官方角色重复发布 | Idempotency-Key、Revision 乐观锁、最小审计、双写开关 |
+| 后续官方角色重复发布 | 正式实施时使用 Idempotency-Key、Revision 乐观锁、最小审计和双写开关 |
 | 同机故障影响后台和主站 | 进程隔离；后台不是用户侧依赖；沿用既有备份和代码回滚流程 |
 
 ## 16. 数据库迁移评估
@@ -800,7 +795,7 @@ PLUM_ADMIN_WRITES_ENABLED=false
 - 独立后台业务数据库。
 - 运营活动表。
 - 订阅支付表，直到支付业务设计明确。
-- 新的审计表，优先复用 `admin_access_events`。
+- 一期审计表；后续写能力优先复用 `admin_access_events`。
 - Wallet 或 Ledger 相关表和字段。
 
 所有迁移必须幂等、兼容旧 Writer，并通过全局迁移链的多产品测试。
@@ -812,14 +807,14 @@ PLUM_ADMIN_WRITES_ENABLED=false
 1. 契约与测试基线。
 2. Admin Identity、RBAC 和后台成员基础。
 3. 一期只读 Admin API 与前端真实数据接入。
-4. 官方角色创建和发布 Wrapper。
-5. 官方角色最小审计。
-6. 线上只读 UAT、专用官方角色写 UAT 和发布。
+4. 精简 Overview。
+5. 线上只读 UAT、主站与多产品回归、文档收口。
 
 以下技术能力留待后续单独设计和排期：
 
 - Wallet/Ledger、支付或财务能力。
 - Subscription 查询和管理。
+- 官方角色创建、媒体上传、审核提交、发布 Wrapper 和对应最小审计。
 - Character、Creator、Membership 治理和通用审计查询工作台。
 - 新建备份基础设施和恢复演练。
 - 独立 Moderation 管理工作台。
@@ -831,11 +826,11 @@ PLUM_ADMIN_WRITES_ENABLED=false
 
 1. 使用飞书 OAuth 2.0 登录，认证模块保留 Provider Adapter。
 2. 使用 `admin.plum.top` 作为生产后台域名。
-3. 使用固定 `Plum Official` 创作者账号承接官方媒体和 Work。
+3. 官方角色整体移至后续；一期不要求配置 `Plum Official` Owner、表单或媒体规则。
 4. Character、Creator 和 Membership 治理属于后续，一期不开放。
-5. 官方角色只支持表单录入；批量导入不进入一期。
+5. 后续若实施官方角色，第一版优先表单录入，批量导入另行评审。
 6. 创作者限制和内部备注属于后续治理能力。
-7. 一期无运营活动、Subscription、Wallet/Ledger、治理写操作、独立审核工作台、Tag/Badge/Feed 管理、普通明文访问、备份基础设施或恢复演练里程碑。
+7. 一期无官方角色专项模块和写流程、运营活动、Subscription、Wallet/Ledger、业务治理写操作、独立审核工作台、Tag/Badge/Feed 管理、普通明文访问、备份基础设施或恢复演练里程碑；已有 `official` 来源内容仅作为通用只读数据展示。
 8. API 错误、分页和时间契约以本文 8.1 为权威定义。
 9. 验收数据和场景以 [验收样例](./ACCEPTANCE_SAMPLES.md) 为权威输入；一期只执行被标记为一期范围的样例。
 10. 一期新后台 RBAC 只包含 Operator 和 Admin；旧控制台 Reviewer Token 仅作兼容，不映射为新后台角色。
