@@ -1,14 +1,14 @@
 # Plum 管理后台技术设计
 
-- 文档版本：v0.8
-- 文档状态：一期范围已冻结；M1 已生产交付，M2/M3 部分完成
-- 更新时间：2026-08-30
+- 文档版本：v0.9
+- 文档状态：瘦身一期范围已冻结；M1 已生产交付，只读模块持续交付
+- 更新时间：2026-08-31
 - 关联 PRD：[Plum 管理后台产品需求文档](./PRD.md)
 - 实施范围：长期技术蓝图；本文明确标注一期实现和后续预留
 
 ## 1. 设计摘要
 
-Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 FastAPI 后端。浏览器不持有后端 Admin Token，不直接访问数据库。FastAPI 继续作为角色、创作者、用户、订阅、钱包、审核和审计的唯一业务入口；其中钱包和独立审核工作台属于后续能力，不进入一期实现。
+Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 FastAPI 后端。浏览器不持有后端 Admin Token，不直接访问数据库。FastAPI 继续作为业务事实的唯一入口；一期只接入角色、创作者、用户/Membership 和官方角色发布链路，Subscription、Wallet、治理和独立审核工作台属于后续能力。
 
 方案优先复用现有能力：
 
@@ -19,9 +19,9 @@ Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 
 - Plum 专属 `plum_admin_users`、共享审计和既有临时明文授权能力。
 - 已有 Moderation Admin API。
 
-主要后端新增内容是 Admin 聚合查询、员工身份入口、权限依赖、官方创作者代理操作和创作者控制状态。管理后台不建立独立业务数据库。
+主要后端新增内容是 Admin 聚合查询、员工身份入口、权限依赖和官方创作者代理操作。管理后台不建立独立业务数据库。
 
-当前实现已完成 Character/Version/Work 只读模型、筛选绑定的 Keyset Cursor、后端权威 OpenAPI 和 Character/Work Remote UI。Creator、User/Membership、Subscription、Overview 和 Audit 将继续沿用同一契约先行的纵向切片方式交付；官方创建和治理写操作尚未开放。
+当前实现已完成 Character/Version/Work/Creator 只读模型、筛选绑定的 Keyset Cursor、后端权威 OpenAPI 和对应 Remote UI，等待生产部署和只读 UAT。User/Membership 与 Overview 将继续沿用同一契约先行的纵向切片方式交付；官方角色写链路尚未实现，治理写操作已移至后续。
 
 ### 1.1 一期技术边界
 
@@ -29,14 +29,17 @@ Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 
 
 - 飞书 OAuth 后台会话、Plum BFF 服务身份、`/admin/plum/me` 和两角色 Capability。
 - 工作台一期指标。
-- Character、Version、Work/草稿、Creator、Plum User、Subscription 和 Admin User 的 Admin Read API。
+- Character、Version、Work/草稿、Creator、Plum User/Membership 和 Admin User 的 Admin Read API。
 - 官方角色媒体、草稿、提交现有审核链路和发布 Wrapper。
-- Character 下架/恢复、Creator Control、Plum Membership 管理和一期审计。
+- 官方角色写操作的最小审计。
 - 前后端契约测试、隔离数据库测试、线上只读联调和受控写操作 UAT。
 
 后续预留但一期不实现：
 
-- Wallet、Ledger、支付和财务能力。
+- Subscription、Wallet、Ledger、支付和财务能力。
+- Character 下架/恢复、Creator Control、内部备注和 Plum Membership 管理。
+- 通用审计查询工作台。
+- 新建备份基础设施和恢复演练；现有备份、代码回滚记录和发布安全继续执行。
 - 独立 Moderation 队列、领取和人工决策 UI/API 整合。
 - Tag、Badge、Feed 排序管理。
 - 运营活动、导入导出、普通明文入口、通用审批流。
@@ -224,7 +227,7 @@ lib/
 - `features/admin-resources` 保存未交付模块的本地 Fixture、数据源和运行时 Guard；M1 Staff 类型直接引用生成 Schema，后续资源随 M2 契约逐项替换手写类型。
 - `lib` 只保存 Auth、BFF 和服务端基础设施，不允许反向依赖 `features` 或 `app`；架构测试固化该规则。
 
-前端可以在非生产 Fixture 模式保留 `creators`、`users`、`subscriptions` 和 `audit` 原型页，用于并行开发和验收。生产 Remote 模式只显示后端真实 API 已交付的模块：当前为工作台基础壳、`characters`/`works`，以及仅 Admin 可见的 `staff`；未交付模块不显示导航，直接访问返回 404。`moderation`、`taxonomy` 仅表示长期目录方向，一期不创建空页面或导航入口。
+前端可以在非生产 Fixture 模式保留 `users`、`subscriptions` 和 `audit` 原型页，用于并行开发和验收。生产 Remote 模式只显示后端真实 API 已交付的模块：当前为工作台基础壳、`characters`/`works`/`creators`，以及仅 Admin 可见的 `staff`；未交付模块不显示导航，直接访问返回 404。`subscriptions`、`audit`、`moderation`、`taxonomy` 仅表示长期目录方向，一期不创建 Remote 导航或空接口。
 
 ### 5.3 BFF 规则
 
@@ -287,7 +290,7 @@ X-Request-Id: <uuid>
 
 ### 6.3 权限模型
 
-使用代码内稳定 Capability，不在路由里散落角色判断。一期只定义四个能力键：
+使用代码内稳定 Capability，不在路由里散落角色判断。当前身份契约保留四个稳定能力键，其中瘦身一期业务仅使用 `operations.access` 和 `staff.manage`；另外两个为后续治理能力预留：
 
 ```text
 operations.access
@@ -296,7 +299,7 @@ membership.manage
 staff.manage
 ```
 
-角色到 Capability 的映射版本化保存在代码中。新后台身份层只接受 `plum_admin_users.role` 为 `operator` 或 `admin` 的成员；未知角色不会获得权限。第一版不新增多角色关联表。Operator 获得 `operations.access`，Admin 在此基础上增加三个高风险 Capability。
+角色到 Capability 的映射版本化保存在代码中。新后台身份层只接受 `plum_admin_users.role` 为 `operator` 或 `admin` 的成员；未知角色不会获得权限。第一版不新增多角色关联表。Operator 获得 `operations.access`，Admin 额外获得 `staff.manage`；已有响应中的治理 Capability 不代表一期开放对应路由或 UI。
 
 | Capability | Operator | Admin |
 | --- | --- | --- |
@@ -307,7 +310,7 @@ staff.manage
 
 `admin` 并不隐含普通明文访问权限。手机号、邮箱、Prompt、聊天、Persona 和记忆正文仍受脱敏或既有临时审批约束，一期后台不提供普通明文入口。
 
-一期不新增审批单、审批状态或通知表。Operator 对 `character.restore`、`membership.manage`、`staff.manage` 的请求直接返回 403；前端提示联系 Admin。Admin 必须使用自己的会话重新发起操作，填写原因并通过现有审计 Helper 留痕，后端不得接受“代表 Operator 执行”的身份参数。
+一期不新增审批单、审批状态或通知表。Operator 对 `staff.manage` 的请求直接返回 403；Admin 必须使用自己的会话执行成员管理。Character、Creator 和 Membership 治理路由不进入一期 BFF Allowlist，不能仅凭 Capability 打开。
 
 ## 7. 后端模块设计
 
@@ -321,21 +324,21 @@ app/products/plum/api/admin/
   characters.py
   creators.py
   users.py
-  subscriptions.py
-  audit.py
+  subscriptions.py  # 后续
+  audit.py          # 后续通用查询
   staff.py
   official.py
   contracts.py
 app/products/plum/application/admin/
   authorization.py
   official_character.py
-  character_governance.py
-  creator_governance.py
-  membership_governance.py
+  character_governance.py   # 后续
+  creator_governance.py     # 后续
+  membership_governance.py  # 后续
   staff_management.py
 app/products/plum/infrastructure/
   admin_repository.py
-  creator_control_repository.py
+  creator_control_repository.py  # 后续
 ```
 
 `taxonomy.py`、独立 Moderation Admin Adapter 和 Wallet/Ledger Repository 留待后续。现有 `app/routers/admin_plum.py` 可继续承载评测、记忆、诊断、模型和发布配置，但不作为一期新后台的任意代理入口。新的日常运营 API 独立成包，并由同一应用组合根挂载，避免单文件继续膨胀。
@@ -347,7 +350,7 @@ app/products/plum/infrastructure/
 - 角色列表一次查询返回 Work、Creator Profile、当前 Version、Stats 和状态摘要。
 - 创作者列表按页聚合作品数量和统计，不做 N+1 查询。
 - 用户列表固定 Join `product_memberships.app_id='plum'`。
-- 一期 Subscription 按 `platform_user_id + app_id='plum'` 查询；Wallet/Ledger 查询留待后续。
+- Subscription、Wallet 和 Ledger 查询全部留待后续。
 - 所有列表使用 Keyset Cursor，限制最大 Page Size。
 
 Repository 只返回 Admin Read Model，不将整行数据库对象直接序列化给客户端。
@@ -527,42 +530,44 @@ sort=created_at.desc
 | POST | `/admin/plum/official/works` | `operations.access` | 创建官方草稿 |
 | PATCH | `/admin/plum/official/works/{id}` | `operations.access` | 保存官方草稿 |
 | POST | `/admin/plum/official/works/{id}/submit` | `operations.access` | 提交审核和发布 |
-| POST | `/admin/plum/characters/{id}/takedown` | `operations.access` | 下架角色 |
-| POST | `/admin/plum/characters/{id}/restore` | `character.restore` | 恢复角色 |
 
-`submit` 复用现有 Creation 发布用例，并保持相同的审核状态和幂等结果。下架和恢复必须调用应用服务，禁止 Router 直接执行 UPDATE。
+`submit` 复用现有 Creation 发布用例，并保持相同的审核状态和幂等结果。`takedown` 和 `restore` 为后续治理接口，不进入一期 Router 或 BFF Allowlist。
 
 ### 8.4 创作者
 
-**交付阶段：一期。**
+**交付阶段：一期只读。**
 
 | Method | Path | Capability | 说明 |
 | --- | --- | --- | --- |
 | GET | `/admin/plum/creators` | `operations.access` | 创作者分页列表 |
 | GET | `/admin/plum/creators/{id}` | `operations.access` | 创作者、作品和表现摘要 |
-| PATCH | `/admin/plum/creators/{id}/control` | `operations.access` | 暂停或恢复创作资格及备注 |
 
-`id` 使用 `platform_user_id`，不使用可变 Handle。跨产品用户不存在或不具有 Plum 创作资产时返回 404。
+`id` 使用 `platform_user_id`，不使用可变 Handle。跨产品用户不存在或不具有 Plum 创作资产时返回 404。Creator Control 和内部备注为后续治理接口。
 
-### 8.5 用户、订阅和钱包
+### 8.5 用户与 Membership
 
-**交付阶段：用户、Membership 和 Subscription 为一期；Wallet 和 Ledger 为后续。** 后续接口保留如下，不能加入一期 BFF Allowlist 或导航。
+**交付阶段：用户和 Membership 只读为一期；所有写操作、Subscription、Wallet 和 Ledger 为后续。**
 
 | Method | Path | Capability | 说明 |
 | --- | --- | --- | --- |
 | GET | `/admin/plum/users` | `operations.access` | Plum 用户分页列表 |
 | GET | `/admin/plum/users/{id}` | `operations.access` | 用户详情摘要 |
+
+以下接口保留为后续方向，不能加入一期 Router、BFF Allowlist 或导航：
+
+| Method | Path | Capability | 说明 |
+| --- | --- | --- | --- |
 | POST | `/admin/plum/users/{id}/membership/disable` | `membership.manage` | 禁用 Plum Membership |
 | POST | `/admin/plum/users/{id}/membership/enable` | `membership.manage` | 恢复 Plum Membership |
 | GET | `/admin/plum/subscriptions` | `operations.access` | 订阅分页列表 |
 | GET | `/admin/plum/users/{id}/wallet` | `operations.access` | 钱包摘要 |
 | GET | `/admin/plum/users/{id}/wallet/ledger` | `operations.access` | 钱包流水分页 |
 
-Subscription 响应必须显式返回 `billing_connected: false`，直到真实支付系统上线，避免前端将 Free Plan 记录描述为支付成功。
+后续若接入 Subscription，响应必须显式返回 `billing_connected: false`，直到真实支付系统上线，避免前端将 Free Plan 记录描述为支付成功。
 
 ### 8.6 标签、Badge、审核和审计
 
-**交付阶段：仅 `/admin/plum/audit-events` 为一期；其余接口均为后续。**
+**交付阶段：本节接口均为后续。** 一期官方角色写链路仍必须通过 Audit Helper 写入最小事件，但不交付通用查询路由和页面。
 
 | Method | Path | Capability | 说明 |
 | --- | --- | --- | --- |
@@ -588,6 +593,8 @@ Subscription 响应必须显式返回 `billing_connected: false`，直到真实�
 ## 9. 状态与并发
 
 ### 9.1 Character 治理状态
+
+**交付阶段：后续。**
 
 第一版不新增平行的 Character 状态机。应用服务将管理动作映射到现有 Character 和 Work 状态，并验证：
 
@@ -712,7 +719,7 @@ PLUM_ADMIN_WRITES_ENABLED=false
 ### 12.4 发布顺序
 
 1. 保持前后端写开关关闭，部署向后兼容的后端代码。
-2. 在重启前确认启动阶段待执行迁移向后兼容，且备份与回滚基线可用。
+2. 在重启前确认待执行迁移向后兼容，并记录可用的代码回滚基线；一期不以新建备份设施或恢复演练为发布门槛。
 3. 启动新后端实例，由应用启动流程执行迁移；迁移或启动失败时保留旧服务运行。
 4. 验证 FastAPI readiness、Admin API 鉴权和只读接口。
 5. 构建 `plum_admin`。
@@ -721,8 +728,8 @@ PLUM_ADMIN_WRITES_ENABLED=false
 8. 安装 nginx 配置并执行 `nginx -t`。
 9. Reload nginx。
 10. 完成登录、只读查询、403 和跨产品隔离 UAT。
-11. 完成备份与恢复检查、准备专用验收数据后，先开后端再开前端写开关。
-12. 逐类验证官方角色、治理和成员管理写操作；任一异常立即关闭写开关。
+11. 官方角色链路实现后，准备固定 Official Owner 和专用验收对象，确认幂等键、Revision 乐观锁和最小审计，再先开后端写开关、后开前端写开关。
+12. 只验证专用官方角色对象；任一异常立即关闭写开关。治理写操作不属于一期，不得在线上试运行。
 
 数据库迁移失败时不得停止仍在运行的旧服务。
 
@@ -756,18 +763,17 @@ PLUM_ADMIN_WRITES_ENABLED=false
 - 官方角色 owner 不可由客户端覆盖。
 - 官方媒体上传保持 owner 隔离。
 - 发布幂等、Revision 冲突和审核失败测试。
-- 下架、恢复和创作者限制的状态机测试。
 - 每个写操作的审计存在性和敏感字段排除测试。
 
 ### 14.3 生产冒烟
 
-生产冒烟分为只读和写操作两道门。只读验证可在后端部署后立即执行；写操作必须等待专用验收对象、数据库备份和两层写开关批准。不得选择任意真实用户、创作者或 Character 做破坏性验证。
+生产冒烟分为只读和官方角色写操作两道门。只读验证可在后端部署后立即执行；写操作必须等待专用 Official Owner、专用验收对象和两层写开关批准。不得选择任意真实用户、创作者或 Character 做验证。
 
 - 未登录访问跳转登录。
 - 非成员登录后显示无权限。
-- Operator 能创建并发布通过现有审核链路的官方角色、限制创作者和下架角色，且审计可查。
-- Operator 恢复角色、管理 Membership 或后台成员时返回 403。
-- Admin 能完成上述三类高风险操作。
+- Operator 能创建并发布通过现有审核链路的专用官方角色，且产生最小审计事件。
+- Operator 管理后台成员时返回 403；Admin 可以管理后台成员。
+- Character、Creator 和 Membership 治理接口不可访问。
 - 后台停止后 `https://plum.top` 仍正常。
 
 ## 15. 安全风险与控制
@@ -780,18 +786,14 @@ PLUM_ADMIN_WRITES_ENABLED=false
 | 管理 API 被任意代理 | BFF 路径 allowlist；nginx 不直通整个 `/admin` |
 | 跨产品用户泄露 | 后端固定 `app_id=plum`，加入隔离契约测试 |
 | 批量查询拖垮生产 | Keyset 分页、最大 Limit、索引、查询超时 |
-| 下架误操作 | 原因、确认、乐观锁、审计、可控恢复 |
-| 同机故障影响后台和主站 | 进程隔离；后台不是用户侧依赖；补充异地数据库备份 |
+| 官方角色重复发布 | Idempotency-Key、Revision 乐观锁、最小审计、双写开关 |
+| 同机故障影响后台和主站 | 进程隔离；后台不是用户侧依赖；沿用既有备份和代码回滚流程 |
 
 ## 16. 数据库迁移评估
 
 一期身份和只读 API 原则上不需要新的 Plum 业务表；只有查询计划证明必要时才补组合索引。
 
-一期治理写操作预计新增：
-
-- `plum_creator_controls`。
-- 角色治理状态或事件字段，仅在现有状态不能准确表达平台下架时新增。
-- 支撑后台列表的组合索引。
+一期仅在查询计划证明必要时增加支撑后台列表的组合索引，不新增治理状态表或字段。
 
 不新增：
 
@@ -811,12 +813,15 @@ PLUM_ADMIN_WRITES_ENABLED=false
 2. Admin Identity、RBAC 和后台成员基础。
 3. 一期只读 Admin API 与前端真实数据接入。
 4. 官方角色创建和发布 Wrapper。
-5. 角色、创作者、Membership 与成员治理。
-6. 线上只读 UAT、受控写操作 UAT 和发布。
+5. 官方角色最小审计。
+6. 线上只读 UAT、专用官方角色写 UAT 和发布。
 
 以下技术能力留待后续单独设计和排期：
 
 - Wallet/Ledger、支付或财务能力。
+- Subscription 查询和管理。
+- Character、Creator、Membership 治理和通用审计查询工作台。
+- 新建备份基础设施和恢复演练。
 - 独立 Moderation 管理工作台。
 - Tag、Badge 和 Feed 排序。
 - JSON 导入、校验预览和异步任务。
@@ -827,10 +832,10 @@ PLUM_ADMIN_WRITES_ENABLED=false
 1. 使用飞书 OAuth 2.0 登录，认证模块保留 Provider Adapter。
 2. 使用 `admin.plum.top` 作为生产后台域名。
 3. 使用固定 `Plum Official` 创作者账号承接官方媒体和 Work。
-4. Operator 可以下架，只有 Admin 可以恢复角色。
+4. Character、Creator 和 Membership 治理属于后续，一期不开放。
 5. 官方角色只支持表单录入；批量导入不进入一期。
-6. 创作者备注使用单一当前字段，历史由审计事件保存。
-7. 一期无运营活动、Wallet/Ledger、支付写操作、独立审核工作台、Tag/Badge/Feed 管理和普通明文访问。
+6. 创作者限制和内部备注属于后续治理能力。
+7. 一期无运营活动、Subscription、Wallet/Ledger、治理写操作、独立审核工作台、Tag/Badge/Feed 管理、普通明文访问、备份基础设施或恢复演练里程碑。
 8. API 错误、分页和时间契约以本文 8.1 为权威定义。
 9. 验收数据和场景以 [验收样例](./ACCEPTANCE_SAMPLES.md) 为权威输入；一期只执行被标记为一期范围的样例。
 10. 一期新后台 RBAC 只包含 Operator 和 Admin；旧控制台 Reviewer Token 仅作兼容，不映射为新后台角色。

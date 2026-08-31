@@ -1,8 +1,8 @@
 # Plum 管理后台验收样例
 
-- 文档版本：v0.3
-- 文档状态：Ready for Implementation
-- 更新时间：2026-08-30
+- 文档版本：v0.4
+- 文档状态：瘦身一期样例已冻结
+- 更新时间：2026-08-31
 - 关联 PRD：[Plum 管理后台产品需求文档](./PRD.md)
 - 关联技术设计：[Plum 管理后台技术设计](./TECHNICAL_DESIGN.md)
 
@@ -23,8 +23,7 @@
 - 验收基准时间：`2026-08-28T04:00:00.000Z`。
 - 日报默认时区：`Asia/Shanghai`。
 - 时间区间：`[from, to)`。
-- 订阅方案枚举：`free`、`standard`、`premium`，与当前用户前端展示一致。
-- `billing_connected=false`：方案记录不代表真实支付成功。
+- 订阅方案枚举和 `billing_connected=false` 口径仅为后续兼容保留，不进入一期响应或验收。
 - 钱包展示单位：Coin；该口径保留供后续使用，一期不返回 Wallet/Ledger。
 
 ## 3. 后台成员样例
@@ -33,12 +32,12 @@
 
 | Feishu Open ID | Email | Role | Status | 用途 |
 | --- | --- | --- | --- | --- |
-| `ou_accept_operator` | 空 | `operator` | `active` | 日常查询、官方角色和内容治理 |
+| `ou_accept_operator` | 空 | `operator` | `active` | 日常查询和官方角色工作 |
 | `ou_accept_operator_2` | 空 | `operator` | `active` | 并发和第二 Operator 验证 |
-| `ou_accept_admin` | 空 | `admin` | `active` | 恢复角色、Membership 和成员管理 |
+| `ou_accept_admin` | 空 | `admin` | `active` | 后台成员管理 |
 | `ou_accept_disabled` | 空 | `operator` | `disabled` | 禁用成员验证 |
 
-预期：
+一期预期：
 
 - 三个 Active 成员的 `/admin/plum/me` 返回各自 Capability。
 - 新 `open_id` 首次调用 `/admin/plum/session` 时创建为 Active Operator，保存 Provider 资料并设置 `created_at=last_login_at`。
@@ -69,11 +68,14 @@
 预期：
 
 - 普通用户目录返回前六个具有 Plum Membership 的用户。
-- `pusr_accept_zhaoxi_only` 不出现在任何 Plum 用户、订阅或钱包列表中。
+- `pusr_accept_zhaoxi_only` 不出现在任何 Plum 用户列表或详情中。
 - Operator 和 Admin 的普通用户详情都只返回脱敏登录标识。
+- User 响应和页面不包含 Subscription、Wallet 或 Ledger 字段。
 - 一期不存在绕过脱敏的普通页面或 Capability。
 
 ## 5. 创作者样例
+
+列表、详情和作品摘要属于一期；Control Status、Internal Note 和以下控制记录仅为后续治理测试保留，不要求一期 Seed Helper 创建。
 
 | Platform User ID | Public Profile | Control Status | Internal Note | 作品摘要 |
 | --- | --- | --- | --- | --- |
@@ -95,7 +97,7 @@
 }
 ```
 
-预期：
+后续治理预期：
 
 - Restricted 创作者可以浏览角色和继续已有聊天。
 - Restricted 创作者上传创作媒体、创建草稿或提交发布时返回稳定的 403 业务错误 `creator_restricted`。
@@ -166,7 +168,7 @@ Character 详情样例：
 
 ### 8.1 Subscription
 
-**交付阶段：一期。**
+**交付阶段：后续，不作为一期验收或 Fixture 要求。**
 
 ```json
 {
@@ -184,7 +186,7 @@ Character 详情样例：
 预期：
 
 - 页面显示 Standard / Active，同时明确显示“未连接支付，方案记录不代表付款”。
-- 一期没有修改 Plan、取消订阅、退款或续费按钮。
+- 一期没有 Subscription 页面、字段或按钮。
 - `pusr_accept_subscription_cancelled` 显示 Premium / Cancelled，不显示为 Active Subscriber。
 
 ### 8.2 Wallet Ledger
@@ -224,24 +226,24 @@ Character 详情样例：
 
 | 编号 | 阶段 | 身份 | 操作 | 预期 |
 | --- | --- | --- | --- | --- |
-| RBAC-01 | 一期 | Operator | GET Character/User/Subscription | 200，敏感字段脱敏 |
+| RBAC-01 | 一期 | Operator | GET Character/Work/Creator/User | 200，敏感字段脱敏 |
 | RBAC-02 | 一期 | Operator | Create and Publish Approved Official Work | 201/200，Owner 固定为 Official |
-| RBAC-03 | 一期 | Operator | Takedown Active UGC Character | 200，写入审计 |
-| RBAC-04 | 一期 | Operator | Restrict or Restore Creator | 200，写入审计 |
+| RBAC-03 | 后续 | Operator | Takedown Active UGC Character | 后续治理范围 |
+| RBAC-04 | 后续 | Operator | Restrict or Restore Creator | 后续治理范围 |
 | RBAC-05 | 后续 | Operator | Claim and Review Moderation Task | 200，遵循审核状态机 |
-| RBAC-06 | 一期 | Operator | Restore Takedown Character | 403 `admin_permission_denied` |
-| RBAC-07 | 一期 | Operator | Disable Plum Membership | 403 `admin_permission_denied` |
+| RBAC-06 | 后续 | Operator | Restore Takedown Character | 后续治理范围 |
+| RBAC-07 | 后续 | Operator | Disable Plum Membership | 后续治理范围 |
 | RBAC-08 | 一期 | Operator | Add or Disable Admin Member | 403 `admin_permission_denied` |
-| RBAC-09 | 一期 | Admin | Restore Character, Manage Membership and Staff | 200，二次确认并写审计 |
+| RBAC-09 | 一期 | Admin | Manage Staff | 200，不能禁用或降级最后一个 Active Admin |
 | RBAC-10 | 一期 | Disabled member | Any Business API | 403 `admin_user_disabled` |
 
-高级操作升级采用人工协作而非后台审批单：Operator 被拒绝后联系 Admin；Admin 使用自己的会话执行。审计事件的操作者必须是 `ou_accept_admin`，不能记录为提出请求的 Operator。
+一期不建设后台审批单。Operator 需要成员管理时联系 Admin，Admin 使用自己的会话执行；治理能力待后续设计。
 
 ## 11. API 契约验收场景
 
 ### API-01 错误格式
 
-Operator 恢复已下架 Character：
+Operator 调用 Admin 专属成员管理接口：
 
 ```json
 {
@@ -271,7 +273,7 @@ GET /admin/plum/characters?limit=2&sort=published_at.desc
 请求：
 
 ```text
-GET /admin/plum/audit-events?from=2026-08-27T00:00:00%2B08:00&to=2026-08-28T00:00:00%2B08:00
+GET /admin/plum/users?created_from=2026-08-27T00:00:00%2B08:00&created_to=2026-08-28T00:00:00%2B08:00
 ```
 
 预期后端按 UTC 区间 `[2026-08-26T16:00:00.000Z, 2026-08-27T16:00:00.000Z)` 查询，响应中的所有时间使用 `Z`。
@@ -285,6 +287,8 @@ GET /admin/plum/audit-events?from=2026-08-27T00:00:00%2B08:00&to=2026-08-28T00:0
 两个 Operator 同时编辑官方草稿 Revision 3。第一个保存成功生成 Revision 4；第二个返回 `409 revision_conflict`，不得覆盖 Revision 4。
 
 ## 12. 治理验收场景
+
+**交付阶段：后续，不作为一期验收或 Fixture 要求。**
 
 ### GOV-01 下架与恢复
 
@@ -314,7 +318,7 @@ GET /admin/plum/audit-events?from=2026-08-27T00:00:00%2B08:00&to=2026-08-28T00:0
 - 后台 Next.js 停止时，`https://plum.top` 仍可访问和聊天。
 - 角色、创作者、用户列表各执行一页查询时不存在按行追加的 N+1 SQL。
 - 普通后台响应和日志中不出现完整登录标识、Cookie、Bearer Token、Prompt 或聊天正文。
-- 高风险业务写入与 `admin_access_events` 位于同一事务；审计写入失败时业务写入回滚。
+- 一期官方角色写入产生最小审计事件；审计失败时业务写入回滚。
 - 角色分页在第一页读取后插入一个排序更靠前的新角色，继续翻页不重复或跳过原快照位置之后的既有记录。
 - `limit=0`、`limit=201`、损坏 Cursor 和无 Offset 时间分别返回稳定的 400 错误码。
 
