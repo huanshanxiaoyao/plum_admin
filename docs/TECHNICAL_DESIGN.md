@@ -1,7 +1,7 @@
 # Plum 管理后台技术设计
 
-- 文档版本：v0.7
-- 文档状态：一期范围已冻结；M1 已生产交付，M2～M6 待实施
+- 文档版本：v0.8
+- 文档状态：一期范围已冻结；M1 已生产交付，M2/M3 部分完成
 - 更新时间：2026-08-30
 - 关联 PRD：[Plum 管理后台产品需求文档](./PRD.md)
 - 实施范围：长期技术蓝图；本文明确标注一期实现和后续预留
@@ -20,6 +20,8 @@ Plum 管理后台采用独立 Next.js 应用，通过服务端 BFF 调用现有 
 - 已有 Moderation Admin API。
 
 主要后端新增内容是 Admin 聚合查询、员工身份入口、权限依赖、官方创作者代理操作和创作者控制状态。管理后台不建立独立业务数据库。
+
+当前实现已完成 Character/Version/Work 只读模型、筛选绑定的 Keyset Cursor、后端权威 OpenAPI 和 Character/Work Remote UI。Creator、User/Membership、Subscription、Overview 和 Audit 将继续沿用同一契约先行的纵向切片方式交付；官方创建和治理写操作尚未开放。
 
 ### 1.1 一期技术边界
 
@@ -222,7 +224,7 @@ lib/
 - `features/admin-resources` 保存未交付模块的本地 Fixture、数据源和运行时 Guard；M1 Staff 类型直接引用生成 Schema，后续资源随 M2 契约逐项替换手写类型。
 - `lib` 只保存 Auth、BFF 和服务端基础设施，不允许反向依赖 `features` 或 `app`；架构测试固化该规则。
 
-前端可以在非生产 Fixture 模式保留 `characters`、`creators`、`users`、`subscriptions` 和 `audit` 原型页，用于并行开发和验收。生产 Remote 模式只显示后端真实 API 已交付的模块：M1 为工作台基础壳，以及仅 Admin 可见的 `staff`；未交付模块不显示导航，直接访问返回 404。`moderation`、`taxonomy` 仅表示长期目录方向，一期不创建空页面或导航入口。
+前端可以在非生产 Fixture 模式保留 `creators`、`users`、`subscriptions` 和 `audit` 原型页，用于并行开发和验收。生产 Remote 模式只显示后端真实 API 已交付的模块：当前为工作台基础壳、`characters`/`works`，以及仅 Admin 可见的 `staff`；未交付模块不显示导航，直接访问返回 404。`moderation`、`taxonomy` 仅表示长期目录方向，一期不创建空页面或导航入口。
 
 ### 5.3 BFF 规则
 
