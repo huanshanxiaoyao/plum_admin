@@ -10,6 +10,7 @@ import type {
   CharacterListQuery,
   CharacterVersionListQuery,
   CreatorListQuery,
+  ModerationReviewListQuery,
   UserListQuery,
   WorkListQuery,
 } from "./contracts.ts";
@@ -20,6 +21,9 @@ import {
   parseCreatorListResponse,
   parseCreatorResponse,
   parseListResponse,
+  parseModerationBacklogResponse,
+  parseModerationReviewDetailResponse,
+  parseModerationReviewListResponse,
   parseUserListResponse,
   parseUserResponse,
   parseOverviewResponse,
@@ -33,6 +37,9 @@ import {
   fixtureCreator,
   fixtureCreatorList,
   fixtureList,
+  fixtureModerationBacklog,
+  fixtureModerationReview,
+  fixtureModerationReviewList,
   fixtureUser,
   fixtureUserList,
   fixtureWork,
@@ -87,7 +94,13 @@ function normalizeWorkQuery(query: WorkListQuery): WorkListQuery {
     q: clean(query.q, 200),
     owner: clean(query.owner, 200),
     state: oneOf(query.state, ["draft", "published", "archived"]),
-    moderation: oneOf(query.moderation, ["not_submitted", "pending_review", "approved", "rejected"]),
+    moderation: oneOf(query.moderation, [
+      "not_submitted",
+      "pending_review",
+      "published_pending_review",
+      "approved",
+      "rejected",
+    ]),
     sort: oneOf(query.sort, ["updated_at.desc", "updated_at.asc", "created_at.desc", "created_at.asc"]),
     limit: limit(query.limit),
     cursor: clean(query.cursor, 2048),
@@ -97,6 +110,16 @@ function normalizeWorkQuery(query: WorkListQuery): WorkListQuery {
 function normalizeVersionQuery(query: CharacterVersionListQuery): CharacterVersionListQuery {
   return {
     sort: oneOf(query.sort, ["created_at.desc", "created_at.asc"]),
+    limit: limit(query.limit),
+    cursor: clean(query.cursor, 2048),
+  };
+}
+
+function normalizeModerationReviewQuery(query: ModerationReviewListQuery): ModerationReviewListQuery {
+  return {
+    status: oneOf(query.status, ["pending", "reviewing", "released", "confined", "purged"]),
+    risk_level: clean(query.risk_level, 40)?.toLowerCase(),
+    sort: oneOf(query.sort, ["created_at.asc", "created_at.desc"]),
     limit: limit(query.limit),
     cursor: clean(query.cursor, 2048),
   };
@@ -295,6 +318,46 @@ export async function getAdminUser(platformUserId: string) {
   }
   try {
     return parseUserResponse(await adminApiGet(`users/${encodeURIComponent(platformUserId)}`));
+  } catch (error) {
+    unexpected(error);
+  }
+}
+
+export async function listAdminModerationReviews(query: ModerationReviewListQuery = {}) {
+  const normalized = normalizeModerationReviewQuery(query);
+  if (adminDataSourceMode() === "fixture") return fixtureModerationReviewList(normalized);
+  try {
+    return parseModerationReviewListResponse(await adminApiGet("moderation/reviews", normalized));
+  } catch (error) {
+    unexpected(error);
+  }
+}
+
+/**
+ * 读取一条复核的送审正文。`reason` 会写进后端的明文审计事件，因此必须随调用给出，
+ * 不能让审计里留下一串没有目的的明文读取。
+ */
+export async function getAdminModerationReview(reviewId: string, reason: string) {
+  if (adminDataSourceMode() === "fixture") {
+    const response = fixtureModerationReview(reviewId);
+    if (!response) throw new AdminApiError(404, "not_found", "Moderation review not found.");
+    return response;
+  }
+  try {
+    return parseModerationReviewDetailResponse(
+      await adminApiGet(`moderation/reviews/${encodeURIComponent(reviewId)}`, {
+        reason: clean(reason, 200),
+      }),
+    );
+  } catch (error) {
+    unexpected(error);
+  }
+}
+
+export async function getAdminModerationBacklog() {
+  if (adminDataSourceMode() === "fixture") return fixtureModerationBacklog();
+  try {
+    return parseModerationBacklogResponse(await adminApiGet("moderation/backlog"));
   } catch (error) {
     unexpected(error);
   }

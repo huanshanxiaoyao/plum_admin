@@ -9,6 +9,11 @@ import type {
   CreatorListQuery,
   CreatorSummary,
   ListResponse,
+  ModerationBacklogResponse,
+  ModerationReviewDetail,
+  ModerationReviewDetailResponse,
+  ModerationReviewListQuery,
+  ModerationReviewSummary,
   OverviewResponse,
   SingleResponse,
   UserListQuery,
@@ -131,6 +136,24 @@ WORKS.push({
   reviewed_at: null,
   created_at: "2026-08-28T07:00:00.000Z",
   updated_at: "2026-08-29T08:00:00.000Z",
+});
+
+// 已发布但被 hold 扣住：有 published_character_id，却不是 approved。fixture 里必须存在
+// 这种行，否则后台永远看不到这个状态，运行时校验也拿不到反例。
+WORKS.push({
+  id: "work_accept_held",
+  display_name: "Nyx",
+  source: "ugc",
+  owner: { platform_user_id: "pusr_accept_creator_active", profile_id: "profile_accept_creator_active", display_name: "Mira Studio" },
+  lifecycle_status: "active",
+  state: "published",
+  moderation: "published_pending_review",
+  revision: 2,
+  published_character_id: "char_accept_ugc_general",
+  submitted_at: "2026-09-01T02:05:00.000Z",
+  reviewed_at: null,
+  created_at: "2026-08-20T09:00:00.000Z",
+  updated_at: "2026-09-01T02:10:00.000Z",
 });
 
 const CHARACTER_VERSIONS: Record<string, CharacterVersion[]> = Object.fromEntries(
@@ -298,6 +321,157 @@ const STAFF: AdminListResourceMap["staff"][] = [
   },
 ];
 
+const MODERATION_REVIEW_CONTENT: Record<string, ModerationReviewDetail["content"]> = {
+  rev_accept_pending: {
+    display_name: "Nyx",
+    intro: "A night-shift paramedic who keeps a running list of everyone she could not save.",
+    opening_scene: "The ambulance bay is empty. She is still in scrubs, staring at the sodium lights.",
+    character_settings: "Blunt, exhausted, allergic to reassurance. Talks about triage the way other people talk about weather.",
+    example_dialogues: "User: Rough night?\nNyx: They are all rough. Some of them just end quieter.",
+    response_rules: "Never romanticise injury. Refuse medical advice and say so plainly.",
+  },
+  rev_accept_reviewing: {
+    display_name: "Kestrel",
+    intro: "A retired blade dancer running a teahouse at the edge of a border town.",
+    opening_scene: "Steam curls off the pot. Two cups are set out although nobody else was invited.",
+    character_settings: "Warm on the surface, unreadable underneath. Answers questions with questions.",
+    example_dialogues: "User: Who is the second cup for?\nKestrel: Whoever sits down before it goes cold.",
+    response_rules: "Keep violence off-screen. Do not describe wounds.",
+  },
+  rev_accept_released: {
+    display_name: "Juniper",
+    intro: "A botanist cataloguing plants that only bloom after a wildfire.",
+    opening_scene: "Ash still warm underfoot. She is on her knees with a hand lens.",
+    character_settings: "Patient, precise, quietly funny about how slow her work is.",
+    example_dialogues: "User: Anything alive out here?\nJuniper: Give it a season. Fire is not the end of the story.",
+    response_rules: "Stay factual about ecology. No survivalist instructions.",
+  },
+  rev_accept_confined: {
+    display_name: "Marrow",
+    intro: "A rooftop fixer who trades favours nobody wants written down.",
+    opening_scene: "The city hums below. He is counting something and does not look up.",
+    character_settings: "Amoral, transactional, allergic to names.",
+    example_dialogues: "User: What do you want?\nMarrow: Nothing you would miss. Yet.",
+    response_rules: "Refuse anything operational or illegal, however it is framed.",
+  },
+  rev_accept_purged: {
+    display_name: "",
+    intro: "",
+    opening_scene: "",
+    character_settings: "",
+    example_dialogues: "",
+    response_rules: "",
+  },
+};
+
+const MODERATION_REVIEWS: ModerationReviewSummary[] = [
+  {
+    id: "rev_accept_pending",
+    character_id: "char_accept_ugc_general",
+    work_id: "work_accept_ugc_general",
+    version_number: 2,
+    display_name: "Nyx",
+    owner_platform_user_id: "pusr_accept_creator_active",
+    status: "pending",
+    trigger_source: "machine_needs_review",
+    risk_level: "medium",
+    machine_labels: ["violence_description", "self_harm_reference"],
+    character_status: "active",
+    moderation_hold: "pending",
+    visibility: "private",
+    assigned_admin_open_id: null,
+    decided_by_open_id: null,
+    decided_at: null,
+    reason_code: null,
+    created_at: "2026-09-01T02:10:00.000Z",
+    updated_at: "2026-09-01T02:10:00.000Z",
+  },
+  {
+    id: "rev_accept_reviewing",
+    character_id: "char_accept_ugc_mature",
+    work_id: "work_accept_ugc_mature",
+    version_number: 1,
+    display_name: "Kestrel",
+    owner_platform_user_id: "pusr_accept_creator_active",
+    status: "reviewing",
+    trigger_source: "machine_needs_review",
+    risk_level: "low",
+    machine_labels: ["weapon_reference"],
+    character_status: "active",
+    moderation_hold: "pending",
+    visibility: "private",
+    assigned_admin_open_id: "ou_accept_operator",
+    decided_by_open_id: null,
+    decided_at: null,
+    reason_code: null,
+    created_at: "2026-09-01T05:40:00.000Z",
+    updated_at: "2026-09-01T06:05:00.000Z",
+  },
+  {
+    id: "rev_accept_released",
+    character_id: "char_accept_official_active",
+    work_id: "work_accept_official_active",
+    version_number: 3,
+    display_name: "Juniper",
+    owner_platform_user_id: "pusr_accept_official",
+    status: "released",
+    trigger_source: "machine_needs_review",
+    risk_level: "low",
+    machine_labels: ["disaster_reference"],
+    character_status: "active",
+    moderation_hold: "none",
+    visibility: "public",
+    assigned_admin_open_id: "ou_accept_operator",
+    decided_by_open_id: "ou_accept_operator",
+    decided_at: "2026-08-31T08:20:00.000Z",
+    reason_code: null,
+    created_at: "2026-08-31T07:00:00.000Z",
+    updated_at: "2026-08-31T08:20:00.000Z",
+  },
+  {
+    id: "rev_accept_confined",
+    character_id: "char_accept_ugc_takedown",
+    work_id: "work_accept_ugc_takedown",
+    version_number: 1,
+    display_name: "Marrow",
+    owner_platform_user_id: "pusr_accept_creator_restricted",
+    status: "confined",
+    trigger_source: "machine_needs_review",
+    risk_level: "high",
+    machine_labels: ["criminal_facilitation", "violence_description"],
+    character_status: "active",
+    moderation_hold: "confined",
+    visibility: "private",
+    assigned_admin_open_id: "ou_accept_admin",
+    decided_by_open_id: "ou_accept_admin",
+    decided_at: "2026-08-30T11:45:00.000Z",
+    reason_code: "criminal_facilitation",
+    created_at: "2026-08-30T10:05:00.000Z",
+    updated_at: "2026-08-30T11:45:00.000Z",
+  },
+  {
+    id: "rev_accept_purged",
+    character_id: "char_accept_ugc_purged",
+    work_id: "work_accept_ugc_purged",
+    version_number: 1,
+    display_name: "(已清除)",
+    owner_platform_user_id: "pusr_accept_creator_restricted",
+    status: "purged",
+    trigger_source: "machine_needs_review",
+    risk_level: "high",
+    machine_labels: ["minor_sexualization"],
+    character_status: "takedown",
+    moderation_hold: "confined",
+    visibility: "private",
+    assigned_admin_open_id: "ou_accept_admin",
+    decided_by_open_id: "ou_accept_admin",
+    decided_at: "2026-08-29T14:30:00.000Z",
+    reason_code: "minor_sexualization",
+    created_at: "2026-08-29T13:55:00.000Z",
+    updated_at: "2026-08-29T14:30:00.000Z",
+  },
+];
+
 export const ADMIN_FIXTURES: { [Section in AdminListSection]: AdminListResourceMap[Section][] } = {
   characters: CHARACTERS,
   creators: CREATORS,
@@ -453,5 +627,37 @@ export function fixtureOverview(): OverviewResponse {
       request_id: "00000000-0000-4000-8000-000000000001",
       timezone: "Asia/Shanghai",
     },
+  };
+}
+
+export function fixtureModerationReviewList(query: ModerationReviewListQuery): ListResponse<ModerationReviewSummary> {
+  const risk = query.risk_level?.trim().toLocaleLowerCase();
+  const filtered = MODERATION_REVIEWS.filter((item) =>
+    (!query.status || item.status === query.status) &&
+    (!risk || item.risk_level === risk));
+  return fixturePage(sortByDate(filtered, query.sort ?? "created_at.asc"), query.limit ?? 50, query.cursor);
+}
+
+export function fixtureModerationReview(reviewId: string): ModerationReviewDetailResponse | null {
+  const review = MODERATION_REVIEWS.find((item) => item.id === reviewId);
+  const content = MODERATION_REVIEW_CONTENT[reviewId];
+  if (!review || !content) return null;
+  return {
+    data: { ...review, note: null, content },
+    meta: { request_id: "00000000-0000-4000-8000-000000000001" },
+    plaintext: true,
+  };
+}
+
+export function fixtureModerationBacklog(): ModerationBacklogResponse {
+  const open = MODERATION_REVIEWS.filter((item) => item.status === "pending" || item.status === "reviewing");
+  const oldest = [...open].sort((left, right) => left.created_at.localeCompare(right.created_at))[0];
+  return {
+    data: {
+      open_count: open.length,
+      pending_count: open.filter((item) => item.status === "pending").length,
+      oldest_created_at: oldest?.created_at ?? null,
+    },
+    meta: { request_id: "00000000-0000-4000-8000-000000000001" },
   };
 }

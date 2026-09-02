@@ -1,0 +1,34 @@
+.actions { min-width: 0; display: grid; gap: 14px; }
+.closed { display: inline-flex; align-items: center; gap: 7px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--muted-strong); background: var(--surface-subtle); font-size: 10px; }
+.blocked { display: inline-flex; align-items: center; gap: 7px; margin: 0; padding: 9px 11px; border: 1px solid #ead1aa; border-radius: 5px; color: var(--amber); background: var(--amber-soft); font-size: 10px; }
+.claimRow { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.claimRow small { color: var(--muted); font-size: 9px; }
+.claim { height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 11px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--muted-strong); background: var(--surface); font-size: 10px; cursor: pointer; }
+.claim:disabled { cursor: not-allowed; opacity: .6; }
+.decisions { display: grid; gap: 7px; margin: 0; padding: 0; border: 0; }
+.decisions legend { padding: 0 0 7px; color: var(--muted); font-size: 9px; }
+.decisions label { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: start; gap: 9px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); cursor: pointer; }
+.decisions label span { display: grid; gap: 3px; }
+.decisions label strong { color: var(--ink); font-size: 11px; }
+.decisions label small { color: var(--muted); font-size: 9px; line-height: 1.5; }
+.decisions .selected { border-color: var(--surface-strong); background: var(--surface-subtle); }
+.decisions:disabled label { cursor: not-allowed; opacity: .6; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.field { min-width: 0; display: grid; gap: 5px; }
+.field > span { color: var(--muted); font-size: 9px; }
+.field b { color: var(--red); }
+.field select, .field input, .field textarea { width: 100%; padding: 8px 9px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--ink); background: var(--surface); font-family: inherit; font-size: 10px; }
+.field textarea { resize: vertical; line-height: 1.5; }
+.noteField { grid-column: 1 / -1; }
+.acknowledge { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: start; gap: 9px; padding: 10px 12px; border: 1px solid #dfb7b4; border-radius: 5px; color: var(--red); background: var(--red-soft); font-size: 10px; line-height: 1.5; cursor: pointer; }
+.submitRow { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.submit, .danger { height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border: 1px solid var(--surface-strong); border-radius: 5px; color: #fff; background: var(--surface-strong); font-size: 10px; cursor: pointer; }
+.danger { border-color: var(--red); background: var(--red); }
+.submit:disabled, .danger:disabled { cursor: not-allowed; opacity: .55; }
+.hint { color: var(--muted); font-size: 9px; }
+.error { margin: 0; color: var(--red); font-size: 10px; }
+/* 清除成功但字节没删干净：不是失败，但运营必须看到，所以用告警色而不是错误色。 */
+.warning { margin: 0; color: var(--amber, #b45309); font-size: 10px; line-height: 1.5; }
+.spinning { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 620px) { .fields { grid-template-columns: 1fr; } }

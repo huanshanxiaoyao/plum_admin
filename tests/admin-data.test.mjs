@@ -7,6 +7,9 @@ import {
   parseCreatorListResponse,
   parseCreatorResponse,
   parseListResponse,
+  parseModerationBacklogResponse,
+  parseModerationReviewDetailResponse,
+  parseModerationReviewListResponse,
   parseUserListResponse,
   parseUserResponse,
   parseWorkListResponse,
@@ -20,6 +23,9 @@ import {
   fixtureCreator,
   fixtureCreatorList,
   fixtureList,
+  fixtureModerationBacklog,
+  fixtureModerationReview,
+  fixtureModerationReviewList,
   fixtureUser,
   fixtureUserList,
   fixtureWork,
@@ -70,7 +76,7 @@ test("fixture responses satisfy the runtime API contract", () => {
   assert.equal(parseCharacterListResponse(fixtureCharacterList({ limit: 50 })).data.length, 5);
   assert.equal(parseCharacterResponse(fixtureCharacter("char_accept_official_active")).data.display_name, "Ada");
   assert.equal(parseCharacterVersionListResponse(fixtureCharacterVersions("char_accept_official_active", { limit: 50 })).data.length, 3);
-  assert.equal(parseWorkListResponse(fixtureWorkList({ limit: 50 })).data.length, 6);
+  assert.equal(parseWorkListResponse(fixtureWorkList({ limit: 50 })).data.length, 7);
   assert.equal(parseWorkResponse(fixtureWork("work_accept_official_active")).data.display_name, "Ada");
   assert.equal(parseCreatorListResponse(fixtureCreatorList({ limit: 50 })).data.length, 3);
   assert.equal(parseCreatorResponse(fixtureCreator("pusr_accept_creator_active")).data.display_name, "Mira Studio");
@@ -178,4 +184,71 @@ test("remote writes require an explicit opt-in", () => {
   withEnvironment({ ADMIN_API_WRITE_ENABLED: undefined }, () => assert.equal(adminApiWritesEnabled(), false));
   withEnvironment({ ADMIN_API_WRITE_ENABLED: "true" }, () => assert.equal(adminApiWritesEnabled(), true));
   withEnvironment({ ADMIN_API_WRITE_ENABLED: "TRUE" }, () => assert.equal(adminApiWritesEnabled(), false));
+});
+
+test("moderation queue fixtures filter by status, risk and creation order", () => {
+  const oldestFirst = fixtureModerationReviewList({ limit: 50 });
+  assert.deepEqual(oldestFirst.data.map((item) => item.id), [
+    "rev_accept_purged",
+    "rev_accept_confined",
+    "rev_accept_released",
+    "rev_accept_pending",
+    "rev_accept_reviewing",
+  ]);
+
+  const open = fixtureModerationReviewList({ status: "pending", limit: 50 });
+  assert.deepEqual(open.data.map((item) => item.id), ["rev_accept_pending"]);
+
+  const high = fixtureModerationReviewList({ risk_level: "high", limit: 50 });
+  assert.deepEqual(high.data.map((item) => item.status), ["purged", "confined"]);
+
+  const backlog = fixtureModerationBacklog();
+  assert.equal(backlog.data.open_count, 2);
+  assert.equal(backlog.data.pending_count, 1);
+  assert.equal(backlog.data.oldest_created_at, "2026-09-01T02:10:00.000Z");
+});
+
+test("moderation fixtures satisfy the runtime contract", () => {
+  assert.doesNotThrow(() => parseModerationReviewListResponse(fixtureModerationReviewList({ limit: 50 })));
+  assert.doesNotThrow(() => parseModerationReviewDetailResponse(fixtureModerationReview("rev_accept_pending")));
+  assert.doesNotThrow(() => parseModerationBacklogResponse(fixtureModerationBacklog()));
+  assert.equal(fixtureModerationReview("rev_missing"), null);
+});
+
+test("moderation list projection must stay free of reviewed text", () => {
+  const withContent = structuredClone(fixtureModerationReviewList({ limit: 50 }));
+  withContent.data[0].content = { intro: "must not cross the queue boundary" };
+  assert.throws(() => parseModerationReviewListResponse(withContent), /Invalid/);
+
+  const flattened = structuredClone(fixtureModerationReviewList({ limit: 50 }));
+  flattened.data[0].intro = "must not cross the queue boundary";
+  assert.throws(() => parseModerationReviewListResponse(flattened), /Invalid/);
+});
+
+test("moderation detail is rejected unless it declares a plaintext read", () => {
+  const detail = structuredClone(fixtureModerationReview("rev_accept_pending"));
+  detail.plaintext = false;
+  assert.throws(() => parseModerationReviewDetailResponse(detail), /Invalid/);
+
+  const missingField = structuredClone(fixtureModerationReview("rev_accept_pending"));
+  delete missingField.data.content.response_rules;
+  assert.throws(() => parseModerationReviewDetailResponse(missingField), /Invalid/);
+
+  const badStatus = structuredClone(fixtureModerationReview("rev_accept_pending"));
+  badStatus.data.status = "approved";
+  assert.throws(() => parseModerationReviewDetailResponse(badStatus), /Invalid/);
+});
+
+test("a published-but-held work is accepted and filterable, not treated as malformed", () => {
+  // 后端把「有 Character 但被 hold 扣住」如实报成 published_pending_review。手写 guard
+  // 若还停在旧四值，整份响应会被拒绝，Work 列表直接加载失败。
+  const held = fixtureWorkList({ moderation: "published_pending_review", limit: 50 });
+  assert.deepEqual(held.data.map((item) => item.id), ["work_accept_held"]);
+  assert.equal(held.data[0].published_character_id, "char_accept_ugc_general");
+  assert.doesNotThrow(() => parseWorkListResponse(held));
+  assert.doesNotThrow(() => parseWorkListResponse(fixtureWorkList({ limit: 50 })));
+
+  const bogus = structuredClone(held);
+  bogus.data[0].moderation = "released";
+  assert.throws(() => parseWorkListResponse(bogus), /Invalid/);
 });

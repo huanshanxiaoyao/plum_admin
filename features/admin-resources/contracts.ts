@@ -35,6 +35,17 @@ export type SubscriptionSummary = {
 
 export type StaffSummary = AdminApiSchemas["AdminUserItem"];
 
+export type ModerationReviewSummary = AdminApiSchemas["AdminModerationReviewItem"];
+export type ModerationReviewDetail = AdminApiSchemas["AdminModerationReviewDetail"];
+export type ModerationReviewContent = AdminApiSchemas["AdminModerationReviewContent"];
+export type ModerationBacklog = AdminApiSchemas["AdminModerationBacklog"];
+export type ModerationDecision = AdminApiSchemas["AdminModerationDecisionRequest"]["decision"];
+export type ModerationReviewStatus = ModerationReviewSummary["status"];
+export type ModerationReviewDetailResponse = SingleResponse<ModerationReviewDetail> & {
+  plaintext: boolean;
+};
+export type ModerationBacklogResponse = SingleResponse<ModerationBacklog>;
+
 export type AdminListResourceMap = {
   characters: CharacterSummary;
   creators: CreatorSummary;
@@ -87,6 +98,14 @@ export type UserListQuery = {
   created_from?: string;
   created_to?: string;
   sort?: "last_activity_at.desc" | "created_at.desc";
+  limit?: number;
+  cursor?: string;
+};
+
+export type ModerationReviewListQuery = {
+  status?: ModerationReviewStatus;
+  risk_level?: string;
+  sort?: "created_at.asc" | "created_at.desc";
   limit?: number;
   cursor?: string;
 };
@@ -193,6 +212,15 @@ function isCharacterVersion(value: unknown): value is CharacterVersion {
     isUtcTimestamp(value.created_at);
 }
 
+/** 与后端 `WorkModeration` 同源；`published_pending_review` = 已发布但被 hold 扣住。 */
+const WORK_MODERATIONS = [
+  "not_submitted",
+  "pending_review",
+  "published_pending_review",
+  "approved",
+  "rejected",
+] as const;
+
 function isWork(value: unknown): value is WorkSummary {
   if (!isRecord(value) || containsPrivateContent(value) || !isContentOwner(value.owner)) return false;
   return hasString(value, "id") &&
@@ -200,7 +228,7 @@ function isWork(value: unknown): value is WorkSummary {
     (value.source === "official" || value.source === "ugc") &&
     (value.lifecycle_status === "active" || value.lifecycle_status === "archived") &&
     (value.state === "draft" || value.state === "published" || value.state === "archived") &&
-    (value.moderation === "not_submitted" || value.moderation === "pending_review" || value.moderation === "approved" || value.moderation === "rejected") &&
+    isOneOf(value.moderation, WORK_MODERATIONS) &&
     (value.revision === undefined || value.revision === null || isPositiveInteger(value.revision)) &&
     isOptionalNullableString(value.published_character_id) &&
     isOptionalNullableString(value.submitted_at) &&
@@ -313,6 +341,67 @@ function isOverviewData(value: unknown): value is OverviewData {
     String(value.window_started_at) < String(value.generated_at);
 }
 
+const REVIEW_STATUSES = ["pending", "reviewing", "released", "confined", "purged"] as const;
+const REVIEW_TRIGGERS = ["machine_needs_review", "report", "manual"] as const;
+const REVIEW_HOLDS = ["none", "pending", "confined"] as const;
+const CHARACTER_STATUSES = ["draft", "active", "takedown", "archived"] as const;
+
+function isOneOf(value: unknown, options: readonly string[]): boolean {
+  return typeof value === "string" && options.includes(value);
+}
+
+/** 列表与详情共享的治理元数据；正文只允许出现在详情的 `content` 里。 */
+function isModerationReviewMetadata(value: unknown): value is Record<string, unknown> {
+  if (!isRecord(value) || containsPrivateContent(value) || !Array.isArray(value.machine_labels)) return false;
+  return (
+    hasString(value, "id") &&
+    hasString(value, "character_id") &&
+    hasString(value, "work_id") &&
+    isPositiveInteger(value.version_number) &&
+    hasString(value, "display_name") &&
+    hasString(value, "owner_platform_user_id") &&
+    isOneOf(value.status, REVIEW_STATUSES) &&
+    isOneOf(value.trigger_source, REVIEW_TRIGGERS) &&
+    hasString(value, "risk_level") &&
+    value.machine_labels.every((label) => typeof label === "string") &&
+    isOneOf(value.character_status, CHARACTER_STATUSES) &&
+    isOneOf(value.moderation_hold, REVIEW_HOLDS) &&
+    (value.visibility === "public" || value.visibility === "private") &&
+    isOptionalNullableString(value.assigned_admin_open_id) &&
+    isOptionalNullableString(value.decided_by_open_id) &&
+    isOptionalNullableString(value.decided_at) &&
+    isOptionalNullableString(value.reason_code) &&
+    isUtcTimestamp(value.created_at) &&
+    isUtcTimestamp(value.updated_at)
+  );
+}
+
+/** 列表投影必须只有元数据：带上 `content` 就是后端把正文漏进了队列列表。 */
+function isModerationReview(value: unknown): value is ModerationReviewSummary {
+  return isModerationReviewMetadata(value) && !("content" in value);
+}
+
+function isModerationReviewContent(value: unknown): value is ModerationReviewContent {
+  if (!isRecord(value)) return false;
+  return ["display_name", "intro", "opening_scene", "character_settings", "example_dialogues", "response_rules"]
+    .every((field) => hasString(value, field));
+}
+
+function isModerationReviewDetail(value: unknown): value is ModerationReviewDetail {
+  return isModerationReviewMetadata(value) &&
+    isOptionalNullableString(value.note) &&
+    isModerationReviewContent(value.content);
+}
+
+function isModerationBacklog(value: unknown): value is ModerationBacklog {
+  if (!isRecord(value)) return false;
+  return isNonNegativeInteger(value.open_count) &&
+    isNonNegativeInteger(value.pending_count) &&
+    (value.oldest_created_at === undefined ||
+      value.oldest_created_at === null ||
+      isUtcTimestamp(value.oldest_created_at));
+}
+
 const ITEM_GUARDS = {
   characters: isCharacter,
   creators: isCreator,
@@ -360,6 +449,20 @@ export const parseCreatorListResponse = (value: unknown) => parseTypedList("crea
 export const parseCreatorResponse = (value: unknown) => parseSingle("creator", value, isCreator);
 export const parseUserListResponse = (value: unknown) => parseTypedList("user", value, isUser);
 export const parseUserResponse = (value: unknown) => parseSingle("user", value, isUser);
+export const parseModerationReviewListResponse = (value: unknown) =>
+  parseTypedList("moderation review", value, isModerationReview);
+export const parseModerationReviewResponse = (value: unknown) =>
+  parseSingle("moderation review", value, isModerationReview);
+export const parseModerationBacklogResponse = (value: unknown) =>
+  parseSingle("moderation backlog", value, isModerationBacklog);
+
+/** 详情必须自证是明文读取，否则前端会把一次降级响应当成正常正文展示。 */
+export function parseModerationReviewDetailResponse(value: unknown): ModerationReviewDetailResponse {
+  if (!isRecord(value) || !isModerationReviewDetail(value.data) || !isResponseMeta(value.meta) || value.plaintext !== true) {
+    throw new TypeError("Invalid moderation review detail response payload");
+  }
+  return value as ModerationReviewDetailResponse;
+}
 export function parseOverviewResponse(value: unknown): OverviewResponse {
   if (
     !isRecord(value) ||

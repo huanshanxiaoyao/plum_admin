@@ -15,6 +15,10 @@ const RULES: readonly AllowRule[] = [
   { methods: ["GET"], path: /^works(?:\/[^/]+)?$/, capability: DAILY },
   { methods: ["GET"], path: /^creators(?:\/[^/]+)?$/, capability: DAILY },
   { methods: ["GET"], path: /^users(?:\/[^/]+)?$/, capability: DAILY },
+  { methods: ["GET"], path: /^moderation\/backlog$/, capability: DAILY },
+  { methods: ["GET"], path: /^moderation\/reviews(?:\/[^/]+)?$/, capability: DAILY },
+  // 三处置与认领都只要 operations.access：purge 不额外限制 admin，是已拍板的产品决定。
+  { methods: ["POST"], path: /^moderation\/reviews\/[^/]+\/(?:claim|decision)$/, capability: DAILY },
   { methods: ["GET"], path: /^admin-users$/, capability: "staff.manage" },
   { methods: ["PATCH"], path: /^admin-users\/[^/]+$/, capability: "staff.manage" },
 ];

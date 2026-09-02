@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   ReceiptText,
+  ShieldAlert,
   Users,
   UsersRound,
   X,
@@ -26,6 +27,7 @@ import styles from "./admin-shell.module.css";
 const NAV_ICONS: Record<AdminModuleKey, LucideIcon> = {
   dashboard: House,
   characters: BadgeCheck,
+  moderation: ShieldAlert,
   creators: UsersRound,
   users: CircleUserRound,
   subscriptions: ReceiptText,
