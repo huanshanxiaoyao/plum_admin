@@ -78,6 +78,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/plum/characters/{character_id}/takedown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Take Down Character
+         * @description Hide a Character immediately and enqueue idempotent public-image revocation.
+         */
+        post: operations["take_down_character_admin_plum_characters__character_id__takedown_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/plum/characters/{character_id}/versions": {
         parameters: {
             query?: never;
@@ -149,6 +169,111 @@ export interface paths {
         get: operations["admin_me_admin_plum_me_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/moderation/backlog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Moderation Backlog
+         * @description Expose queue depth and the oldest waiting row.
+         *
+         *     「超时保持自见」不需要定时任务，但没有这两个数，无人处理的内容会静默地永远自见。
+         */
+        get: operations["admin_moderation_backlog_admin_plum_moderation_backlog_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/moderation/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Moderation Reviews
+         * @description List review rows, oldest first — the queue is served by waiting time.
+         */
+        get: operations["admin_moderation_reviews_admin_plum_moderation_reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/moderation/reviews/{review_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Moderation Review
+         * @description Return one review with the exact reviewed text, writing a plaintext audit event.
+         *
+         *     这是 Plum Admin 唯一返回 Character 正文的读口子——治理接口一律只给元数据。因此每次读取
+         *     都落一条 ``admin_access_events(plaintext=1)``，与平台侧明文审计口径一致。
+         */
+        get: operations["admin_moderation_review_admin_plum_moderation_reviews__review_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/moderation/reviews/{review_id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Moderation Claim Review
+         * @description Assign one open row to the calling operator; 409 when someone else holds it.
+         */
+        post: operations["admin_moderation_claim_review_admin_plum_moderation_reviews__review_id__claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/moderation/reviews/{review_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Moderation Decide Review
+         * @description Apply release / confine / purge to one open review row.
+         */
+        post: operations["admin_moderation_decide_review_admin_plum_moderation_reviews__review_id__decision_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -335,6 +460,11 @@ export interface components {
             data: components["schemas"]["AdminCharacterItem"];
             meta: components["schemas"]["ResponseMeta"];
         };
+        /** AdminCharacterTakedownRequest */
+        AdminCharacterTakedownRequest: {
+            /** Reason Code */
+            reason_code: string;
+        };
         /** AdminCharacterVersionItem */
         AdminCharacterVersionItem: {
             /** Access Policy Version */
@@ -481,6 +611,219 @@ export interface components {
         /** AdminIdentityResponse */
         AdminIdentityResponse: {
             data: components["schemas"]["AdminIdentity"];
+            meta: components["schemas"]["ResponseMeta"];
+        };
+        /** AdminModerationBacklog */
+        AdminModerationBacklog: {
+            /** Oldest Created At */
+            oldest_created_at?: string | null;
+            /** Open Count */
+            open_count: number;
+            /** Pending Count */
+            pending_count: number;
+        };
+        /** AdminModerationBacklogResponse */
+        AdminModerationBacklogResponse: {
+            data: components["schemas"]["AdminModerationBacklog"];
+            meta: components["schemas"]["ResponseMeta"];
+        };
+        /**
+         * AdminModerationContentPurge
+         * @description How much stored image data the purge actually managed to delete.
+         *
+         *     对象删除不可回滚也不参与事务，失败只是留下孤儿对象。review 关闭后没有重试入口，
+         *     所以计数必须回到调用方：``failed_objects`` 非 0 意味着仍有字节留在存储里，需要人工重跑。
+         */
+        AdminModerationContentPurge: {
+            /** Deleted Objects */
+            deleted_objects: number;
+            /** Failed Objects */
+            failed_objects: number;
+        };
+        /** AdminModerationDecisionRequest */
+        AdminModerationDecisionRequest: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "release" | "confine" | "purge";
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /**
+             * Reason Code
+             * @default
+             */
+            reason_code: string;
+        };
+        /**
+         * AdminModerationReviewContent
+         * @description 送审正文。只在详情返回，且必须伴随明文审计事件。
+         */
+        AdminModerationReviewContent: {
+            /** Character Settings */
+            character_settings: string;
+            /** Display Name */
+            display_name: string;
+            /** Example Dialogues */
+            example_dialogues: string;
+            /** Intro */
+            intro: string;
+            /** Opening Scene */
+            opening_scene: string;
+            /** Response Rules */
+            response_rules: string;
+        };
+        /** AdminModerationReviewDetail */
+        AdminModerationReviewDetail: {
+            /** Assigned Admin Open Id */
+            assigned_admin_open_id?: string | null;
+            /** Character Id */
+            character_id: string;
+            /**
+             * Character Status
+             * @enum {string}
+             */
+            character_status: "draft" | "active" | "takedown" | "archived";
+            content: components["schemas"]["AdminModerationReviewContent"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at?: string | null;
+            /** Decided By Open Id */
+            decided_by_open_id?: string | null;
+            /** Display Name */
+            display_name: string;
+            /** Id */
+            id: string;
+            /** Machine Labels */
+            machine_labels: string[];
+            /**
+             * Moderation Hold
+             * @enum {string}
+             */
+            moderation_hold: "none" | "pending" | "confined";
+            /** Note */
+            note?: string | null;
+            /** Owner Platform User Id */
+            owner_platform_user_id: string;
+            /** Reason Code */
+            reason_code?: string | null;
+            /** Risk Level */
+            risk_level: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "reviewing" | "released" | "confined" | "purged";
+            /**
+             * Trigger Source
+             * @enum {string}
+             */
+            trigger_source: "machine_needs_review" | "report" | "manual";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version Number */
+            version_number: number;
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "public" | "private";
+            /** Work Id */
+            work_id: string;
+        };
+        /** AdminModerationReviewDetailResponse */
+        AdminModerationReviewDetailResponse: {
+            data: components["schemas"]["AdminModerationReviewDetail"];
+            meta: components["schemas"]["ResponseMeta"];
+            /** Plaintext */
+            plaintext: boolean;
+        };
+        /**
+         * AdminModerationReviewItem
+         * @description 列表投影：只给治理元数据，不含送审正文。
+         */
+        AdminModerationReviewItem: {
+            /** Assigned Admin Open Id */
+            assigned_admin_open_id?: string | null;
+            /** Character Id */
+            character_id: string;
+            /**
+             * Character Status
+             * @enum {string}
+             */
+            character_status: "draft" | "active" | "takedown" | "archived";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at?: string | null;
+            /** Decided By Open Id */
+            decided_by_open_id?: string | null;
+            /** Display Name */
+            display_name: string;
+            /** Id */
+            id: string;
+            /** Machine Labels */
+            machine_labels: string[];
+            /**
+             * Moderation Hold
+             * @enum {string}
+             */
+            moderation_hold: "none" | "pending" | "confined";
+            /** Owner Platform User Id */
+            owner_platform_user_id: string;
+            /** Reason Code */
+            reason_code?: string | null;
+            /** Risk Level */
+            risk_level: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "reviewing" | "released" | "confined" | "purged";
+            /**
+             * Trigger Source
+             * @enum {string}
+             */
+            trigger_source: "machine_needs_review" | "report" | "manual";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version Number */
+            version_number: number;
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "public" | "private";
+            /** Work Id */
+            work_id: string;
+        };
+        /** AdminModerationReviewListResponse */
+        AdminModerationReviewListResponse: {
+            /** Data */
+            data: components["schemas"]["AdminModerationReviewItem"][];
+            meta: components["schemas"]["ResponseMeta"];
+            page: components["schemas"]["PageInfo"];
+        };
+        /** AdminModerationReviewResponse */
+        AdminModerationReviewResponse: {
+            content_purge?: components["schemas"]["AdminModerationContentPurge"] | null;
+            data: components["schemas"]["AdminModerationReviewItem"];
             meta: components["schemas"]["ResponseMeta"];
         };
         /** AdminOverviewData */
@@ -638,7 +981,7 @@ export interface components {
              * Moderation
              * @enum {string}
              */
-            moderation: "not_submitted" | "pending_review" | "approved" | "rejected";
+            moderation: "not_submitted" | "pending_review" | "published_pending_review" | "approved" | "rejected";
             owner: components["schemas"]["ContentOwner"];
             /** Published Character Id */
             published_character_id?: string | null;
@@ -1146,6 +1489,98 @@ export interface operations {
             };
         };
     };
+    take_down_character_admin_plum_characters__character_id__takedown_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                character_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCharacterTakedownRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCharacterResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
     admin_character_versions_admin_plum_characters__character_id__versions_get: {
         parameters: {
             query?: {
@@ -1439,6 +1874,499 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminIdentityResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_moderation_backlog_admin_plum_moderation_backlog_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminModerationBacklogResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_moderation_reviews_admin_plum_moderation_reviews_get: {
+        parameters: {
+            query?: {
+                status?: string;
+                risk_level?: string;
+                sort?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminModerationReviewListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_moderation_review_admin_plum_moderation_reviews__review_id__get: {
+        parameters: {
+            query?: {
+                reason?: string;
+            };
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminModerationReviewDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_moderation_claim_review_admin_plum_moderation_reviews__review_id__claim_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminModerationReviewResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_moderation_decide_review_admin_plum_moderation_reviews__review_id__decision_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminModerationDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminModerationReviewResponse"];
                 };
             };
             /** @description Bad Request */

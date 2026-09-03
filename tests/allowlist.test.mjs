@@ -12,7 +12,26 @@ test("daily routes resolve to operations access", () => {
   assert.equal(requiredCapability("GET", "overview"), "operations.access");
 });
 
-test("staff management remains the only phase-one write route", () => {
+test("moderation review queue is readable and decidable by operators", () => {
+  assert.equal(requiredCapability("GET", "moderation/reviews"), "operations.access");
+  assert.equal(requiredCapability("GET", "moderation/reviews/rev-01"), "operations.access");
+  assert.equal(requiredCapability("GET", "moderation/backlog"), "operations.access");
+  assert.equal(requiredCapability("POST", "moderation/reviews/rev-01/claim"), "operations.access");
+  assert.equal(requiredCapability("POST", "moderation/reviews/rev-01/decision"), "operations.access");
+});
+
+test("moderation rules do not widen into neighbouring paths", () => {
+  assert.equal(requiredCapability("POST", "moderation/reviews"), null);
+  assert.equal(requiredCapability("POST", "moderation/reviews/rev-01"), null);
+  assert.equal(requiredCapability("DELETE", "moderation/reviews/rev-01"), null);
+  assert.equal(requiredCapability("GET", "moderation/reviews/rev-01/claim"), null);
+  assert.equal(requiredCapability("POST", "moderation/reviews/rev-01/purge"), null);
+  assert.equal(requiredCapability("GET", "moderation/reviews/rev-01/content"), null);
+  assert.equal(requiredCapability("GET", "moderation"), null);
+  assert.equal(requiredCapability("POST", "moderation/backlog"), null);
+});
+
+test("staff management stays behind its own capability", () => {
   assert.equal(requiredCapability("GET", "admin-users"), "staff.manage");
   assert.equal(requiredCapability("PATCH", "admin-users/adm-01"), "staff.manage");
 });

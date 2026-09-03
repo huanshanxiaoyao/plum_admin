@@ -77,7 +77,8 @@ function WorkFilters({ query }: { query: WorkListQuery }) {
       </select></label>
       <label className={styles.select}><select name="moderation" defaultValue={query.moderation ?? ""} aria-label="审核状态">
         <option value="">全部审核状态</option><option value="not_submitted">未提交</option>
-        <option value="pending_review">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option>
+        <option value="pending_review">待审核</option><option value="published_pending_review">已发布·待复核</option>
+        <option value="approved">已通过</option><option value="rejected">已拒绝</option>
       </select></label>
       <label className={`${styles.search} ${styles.owner}`}><input name="owner" defaultValue={query.owner} placeholder="Owner ID 或名称" aria-label="Owner" /></label>
       <label className={styles.select}><select name="sort" defaultValue={query.sort ?? "updated_at.desc"} aria-label="排序">
@@ -109,7 +110,7 @@ export async function ContentPage({ searchParams }: ContentPageProps) {
     limit: 50,
     owner: first(params.owner)?.trim() || undefined,
     state: allowed(first(params.state), ["draft", "published", "archived"]),
-    moderation: allowed(first(params.moderation), ["not_submitted", "pending_review", "approved", "rejected"]),
+    moderation: allowed(first(params.moderation), ["not_submitted", "pending_review", "published_pending_review", "approved", "rejected"]),
     sort: allowed(first(params.sort), ["updated_at.desc", "updated_at.asc", "created_at.desc", "created_at.asc"]),
   };
 
@@ -165,7 +166,7 @@ export async function ContentPage({ searchParams }: ContentPageProps) {
                 <td><div className={styles.identity}><strong>{item.owner.display_name}</strong><code>{item.owner.platform_user_id ?? item.owner.profile_id}</code></div></td>
                 <td><Badge tone={item.lifecycle_status === "active" ? "good" : "muted"}>{item.lifecycle_status}</Badge></td>
                 <td><Badge tone={item.state === "published" ? "good" : "muted"}>{item.state}</Badge></td>
-                <td><Badge tone={item.moderation === "approved" ? "good" : item.moderation === "rejected" ? "warn" : "muted"}>{item.moderation}</Badge></td>
+                <td><Badge tone={item.moderation === "approved" ? "good" : item.moderation === "rejected" || item.moderation === "published_pending_review" ? "warn" : "muted"}>{item.moderation}</Badge></td>
                 <td>{formatDateTime(item.updated_at)}</td>
               </tr>
             ))}</tbody></table>
