@@ -551,6 +551,956 @@
         "title": "AdminIdentityResponse",
         "type": "object"
       },
+      "AdminImportBatchDetailResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminImportBatchItem"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ListResponseMeta"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/AdminImportRowResult"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data",
+          "rows",
+          "meta"
+        ],
+        "title": "AdminImportBatchDetailResponse",
+        "type": "object"
+      },
+      "AdminImportBatchItem": {
+        "properties": {
+          "adult_confirmed": {
+            "title": "Adult Confirmed",
+            "type": "boolean"
+          },
+          "batch_id": {
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "title": "Created At",
+            "type": "string"
+          },
+          "failed_count": {
+            "minimum": 0.0,
+            "title": "Failed Count",
+            "type": "integer"
+          },
+          "operator_open_id": {
+            "title": "Operator Open Id",
+            "type": "string"
+          },
+          "owner_platform_user_id": {
+            "title": "Owner Platform User Id",
+            "type": "string"
+          },
+          "pending_review_count": {
+            "minimum": 0.0,
+            "title": "Pending Review Count",
+            "type": "integer"
+          },
+          "published_count": {
+            "minimum": 0.0,
+            "title": "Published Count",
+            "type": "integer"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "rejected_count": {
+            "minimum": 0.0,
+            "title": "Rejected Count",
+            "type": "integer"
+          },
+          "rights_confirmed": {
+            "title": "Rights Confirmed",
+            "type": "boolean"
+          },
+          "row_count": {
+            "minimum": 0.0,
+            "title": "Row Count",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "completed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "batch_id",
+          "operator_open_id",
+          "owner_platform_user_id",
+          "reason",
+          "adult_confirmed",
+          "rights_confirmed",
+          "status",
+          "row_count",
+          "published_count",
+          "pending_review_count",
+          "rejected_count",
+          "failed_count",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AdminImportBatchItem",
+        "type": "object"
+      },
+      "AdminImportBatchListResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AdminImportBatchItem"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ListResponseMeta"
+          },
+          "page": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        },
+        "required": [
+          "data",
+          "page",
+          "meta"
+        ],
+        "title": "AdminImportBatchListResponse",
+        "type": "object"
+      },
+      "AdminImportConfirmations": {
+        "additionalProperties": false,
+        "properties": {
+          "adult_confirmed": {
+            "const": true,
+            "title": "Adult Confirmed",
+            "type": "boolean"
+          },
+          "rights_confirmed": {
+            "const": true,
+            "title": "Rights Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "adult_confirmed",
+          "rights_confirmed"
+        ],
+        "title": "AdminImportConfirmations",
+        "type": "object"
+      },
+      "AdminImportCropRect": {
+        "properties": {
+          "contract_version": {
+            "const": 2,
+            "default": 2,
+            "title": "Contract Version",
+            "type": "integer"
+          },
+          "height": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Height",
+            "type": "number"
+          },
+          "width": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Width",
+            "type": "number"
+          },
+          "x": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "title": "AdminImportCropRect",
+        "type": "object"
+      },
+      "AdminImportExecuteRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "batch_id": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "confirmations": {
+            "$ref": "#/components/schemas/AdminImportConfirmations"
+          },
+          "default_owner_platform_user_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Default Owner Platform User Id",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/AdminImportRow"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "batch_id",
+          "default_owner_platform_user_id",
+          "reason",
+          "confirmations",
+          "rows"
+        ],
+        "title": "AdminImportExecuteRequest",
+        "type": "object"
+      },
+      "AdminImportExecuteResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminImportBatchItem"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ListResponseMeta"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/AdminImportRowResult"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data",
+          "rows",
+          "meta"
+        ],
+        "title": "AdminImportExecuteResponse",
+        "type": "object"
+      },
+      "AdminImportImageSetRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "avatar_crop": {
+            "$ref": "#/components/schemas/AdminImportCropRect"
+          },
+          "owner_platform_user_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Owner Platform User Id",
+            "type": "string"
+          },
+          "portrait_crop": {
+            "$ref": "#/components/schemas/AdminImportCropRect"
+          },
+          "source_media_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source Media Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_platform_user_id",
+          "source_media_id",
+          "portrait_crop",
+          "avatar_crop"
+        ],
+        "title": "AdminImportImageSetRequest",
+        "type": "object"
+      },
+      "AdminImportIssue": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "AdminImportIssue",
+        "type": "object"
+      },
+      "AdminImportMediaCompleteRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "owner_platform_user_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Owner Platform User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_platform_user_id"
+        ],
+        "title": "AdminImportMediaCompleteRequest",
+        "type": "object"
+      },
+      "AdminImportMediaResponse": {
+        "properties": {
+          "data": {
+            "additionalProperties": true,
+            "title": "Data",
+            "type": "object"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "AdminImportMediaResponse",
+        "type": "object"
+      },
+      "AdminImportMediaUploadRequest": {
+        "additionalProperties": false,
+        "description": "Admin 直传申请。owner 由服务端从这里取，而不是从操作员会话取。",
+        "properties": {
+          "bytes": {
+            "minimum": 1.0,
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "checksum_sha256": {
+            "maxLength": 44,
+            "minLength": 44,
+            "title": "Checksum Sha256",
+            "type": "string"
+          },
+          "content_type": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Content Type",
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          },
+          "height": {
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Height",
+            "type": "integer"
+          },
+          "kind": {
+            "default": "image",
+            "title": "Kind",
+            "type": "string"
+          },
+          "owner_platform_user_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Owner Platform User Id",
+            "type": "string"
+          },
+          "purpose": {
+            "default": "character_portrait",
+            "title": "Purpose",
+            "type": "string"
+          },
+          "width": {
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "owner_platform_user_id",
+          "filename",
+          "content_type",
+          "bytes",
+          "checksum_sha256",
+          "width",
+          "height"
+        ],
+        "title": "AdminImportMediaUploadRequest",
+        "type": "object"
+      },
+      "AdminImportPortrait": {
+        "description": "One row's declared portrait bytes, measured in the browser before upload.",
+        "properties": {
+          "bytes": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "filename": {
+            "default": "",
+            "maxLength": 255,
+            "title": "Filename",
+            "type": "string"
+          },
+          "height": {
+            "default": 0,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Height",
+            "type": "integer"
+          },
+          "sha256": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "width": {
+            "default": 0,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "title": "AdminImportPortrait",
+        "type": "object"
+      },
+      "AdminImportPreflightRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "batch_id": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "default_owner_platform_user_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Default Owner Platform User Id",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/AdminImportRow"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "batch_id",
+          "default_owner_platform_user_id",
+          "rows"
+        ],
+        "title": "AdminImportPreflightRequest",
+        "type": "object"
+      },
+      "AdminImportPreflightResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AdminImportPreflightRow"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ListResponseMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "AdminImportPreflightResponse",
+        "type": "object"
+      },
+      "AdminImportPreflightRow": {
+        "description": "Per-row preflight verdict. ``changed_fields`` 只含字段名，绝不含内容。",
+        "properties": {
+          "changed_fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed Fields",
+            "type": "array"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/AdminImportIssue"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "operation": {
+            "enum": [
+              "create",
+              "update"
+            ],
+            "title": "Operation",
+            "type": "string"
+          },
+          "owner_platform_user_id": {
+            "title": "Owner Platform User Id",
+            "type": "string"
+          },
+          "portrait_action": {
+            "enum": [
+              "upload",
+              "reuse"
+            ],
+            "title": "Portrait Action",
+            "type": "string"
+          },
+          "portrait_media_id": {
+            "title": "Portrait Media Id",
+            "type": "string"
+          },
+          "prompt_budget": {
+            "$ref": "#/components/schemas/AdminImportPromptBudget"
+          },
+          "row_key": {
+            "title": "Row Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "row_key",
+          "operation",
+          "owner_platform_user_id",
+          "changed_fields",
+          "portrait_action",
+          "portrait_media_id",
+          "prompt_budget",
+          "issues"
+        ],
+        "title": "AdminImportPreflightRow",
+        "type": "object"
+      },
+      "AdminImportPromptBlock": {
+        "properties": {
+          "block": {
+            "title": "Block",
+            "type": "string"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "over_limit": {
+            "title": "Over Limit",
+            "type": "boolean"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "tokens": {
+            "title": "Tokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "block",
+          "tokens",
+          "limit",
+          "required",
+          "over_limit"
+        ],
+        "title": "AdminImportPromptBlock",
+        "type": "object"
+      },
+      "AdminImportPromptBudget": {
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/components/schemas/AdminImportPromptBlock"
+            },
+            "title": "Blocks",
+            "type": "array"
+          },
+          "over_limit": {
+            "title": "Over Limit",
+            "type": "boolean"
+          },
+          "total_tokens": {
+            "title": "Total Tokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "blocks",
+          "total_tokens",
+          "over_limit"
+        ],
+        "title": "AdminImportPromptBudget",
+        "type": "object"
+      },
+      "AdminImportRow": {
+        "additionalProperties": false,
+        "description": "One manifest line. ``character_id`` 有值即为改版，为空即为新建。\n\n这里刻意不复用 ``CreateCharacterRequest``：导入行允许字段不完整（预检要能报出哪里\n不合规，而不是整批 422），完整性由预检的 ``issues[]`` 和执行期的逐行校验负责。",
+        "properties": {
+          "avatar_crop": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminImportCropRect"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "avatar_position_x": {
+            "default": 50,
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Avatar Position X",
+            "type": "integer"
+          },
+          "avatar_position_y": {
+            "default": 50,
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Avatar Position Y",
+            "type": "integer"
+          },
+          "avatar_zoom": {
+            "default": 100,
+            "maximum": 200.0,
+            "minimum": 100.0,
+            "title": "Avatar Zoom",
+            "type": "integer"
+          },
+          "character_id": {
+            "default": "",
+            "maxLength": 100,
+            "title": "Character Id",
+            "type": "string"
+          },
+          "character_settings": {
+            "default": "",
+            "maxLength": 200000,
+            "title": "Character Settings",
+            "type": "string"
+          },
+          "creator_declared_rating": {
+            "default": "",
+            "maxLength": 40,
+            "title": "Creator Declared Rating",
+            "type": "string"
+          },
+          "display_name": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "example_dialogues": {
+            "default": "",
+            "maxLength": 200000,
+            "title": "Example Dialogues",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
+          },
+          "gender": {
+            "default": "",
+            "maxLength": 40,
+            "title": "Gender",
+            "type": "string"
+          },
+          "image_set_id": {
+            "default": "",
+            "maxLength": 100,
+            "title": "Image Set Id",
+            "type": "string"
+          },
+          "intro": {
+            "default": "",
+            "maxLength": 200000,
+            "title": "Intro",
+            "type": "string"
+          },
+          "opening_scene": {
+            "default": "",
+            "maxLength": 200000,
+            "title": "Opening Scene",
+            "type": "string"
+          },
+          "owner_platform_user_id": {
+            "default": "",
+            "maxLength": 100,
+            "title": "Owner Platform User Id",
+            "type": "string"
+          },
+          "portrait": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminImportPortrait"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "portrait_crop": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminImportCropRect"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "portrait_media_id": {
+            "default": "",
+            "maxLength": 100,
+            "title": "Portrait Media Id",
+            "type": "string"
+          },
+          "portrait_position_x": {
+            "default": 50,
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Portrait Position X",
+            "type": "integer"
+          },
+          "portrait_position_y": {
+            "default": 50,
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Portrait Position Y",
+            "type": "integer"
+          },
+          "portrait_zoom": {
+            "default": 100,
+            "maximum": 200.0,
+            "minimum": 100.0,
+            "title": "Portrait Zoom",
+            "type": "integer"
+          },
+          "response_rules": {
+            "default": "",
+            "maxLength": 200000,
+            "title": "Response Rules",
+            "type": "string"
+          },
+          "row_key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Row Key",
+            "type": "string"
+          },
+          "tag_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Tag Ids",
+            "type": "array"
+          },
+          "visibility": {
+            "default": "private",
+            "maxLength": 40,
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "row_key"
+        ],
+        "title": "AdminImportRow",
+        "type": "object"
+      },
+      "AdminImportRowResult": {
+        "description": "Row ledger projection. 只含标识与状态，不含角色正文。",
+        "properties": {
+          "character_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character Id"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "operation": {
+            "enum": [
+              "create",
+              "update"
+            ],
+            "title": "Operation",
+            "type": "string"
+          },
+          "review_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Id"
+          },
+          "row_key": {
+            "title": "Row Key",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "published",
+              "pending_review",
+              "rejected",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Number"
+          },
+          "work_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Id"
+          }
+        },
+        "required": [
+          "row_key",
+          "operation",
+          "status"
+        ],
+        "title": "AdminImportRowResult",
+        "type": "object"
+      },
+      "AdminImportSchemaResponse": {
+        "properties": {
+          "data": {
+            "additionalProperties": true,
+            "title": "Data",
+            "type": "object"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "AdminImportSchemaResponse",
+        "type": "object"
+      },
       "AdminModerationBacklog": {
         "properties": {
           "oldest_created_at": {
@@ -3169,6 +4119,1263 @@
         "summary": "Admin Creator",
         "tags": [
           "plum-admin-creators"
+        ]
+      }
+    },
+    "/admin/plum/imports": {
+      "get": {
+        "description": "List import batches newest first.",
+        "operationId": "admin_import_batches_admin_plum_imports_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminImportBatchListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Import Batches",
+        "tags": [
+          "plum-admin-imports"
+        ]
+      }
+    },
+    "/admin/plum/imports/characters": {
+      "post": {
+        "description": "Import every row independently, recording a terminal state for each.",
+        "operationId": "admin_import_characters_admin_plum_imports_characters_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminImportExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminImportExecuteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Import Characters",
+        "tags": [
+          "plum-admin-imports"
+        ]
+      }
+    },
+    "/admin/plum/imports/characters/preflight": {
+      "post": {
+        "description": "Report per-row verdicts without writing anything.\n\n只要 ``operations.access``：预检是只读的，不该受写开关影响——后台设为只读时运营仍然\n应该能先把包检查干净。",
+        "operationId": "admin_import_preflight_admin_plum_imports_characters_preflight_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminImportPreflightRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminImportPreflightResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Import Preflight",
+        "tags": [
+          "plum-admin-imports"
+        ]
+      }
+    },
+    "/admin/plum/imports/characters/schema": {
+      "get": {
+        "description": "Publish the field contract the import package must satisfy.\n\n上限一律现取：字符上限取 ``character_limits``，token 上限直接量一次空内容拿到发布期\n真正会用的分块与 cap。抄一份常量就等于多一个会和发布期悄悄分叉的事实来源。",
+        "operationId": "admin_import_schema_admin_plum_imports_characters_schema_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminImportSchemaResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Import Schema",
+        "tags": [
+          "plum-admin-imports"
+        ]
+      }
+    },
+    "/admin/plum/imports/media/image-sets": {
+      "post": {
+        "description": "Materialize the two public renditions under the batch owner's media scope.",
+        "operationId": "admin_import_image_set_admin_plum_imports_media_image_sets_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminImportImageSetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminImportMediaResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Import Image Set",
+        "tags": [
+          "plum-admin-imports"
+        ]
+      }
+    },
+    "/admin/plum/imports/media/uploads": {
+      "post": {
+        "description": "Grant a direct S3 upload for the batch owner, not for the operator.",
+        "operationId": "admin_import_media_upload_admin_plum_imports_media_uploads_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminImportMediaUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminImportMediaResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Import Media Upload",
+        "tags": [
+          "plum-admin-imports"
+        ]
+      }
+    },
+    "/admin/plum/imports/media/uploads/{media_id}/complete": {
+      "post": {
+        "description": "Run the creator-side verification chain against the batch owner's asset.",
+        "operationId": "admin_import_media_complete_admin_plum_imports_media_uploads__media_id__complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "media_id",
+            "required": true,
+            "schema": {
+              "title": "Media Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminImportMediaCompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminImportMediaResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Import Media Complete",
+        "tags": [
+          "plum-admin-imports"
+        ]
+      }
+    },
+    "/admin/plum/imports/{batch_id}": {
+      "get": {
+        "description": "Return one batch header plus its per-row results.",
+        "operationId": "admin_import_batch_admin_plum_imports__batch_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "title": "Batch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminImportBatchDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Import Batch",
+        "tags": [
+          "plum-admin-imports"
         ]
       }
     },
