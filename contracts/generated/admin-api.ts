@@ -38,6 +38,26 @@ export interface paths {
         patch: operations["update_admin_user_admin_plum_admin_users__open_id__patch"];
         trace?: never;
     };
+    "/admin/plum/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Audit Events
+         * @description 按时间倒序读一页 Plum 审计事件。最近发生的事最常被追问，所以倒序是默认也是唯一。
+         */
+        get: operations["admin_audit_events_admin_plum_audit_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/plum/characters": {
         parameters: {
             query?: never;
@@ -567,6 +587,50 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AdminAuditEventItem
+         * @description 一条后台操作审计。
+         *
+         *     ``metadata`` 里只允许出现标识、状态与**字段名**——角色正文、立绘字节、Token、Cookie
+         *     与完整 Prompt 一律不进审计（写入侧在 imports/moderation 各自约束）。这个读接口不做
+         *     二次裁剪：能读到审计的人本来就是管理员，真要出问题也是写入侧写错了，那必须在写入侧修。
+         */
+        AdminAuditEventItem: {
+            /** Action */
+            action: string;
+            /** Actor Display Name */
+            actor_display_name?: string | null;
+            /** Actor Open Id */
+            actor_open_id: string;
+            /** Id */
+            id: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Plaintext */
+            plaintext: boolean;
+            /** Reason */
+            reason?: string | null;
+            /** Request Path */
+            request_path?: string | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Resource Type */
+            resource_type: string;
+        };
+        /** AdminAuditEventListResponse */
+        AdminAuditEventListResponse: {
+            /** Data */
+            data: components["schemas"]["AdminAuditEventItem"][];
+            meta: components["schemas"]["ResponseMeta"];
+            page: components["schemas"]["PageInfo"];
+        };
         /** AdminCharacterItem */
         AdminCharacterItem: {
             /**
@@ -756,7 +820,7 @@ export interface components {
         /** AdminIdentity */
         AdminIdentity: {
             /** Capabilities */
-            capabilities: ("operations.access" | "character.restore" | "membership.manage" | "staff.manage")[];
+            capabilities: ("operations.access" | "character.restore" | "membership.manage" | "staff.manage" | "audit.read")[];
             /** Display Name */
             display_name: string;
             /** Email */
@@ -1015,6 +1079,8 @@ export interface components {
             prompt_budget: components["schemas"]["AdminImportPromptBudget"];
             /** Row Key */
             row_key: string;
+            /** Target Display Name */
+            target_display_name?: string | null;
         };
         /** AdminImportPromptBlock */
         AdminImportPromptBlock: {
@@ -1846,6 +1912,89 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_audit_events_admin_plum_audit_events_get: {
+        parameters: {
+            query?: {
+                action?: string;
+                actor?: string;
+                plaintext?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAuditEventListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
