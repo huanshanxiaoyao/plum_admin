@@ -33,7 +33,7 @@
 
 改为复用 `operations.access` 之后，**允许清单、导航注册、写开关判断全部可以立即落地**，不必等后端。仍需等契约的只剩响应体类型；参照 `features/admin-resources/contracts.ts` 里 `SubscriptionSummary` 的既有做法（fixture 模块手写类型），导入模块可以先手写请求/响应类型，等后端契约落地后替换为生成类型。这条替换必须在联调前完成，不能留到上线后。
 
-**写开关本期直接开启**（`ADMIN_API_WRITE_ENABLED=true`、`PLUM_ADMIN_WRITES_ENABLED=true`）。需要在评审时点明的连带影响：这两个开关是全局的，打开后**内容复核的三处置（`release` / `confine` / `purge`）也随之在生产可用**，其中 `purge` 不可撤销。若不接受，必须为导入引入独立开关，`lib/bff/config.ts` 需要相应扩展。
+**写开关本期直接开启**（`ADMIN_API_WRITE_ENABLED=true`、`PLUM_ADMIN_WRITES_ENABLED=true`）。连带影响：这两个开关是全局的，打开后**内容复核的三处置（`release` / `confine` / `purge`）也随之在生产可用**，其中 `purge` 不可撤销。**2026-09-05 已拍板接受这一连带影响**，不为导入拆独立开关——`lib/bff/config.ts` 保持现状；前提是这些写操作都留得下审计（覆盖范围与两处已知不足见 PRD §11.3）。
 
 ## 2. 现状盘点
 
@@ -452,7 +452,7 @@ features/imports/
 | 项 | 设计 |
 | --- | --- |
 | Capability | 复用 `operations.access`，不新增能力，`lib/auth/capabilities.ts` 不动。代价是所有后台运营都能批量写，补偿手段是审计完备性 |
-| 写开关 | `ADMIN_API_WRITE_ENABLED` 与 `PLUM_ADMIN_WRITES_ENABLED` 本期均置 `true`。注意这是全局开关，同时放开内容复核三处置（§1.1） |
+| 写开关 | `ADMIN_API_WRITE_ENABLED` 与 `PLUM_ADMIN_WRITES_ENABLED` 本期均置 `true`。这是全局开关，同时放开内容复核三处置；已拍板接受，条件是审计覆盖（§1.1、PRD §11.3） |
 | CSRF | 写请求走既有 `isSameOrigin` 检查 |
 | 批次审计 | `plum.character.import`：`batch_id`、归属账号、行数、四类计数、`reason`、两个确认项、操作员 `open_id` |
 | 行级审计 | `plum.character.create` / `plum.character.revise`：`row_key`、`character_id`、`work_id`、`operation`、机审结论、`changed_fields`（**仅字段名**） |
@@ -526,5 +526,5 @@ features/imports/
 | 大文件打爆后台进程 | 图片直传对象存储，不经 BFF 缓冲；manifest 文本单独提交 |
 | 浏览器校验被绕过 | L3 用与用户侧相同的严格模型重新校验全部规则 |
 | 批量写能力被误用于日常运营 | **本期复用 `operations.access`，这道闸门是敞开的。** 剩余控制只有：逐行审计不可删改、导入不绕过机审、批次串行。若实际运行中出现误用，收紧手段是引入 `character.import`（改动面：后端契约枚举、`lib/auth/capabilities.ts`、allowlist 六条规则、模块注册一处） |
-| 开启全局写开关连带放开内容复核三处置 | **已知且未解决。** 需要在评审时明确接受，或为导入引入独立开关（§1.1） |
+| 开启全局写开关连带放开内容复核三处置 | **已知，2026-09-05 接受。** 不拆独立开关，代偿是审计：导入逐行审计写失败即该行失败；复核三处置逐次记 `plum_moderation.*`。账本已可在控制台回看（`audit.read`，仅 admin）；残余风险是复核审计与处置不在同一事务（PRD §11.3） |
 | 没有草稿的种子角色无法更新 | 本期显式报错，不凭空补建草稿 |

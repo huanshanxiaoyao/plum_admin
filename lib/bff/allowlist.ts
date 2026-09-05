@@ -26,6 +26,8 @@ const RULES: readonly AllowRule[] = [
   { methods: ["POST"], path: /^imports\/media\/uploads$/, capability: DAILY },
   { methods: ["POST"], path: /^imports\/media\/uploads\/[^/]+\/complete$/, capability: DAILY },
   { methods: ["POST"], path: /^imports\/media\/image-sets$/, capability: DAILY },
+  // 操作审计只给 admin：审计里有操作者、资源 id 与操作原因，是「谁动过什么」的完整账本。
+  { methods: ["GET"], path: /^audit-events$/, capability: "audit.read" },
   { methods: ["GET"], path: /^admin-users$/, capability: "staff.manage" },
   { methods: ["PATCH"], path: /^admin-users\/[^/]+$/, capability: "staff.manage" },
 ];

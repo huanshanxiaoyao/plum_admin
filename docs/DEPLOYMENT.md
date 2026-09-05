@@ -79,6 +79,8 @@ FEISHU_CLIENT_SECRET=<飞书应用 App Secret>
 FEISHU_REDIRECT_URI=https://admin.plum.top/api/auth/feishu/callback
 ```
 
+`ADMIN_API_WRITE_ENABLED` 一期保持 `false`。**上线角色批量导入时改为 `true`**——这是全局开关，改了之后内容复核的三处置（`release` / `confine` / `purge`，其中 `purge` 不可撤销）也一并在生产可用。这个连带影响已于 2026-09-05 拍板接受，前提是写操作都有审计，覆盖范围见[角色批量导入 PRD §11.3](./CHARACTER_IMPORT_PRD.md)。
+
 ```bash
 chmod 600 .env
 npm run lint

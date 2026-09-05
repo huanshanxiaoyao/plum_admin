@@ -51,6 +51,14 @@ test("moderation rules do not widen into neighbouring paths", () => {
   assert.equal(requiredCapability("POST", "moderation/backlog"), null);
 });
 
+test("audit read stays behind its own capability, and only for GET", () => {
+  assert.equal(requiredCapability("GET", "audit-events"), "audit.read");
+  assert.equal(requiredCapability("POST", "audit-events"), null);
+  assert.equal(requiredCapability("DELETE", "audit-events"), null);
+  assert.equal(requiredCapability("GET", "audit-events/10241"), null);
+  assert.equal(requiredCapability("GET", "audit"), null);
+});
+
 test("staff management stays behind its own capability", () => {
   assert.equal(requiredCapability("GET", "admin-users"), "staff.manage");
   assert.equal(requiredCapability("PATCH", "admin-users/adm-01"), "staff.manage");
@@ -63,7 +71,6 @@ test("phase-one-excluded and unknown routes remain closed", () => {
   assert.equal(requiredCapability("PATCH", "creators/pusr-01/control"), null);
   assert.equal(requiredCapability("POST", "users/pusr-01/membership/disable"), null);
   assert.equal(requiredCapability("GET", "subscriptions"), null);
-  assert.equal(requiredCapability("GET", "audit-events"), null);
   assert.equal(requiredCapability("DELETE", "users/pusr-01"), null);
   assert.equal(requiredCapability("GET", "../../health"), null);
   assert.equal(requiredCapability("POST", "arbitrary/proxy/path"), null);

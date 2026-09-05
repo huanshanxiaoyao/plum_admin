@@ -86,8 +86,8 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
     section: "audit",
     href: "/audit",
     label: "操作审计",
-    availability: "fixture",
-    capability: "operations.access",
+    availability: "shipped",
+    capability: "audit.read",
   },
   {
     key: "staff",

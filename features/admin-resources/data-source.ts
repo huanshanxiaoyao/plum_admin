@@ -156,7 +156,12 @@ function normalizeUserQuery(query: UserListQuery): UserListQuery {
   };
 }
 
-async function adminApiGet(path: string, query: Record<string, string | number | undefined> = {}): Promise<unknown> {
+/**
+ * 带 BFF 令牌直连后端的**服务端**取数。浏览器侧的 `adminApiFetch` 走 `/api/admin`
+ * 相对路径，在 Server Component 里没有 base URL，用错会在远端模式下直接抛。
+ * 导出给同样跑在服务端的其他 feature 复用（如导入批次台账）。
+ */
+export async function adminApiGet(path: string, query: Record<string, string | number | undefined> = {}): Promise<unknown> {
   const identity = await getCurrentIdentity();
   if (!identity) throw new AdminApiError(401, "admin_unauthenticated", "Sign in to continue.");
   const token = process.env.PLUM_ADMIN_BFF_TOKEN?.trim();

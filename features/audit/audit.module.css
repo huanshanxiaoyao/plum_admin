@@ -1,0 +1,60 @@
+.action {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  justify-items: start;
+}
+
+.action strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action code {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* metadata 是键值对，不是段落：定宽标签 + 可换行的值，行多了也不会把表格撑歪。 */
+.metadata {
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.metadata > div {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 6px;
+  align-items: baseline;
+}
+
+.metadata dt {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metadata dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted-strong);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 9px;
+}

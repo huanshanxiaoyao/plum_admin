@@ -23,6 +23,7 @@ test("remote mode exposes only shipped modules allowed by RBAC", () => {
     "moderation",
     "creators",
     "users",
+    "audit",
     "staff",
   ]);
 });
@@ -36,7 +37,6 @@ test("fixture mode keeps prototype modules without exposing staff to operators",
     "creators",
     "users",
     "subscriptions",
-    "audit",
   ]);
   assert.deepEqual(keys("fixture", "admin"), [
     "dashboard",
@@ -58,5 +58,7 @@ test("section lookup excludes the dashboard and unknown routes", () => {
   assert.equal(adminModuleForSection("moderation")?.capability, "operations.access");
   // 批量导入复用同一道闸门，不新开一个 capability。
   assert.equal(adminModuleForSection("imports")?.capability, "operations.access");
+  // 审计不共用日常闸门：能看账本的只有 admin。
+  assert.equal(adminModuleForSection("audit")?.capability, "audit.read");
   assert.equal(adminModuleForSection("appeals"), undefined);
 });
