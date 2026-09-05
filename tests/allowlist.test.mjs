@@ -20,6 +20,26 @@ test("moderation review queue is readable and decidable by operators", () => {
   assert.equal(requiredCapability("POST", "moderation/reviews/rev-01/decision"), "operations.access");
 });
 
+test("character import endpoints are reachable by operators", () => {
+  assert.equal(requiredCapability("GET", "imports"), "operations.access");
+  assert.equal(requiredCapability("GET", "imports/0f3d1a2b"), "operations.access");
+  assert.equal(requiredCapability("GET", "imports/characters/schema"), "operations.access");
+  assert.equal(requiredCapability("POST", "imports/characters/preflight"), "operations.access");
+  assert.equal(requiredCapability("POST", "imports/characters"), "operations.access");
+  assert.equal(requiredCapability("POST", "imports/media/uploads"), "operations.access");
+  assert.equal(requiredCapability("POST", "imports/media/uploads/med_1/complete"), "operations.access");
+  assert.equal(requiredCapability("POST", "imports/media/image-sets"), "operations.access");
+});
+
+test("import rules do not widen into neighbouring paths", () => {
+  assert.equal(requiredCapability("POST", "imports"), null);
+  assert.equal(requiredCapability("DELETE", "imports/0f3d1a2b"), null);
+  assert.equal(requiredCapability("GET", "imports/a/b"), null);
+  assert.equal(requiredCapability("GET", "imports/media/uploads"), null);
+  assert.equal(requiredCapability("POST", "imports/characters/schema"), null);
+  assert.equal(requiredCapability("POST", "imports/media/uploads/med_1"), null);
+});
+
 test("moderation rules do not widen into neighbouring paths", () => {
   assert.equal(requiredCapability("POST", "moderation/reviews"), null);
   assert.equal(requiredCapability("POST", "moderation/reviews/rev-01"), null);

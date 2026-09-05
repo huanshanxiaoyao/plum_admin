@@ -19,6 +19,13 @@ const RULES: readonly AllowRule[] = [
   { methods: ["GET"], path: /^moderation\/reviews(?:\/[^/]+)?$/, capability: DAILY },
   // 三处置与认领都只要 operations.access：purge 不额外限制 admin，是已拍板的产品决定。
   { methods: ["POST"], path: /^moderation\/reviews\/[^/]+\/(?:claim|decision)$/, capability: DAILY },
+  // 角色批量导入。复用 operations.access：与复核三处置同一道闸门，是已拍板的产品决定。
+  { methods: ["GET"], path: /^imports(?:\/[^/]+)?$/, capability: DAILY },
+  { methods: ["GET"], path: /^imports\/characters\/schema$/, capability: DAILY },
+  { methods: ["POST"], path: /^imports\/characters(?:\/preflight)?$/, capability: DAILY },
+  { methods: ["POST"], path: /^imports\/media\/uploads$/, capability: DAILY },
+  { methods: ["POST"], path: /^imports\/media\/uploads\/[^/]+\/complete$/, capability: DAILY },
+  { methods: ["POST"], path: /^imports\/media\/image-sets$/, capability: DAILY },
   { methods: ["GET"], path: /^admin-users$/, capability: "staff.manage" },
   { methods: ["PATCH"], path: /^admin-users\/[^/]+$/, capability: "staff.manage" },
 ];

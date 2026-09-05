@@ -4,6 +4,7 @@ import type { AdminDataSourceMode } from "../../lib/bff/config.ts";
 export type AdminModuleKey =
   | "dashboard"
   | "characters"
+  | "imports"
   | "moderation"
   | "creators"
   | "users"
@@ -36,6 +37,15 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
     section: "characters",
     href: "/characters",
     label: "角色管理",
+    availability: "shipped",
+    capability: "operations.access",
+  },
+  {
+    // 运营的心智起点是角色列表，导入紧挨着它。
+    key: "imports",
+    section: "imports",
+    href: "/imports",
+    label: "角色导入",
     availability: "shipped",
     capability: "operations.access",
   },
