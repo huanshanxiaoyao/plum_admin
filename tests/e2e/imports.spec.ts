@@ -47,7 +47,26 @@ test("operator reaches the import console from daily navigation", async ({ page 
   await nav.getByRole("link", { name: "角色导入" }).click();
   await expect(page).toHaveURL("/imports");
   await expect(page.getByRole("heading", { name: "角色导入" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "打包规范" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "使用说明" })).toBeVisible();
+});
+
+test("operator can open both import documents from the console", async ({ page }) => {
+  await signIn(page, "operator");
+  await page.goto("/imports");
+
+  await page.getByRole("link", { name: "打包规范" }).click();
+  await expect(page).toHaveURL("/imports/package-guide");
+  await expect(page.getByRole("heading", { name: "角色导入打包规范" })).toBeVisible();
   await expect(page.getByRole("button", { name: "下载 CSV 模板" })).toBeVisible();
+  await expect(page.getByRole("table")).toContainText("character_id");
+  await expect(page.getByText("第 61 行起显示文件名")).toBeVisible();
+
+  await page.getByRole("link", { name: "返回角色导入" }).click();
+  await page.getByRole("link", { name: "使用说明" }).click();
+  await expect(page).toHaveURL("/imports/user-guide");
+  await expect(page.getByRole("heading", { name: "角色导入使用说明" })).toBeVisible();
+  await expect(page.getByText("生产导入会真实创建或更新角色，且没有批次回滚。")).toBeVisible();
 });
 
 test("packaging rules are rendered from the schema instead of hand-written copy", async ({ page }) => {

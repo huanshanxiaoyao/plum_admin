@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { AlertTriangle, FileSpreadsheet, Image as ImageIcon, Package } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, BookOpen, FileSpreadsheet, Image as ImageIcon, Package } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getCurrentIdentity } from "../../lib/auth/session";
 import {
@@ -17,7 +18,6 @@ import {
   MAX_TAGS_PER_CHARACTER,
 } from "./manifest-schema";
 import { RecentBatches, RecentBatchesFallback } from "./recent-batches";
-import { TemplateDownload } from "./template-download";
 import styles from "./imports.module.css";
 
 const STEPS = [
@@ -49,7 +49,14 @@ export async function ImportConsolePage() {
           <p>用一个压缩包成批新建或更新角色。与创作者自建走完全相同的审核与发布链路。</p>
         </div>
         <div className={styles.headerActions}>
-          <TemplateDownload />
+          <Link className={styles.secondaryAction} href="/imports/package-guide">
+            <Package size={14} />
+            打包规范
+          </Link>
+          <Link className={styles.secondaryAction} href="/imports/user-guide">
+            <BookOpen size={14} />
+            使用说明
+          </Link>
         </div>
       </header>
 
