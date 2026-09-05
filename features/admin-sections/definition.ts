@@ -56,10 +56,3 @@ export function defineListSection<Section extends AdminListSection>(
     },
   };
 }
-
-export function defineStaticSection(
-  section: AdminModuleSection,
-  config: SectionConfig,
-): AdminSectionDefinition {
-  return { section, config };
-}

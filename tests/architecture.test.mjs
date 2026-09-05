@@ -33,7 +33,16 @@ test("the generated contract layer does not depend on application code", () => {
 });
 
 test("admin business routes are explicit instead of catch-all", () => {
-  for (const section of ["characters", "moderation", "creators", "users", "subscriptions", "audit", "staff"]) {
+  for (const section of [
+    "characters",
+    "imports",
+    "moderation",
+    "creators",
+    "users",
+    "subscriptions",
+    "audit",
+    "staff",
+  ]) {
     assert.equal(existsSync(join(ROOT, "app", "(admin)", section, "page.tsx")), true, section);
   }
   assert.equal(existsSync(join(ROOT, "app", "(admin)", "[section]", "page.tsx")), false);
@@ -42,4 +51,5 @@ test("admin business routes are explicit instead of catch-all", () => {
   assert.equal(existsSync(join(ROOT, "app", "(admin)", "users", "[id]", "page.tsx")), true);
   assert.equal(existsSync(join(ROOT, "app", "(admin)", "works", "[id]", "page.tsx")), true);
   assert.equal(existsSync(join(ROOT, "app", "(admin)", "moderation", "[id]", "page.tsx")), true);
+  assert.equal(existsSync(join(ROOT, "app", "(admin)", "imports", "[batchId]", "page.tsx")), true);
 });

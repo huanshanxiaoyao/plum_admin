@@ -7,6 +7,7 @@ export const CAPABILITIES = [
   "character.restore",
   "membership.manage",
   "staff.manage",
+  "audit.read",
 ] as const satisfies readonly BackendAdminIdentity["capabilities"][number][];
 
 export type Capability = BackendAdminIdentity["capabilities"][number];

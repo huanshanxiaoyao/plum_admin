@@ -38,6 +38,26 @@ export interface paths {
         patch: operations["update_admin_user_admin_plum_admin_users__open_id__patch"];
         trace?: never;
     };
+    "/admin/plum/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Audit Events
+         * @description 按时间倒序读一页 Plum 审计事件。最近发生的事最常被追问，所以倒序是默认也是唯一。
+         */
+        get: operations["admin_audit_events_admin_plum_audit_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/plum/characters": {
         parameters: {
             query?: never;
@@ -150,6 +170,172 @@ export interface paths {
          * @description Return one Creator public profile and aggregate content performance metadata.
          */
         get: operations["admin_creator_admin_plum_creators__platform_user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Import Batches
+         * @description List import batches newest first.
+         */
+        get: operations["admin_import_batches_admin_plum_imports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/imports/characters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Import Characters
+         * @description Import every row independently, recording a terminal state for each.
+         */
+        post: operations["admin_import_characters_admin_plum_imports_characters_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/imports/characters/preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Import Preflight
+         * @description Report per-row verdicts without writing anything.
+         *
+         *     只要 ``operations.access``：预检是只读的，不该受写开关影响——后台设为只读时运营仍然
+         *     应该能先把包检查干净。
+         */
+        post: operations["admin_import_preflight_admin_plum_imports_characters_preflight_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/imports/characters/schema": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Import Schema
+         * @description Publish the field contract the import package must satisfy.
+         *
+         *     上限一律现取：字符上限取 ``character_limits``，token 上限直接量一次空内容拿到发布期
+         *     真正会用的分块与 cap。抄一份常量就等于多一个会和发布期悄悄分叉的事实来源。
+         */
+        get: operations["admin_import_schema_admin_plum_imports_characters_schema_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/imports/media/image-sets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Import Image Set
+         * @description Materialize the two public renditions under the batch owner's media scope.
+         */
+        post: operations["admin_import_image_set_admin_plum_imports_media_image_sets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/imports/media/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Import Media Upload
+         * @description Grant a direct S3 upload for the batch owner, not for the operator.
+         */
+        post: operations["admin_import_media_upload_admin_plum_imports_media_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/imports/media/uploads/{media_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Import Media Complete
+         * @description Run the creator-side verification chain against the batch owner's asset.
+         */
+        post: operations["admin_import_media_complete_admin_plum_imports_media_uploads__media_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/imports/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Import Batch
+         * @description Return one batch header plus its per-row results.
+         */
+        get: operations["admin_import_batch_admin_plum_imports__batch_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -401,6 +587,50 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AdminAuditEventItem
+         * @description 一条后台操作审计。
+         *
+         *     ``metadata`` 里只允许出现标识、状态与**字段名**——角色正文、立绘字节、Token、Cookie
+         *     与完整 Prompt 一律不进审计（写入侧在 imports/moderation 各自约束）。这个读接口不做
+         *     二次裁剪：能读到审计的人本来就是管理员，真要出问题也是写入侧写错了，那必须在写入侧修。
+         */
+        AdminAuditEventItem: {
+            /** Action */
+            action: string;
+            /** Actor Display Name */
+            actor_display_name?: string | null;
+            /** Actor Open Id */
+            actor_open_id: string;
+            /** Id */
+            id: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Plaintext */
+            plaintext: boolean;
+            /** Reason */
+            reason?: string | null;
+            /** Request Path */
+            request_path?: string | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Resource Type */
+            resource_type: string;
+        };
+        /** AdminAuditEventListResponse */
+        AdminAuditEventListResponse: {
+            /** Data */
+            data: components["schemas"]["AdminAuditEventItem"][];
+            meta: components["schemas"]["ResponseMeta"];
+            page: components["schemas"]["PageInfo"];
+        };
         /** AdminCharacterItem */
         AdminCharacterItem: {
             /**
@@ -590,7 +820,7 @@ export interface components {
         /** AdminIdentity */
         AdminIdentity: {
             /** Capabilities */
-            capabilities: ("operations.access" | "character.restore" | "membership.manage" | "staff.manage")[];
+            capabilities: ("operations.access" | "character.restore" | "membership.manage" | "staff.manage" | "audit.read")[];
             /** Display Name */
             display_name: string;
             /** Email */
@@ -611,6 +841,418 @@ export interface components {
         /** AdminIdentityResponse */
         AdminIdentityResponse: {
             data: components["schemas"]["AdminIdentity"];
+            meta: components["schemas"]["ResponseMeta"];
+        };
+        /** AdminImportBatchDetailResponse */
+        AdminImportBatchDetailResponse: {
+            data: components["schemas"]["AdminImportBatchItem"];
+            meta: components["schemas"]["ListResponseMeta"];
+            /** Rows */
+            rows: components["schemas"]["AdminImportRowResult"][];
+        };
+        /** AdminImportBatchItem */
+        AdminImportBatchItem: {
+            /** Adult Confirmed */
+            adult_confirmed: boolean;
+            /** Batch Id */
+            batch_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Failed Count */
+            failed_count: number;
+            /** Operator Open Id */
+            operator_open_id: string;
+            /** Owner Platform User Id */
+            owner_platform_user_id: string;
+            /** Pending Review Count */
+            pending_review_count: number;
+            /** Published Count */
+            published_count: number;
+            /** Reason */
+            reason: string;
+            /** Rejected Count */
+            rejected_count: number;
+            /** Rights Confirmed */
+            rights_confirmed: boolean;
+            /** Row Count */
+            row_count: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "completed";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AdminImportBatchListResponse */
+        AdminImportBatchListResponse: {
+            /** Data */
+            data: components["schemas"]["AdminImportBatchItem"][];
+            meta: components["schemas"]["ListResponseMeta"];
+            page: components["schemas"]["PageInfo"];
+        };
+        /** AdminImportConfirmations */
+        AdminImportConfirmations: {
+            /**
+             * Adult Confirmed
+             * @constant
+             */
+            adult_confirmed: true;
+            /**
+             * Rights Confirmed
+             * @constant
+             */
+            rights_confirmed: true;
+        };
+        /** AdminImportCropRect */
+        AdminImportCropRect: {
+            /**
+             * Contract Version
+             * @default 2
+             * @constant
+             */
+            contract_version: 2;
+            /** Height */
+            height: number;
+            /** Width */
+            width: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** AdminImportExecuteRequest */
+        AdminImportExecuteRequest: {
+            /** Batch Id */
+            batch_id: string;
+            confirmations: components["schemas"]["AdminImportConfirmations"];
+            /** Default Owner Platform User Id */
+            default_owner_platform_user_id: string;
+            /** Reason */
+            reason: string;
+            /** Rows */
+            rows: components["schemas"]["AdminImportRow"][];
+        };
+        /** AdminImportExecuteResponse */
+        AdminImportExecuteResponse: {
+            data: components["schemas"]["AdminImportBatchItem"];
+            meta: components["schemas"]["ListResponseMeta"];
+            /** Rows */
+            rows: components["schemas"]["AdminImportRowResult"][];
+        };
+        /** AdminImportImageSetRequest */
+        AdminImportImageSetRequest: {
+            avatar_crop: components["schemas"]["AdminImportCropRect"];
+            /** Owner Platform User Id */
+            owner_platform_user_id: string;
+            portrait_crop: components["schemas"]["AdminImportCropRect"];
+            /** Source Media Id */
+            source_media_id: string;
+        };
+        /** AdminImportIssue */
+        AdminImportIssue: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
+        /** AdminImportMediaCompleteRequest */
+        AdminImportMediaCompleteRequest: {
+            /** Owner Platform User Id */
+            owner_platform_user_id: string;
+        };
+        /** AdminImportMediaResponse */
+        AdminImportMediaResponse: {
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+            meta: components["schemas"]["ResponseMeta"];
+        };
+        /**
+         * AdminImportMediaUploadRequest
+         * @description Admin 直传申请。owner 由服务端从这里取，而不是从操作员会话取。
+         */
+        AdminImportMediaUploadRequest: {
+            /** Bytes */
+            bytes: number;
+            /** Checksum Sha256 */
+            checksum_sha256: string;
+            /** Content Type */
+            content_type: string;
+            /** Filename */
+            filename: string;
+            /** Height */
+            height: number;
+            /**
+             * Kind
+             * @default image
+             */
+            kind: string;
+            /** Owner Platform User Id */
+            owner_platform_user_id: string;
+            /**
+             * Purpose
+             * @default character_portrait
+             */
+            purpose: string;
+            /** Width */
+            width: number;
+        };
+        /**
+         * AdminImportPortrait
+         * @description One row's declared portrait bytes, measured in the browser before upload.
+         */
+        AdminImportPortrait: {
+            /**
+             * Bytes
+             * @default 0
+             */
+            bytes: number;
+            /**
+             * Filename
+             * @default
+             */
+            filename: string;
+            /**
+             * Height
+             * @default 0
+             */
+            height: number;
+            /**
+             * Sha256
+             * @default
+             */
+            sha256: string;
+            /**
+             * Width
+             * @default 0
+             */
+            width: number;
+        };
+        /** AdminImportPreflightRequest */
+        AdminImportPreflightRequest: {
+            /** Batch Id */
+            batch_id: string;
+            /** Default Owner Platform User Id */
+            default_owner_platform_user_id: string;
+            /** Rows */
+            rows: components["schemas"]["AdminImportRow"][];
+        };
+        /** AdminImportPreflightResponse */
+        AdminImportPreflightResponse: {
+            /** Data */
+            data: components["schemas"]["AdminImportPreflightRow"][];
+            meta: components["schemas"]["ListResponseMeta"];
+        };
+        /**
+         * AdminImportPreflightRow
+         * @description Per-row preflight verdict. ``changed_fields`` 只含字段名，绝不含内容。
+         */
+        AdminImportPreflightRow: {
+            /** Changed Fields */
+            changed_fields: string[];
+            /** Expected Revision */
+            expected_revision?: number | null;
+            /** Issues */
+            issues: components["schemas"]["AdminImportIssue"][];
+            /**
+             * Operation
+             * @enum {string}
+             */
+            operation: "create" | "update";
+            /** Owner Platform User Id */
+            owner_platform_user_id: string;
+            /**
+             * Portrait Action
+             * @enum {string}
+             */
+            portrait_action: "upload" | "reuse";
+            /** Portrait Media Id */
+            portrait_media_id: string;
+            prompt_budget: components["schemas"]["AdminImportPromptBudget"];
+            /** Row Key */
+            row_key: string;
+            /** Target Display Name */
+            target_display_name?: string | null;
+        };
+        /** AdminImportPromptBlock */
+        AdminImportPromptBlock: {
+            /** Block */
+            block: string;
+            /** Limit */
+            limit: number;
+            /** Over Limit */
+            over_limit: boolean;
+            /** Required */
+            required: boolean;
+            /** Tokens */
+            tokens: number;
+        };
+        /** AdminImportPromptBudget */
+        AdminImportPromptBudget: {
+            /** Blocks */
+            blocks: components["schemas"]["AdminImportPromptBlock"][];
+            /** Over Limit */
+            over_limit: boolean;
+            /** Total Tokens */
+            total_tokens: number;
+        };
+        /**
+         * AdminImportRow
+         * @description One manifest line. ``character_id`` 有值即为改版，为空即为新建。
+         *
+         *     这里刻意不复用 ``CreateCharacterRequest``：导入行允许字段不完整（预检要能报出哪里
+         *     不合规，而不是整批 422），完整性由预检的 ``issues[]`` 和执行期的逐行校验负责。
+         */
+        AdminImportRow: {
+            avatar_crop?: components["schemas"]["AdminImportCropRect"] | null;
+            /**
+             * Avatar Position X
+             * @default 50
+             */
+            avatar_position_x: number;
+            /**
+             * Avatar Position Y
+             * @default 50
+             */
+            avatar_position_y: number;
+            /**
+             * Avatar Zoom
+             * @default 100
+             */
+            avatar_zoom: number;
+            /**
+             * Character Id
+             * @default
+             */
+            character_id: string;
+            /**
+             * Character Settings
+             * @default
+             */
+            character_settings: string;
+            /**
+             * Creator Declared Rating
+             * @default
+             */
+            creator_declared_rating: string;
+            /**
+             * Display Name
+             * @default
+             */
+            display_name: string;
+            /**
+             * Example Dialogues
+             * @default
+             */
+            example_dialogues: string;
+            /** Expected Revision */
+            expected_revision?: number | null;
+            /**
+             * Gender
+             * @default
+             */
+            gender: string;
+            /**
+             * Image Set Id
+             * @default
+             */
+            image_set_id: string;
+            /**
+             * Intro
+             * @default
+             */
+            intro: string;
+            /**
+             * Opening Scene
+             * @default
+             */
+            opening_scene: string;
+            /**
+             * Owner Platform User Id
+             * @default
+             */
+            owner_platform_user_id: string;
+            portrait?: components["schemas"]["AdminImportPortrait"] | null;
+            portrait_crop?: components["schemas"]["AdminImportCropRect"] | null;
+            /**
+             * Portrait Media Id
+             * @default
+             */
+            portrait_media_id: string;
+            /**
+             * Portrait Position X
+             * @default 50
+             */
+            portrait_position_x: number;
+            /**
+             * Portrait Position Y
+             * @default 50
+             */
+            portrait_position_y: number;
+            /**
+             * Portrait Zoom
+             * @default 100
+             */
+            portrait_zoom: number;
+            /**
+             * Response Rules
+             * @default
+             */
+            response_rules: string;
+            /** Row Key */
+            row_key: string;
+            /** Tag Ids */
+            tag_ids?: string[];
+            /**
+             * Visibility
+             * @default private
+             */
+            visibility: string;
+        };
+        /**
+         * AdminImportRowResult
+         * @description Row ledger projection. 只含标识与状态，不含角色正文。
+         */
+        AdminImportRowResult: {
+            /** Character Id */
+            character_id?: string | null;
+            /** Error Code */
+            error_code?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /**
+             * Operation
+             * @enum {string}
+             */
+            operation: "create" | "update";
+            /** Review Id */
+            review_id?: string | null;
+            /** Row Key */
+            row_key: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "published" | "pending_review" | "rejected" | "failed";
+            /** Version Number */
+            version_number?: number | null;
+            /** Work Id */
+            work_id?: string | null;
+        };
+        /** AdminImportSchemaResponse */
+        AdminImportSchemaResponse: {
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
             meta: components["schemas"]["ResponseMeta"];
         };
         /** AdminModerationBacklog */
@@ -1306,6 +1948,89 @@ export interface operations {
             };
         };
     };
+    admin_audit_events_admin_plum_audit_events_get: {
+        parameters: {
+            query?: {
+                action?: string;
+                actor?: string;
+                plaintext?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAuditEventListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
     admin_characters_admin_plum_characters_get: {
         parameters: {
             query?: {
@@ -1828,6 +2553,865 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_import_batches_admin_plum_imports_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminImportBatchListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_import_characters_admin_plum_imports_characters_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminImportExecuteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminImportExecuteResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_import_preflight_admin_plum_imports_characters_preflight_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminImportPreflightRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminImportPreflightResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_import_schema_admin_plum_imports_characters_schema_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminImportSchemaResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_import_image_set_admin_plum_imports_media_image_sets_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminImportImageSetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminImportMediaResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_import_media_upload_admin_plum_imports_media_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminImportMediaUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminImportMediaResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_import_media_complete_admin_plum_imports_media_uploads__media_id__complete_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminImportMediaCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminImportMediaResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_import_batch_admin_plum_imports__batch_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminImportBatchDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
