@@ -54,6 +54,9 @@
 .summaryPass strong { color: var(--green); }
 .summaryFail strong { color: var(--red); }
 .pendingServer { color: var(--muted); font-size: 9px; }
+/* 目标角色的当前名。改名行用强调色：它是合法操作，但必须被看见。 */
+.targetName { color: var(--muted-strong); font-size: 9px; }
+.targetRenamed { color: var(--amber); font-size: 9px; font-weight: 700; }
 
 .packageIssues { display: grid; gap: 6px; margin: 0; padding: 12px 14px; border: 1px solid #dfb7b4; border-radius: 5px; background: var(--red-soft); list-style: none; }
 .packageIssues li { display: flex; align-items: flex-start; gap: 6px; font-size: 10px; line-height: 1.6; }
@@ -68,6 +71,10 @@
 .rowBlocked td { background: #fefafa; }
 
 .identity { min-width: 0; display: grid; gap: 3px; }
+.rowIdentity { min-width: 0; display: flex; align-items: flex-start; gap: 9px; }
+/* 9:16 竖图按发布比例显示，方图/横图会被 cover 裁掉——那本身就是要看见的信息。 */
+.portrait { flex: none; width: 34px; height: 60px; border: 1px solid var(--line); border-radius: 3px; object-fit: cover; background: var(--surface-subtle); }
+.portraitMissing { flex: none; width: 34px; min-height: 60px; display: grid; place-items: center; padding: 3px; border: 1px dashed var(--line-strong); border-radius: 3px; color: var(--muted); font-size: 8px; word-break: break-all; text-align: center; }
 .identity strong { overflow: hidden; color: var(--ink); font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .identity a { color: var(--green); font-size: 10px; text-decoration: none; }
 .identity a:hover { text-decoration: underline; }
@@ -157,6 +164,35 @@
 .reviewNote { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 11px 13px; border: 1px solid #ead1aa; border-radius: 5px; background: var(--amber-soft); color: var(--muted-strong); font-size: 10px; line-height: 1.6; }
 .reviewNote strong { color: var(--amber); }
 .reviewNote a { display: inline-flex; align-items: center; gap: 4px; color: var(--green); text-decoration: none; }
+
+/* --- 批次台账 --- */
+.batchTable table { min-width: 880px; }
+.batchTable th:first-child { width: 20%; }
+.batchTable th:nth-child(2) { width: 8%; }
+.batchTable th:nth-child(3) { width: 26%; }
+.batchTable th:nth-child(4) { width: 7%; }
+.batchTable th:nth-child(5) { width: 18%; }
+.batchTable th:last-child { width: 21%; }
+
+.countRow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.countRow > span { display: inline-flex; align-items: center; min-height: 21px; padding: 0 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 9px; font-weight: 700; white-space: nowrap; }
+.countZero { color: var(--muted); background: var(--surface-subtle); }
+.countPending { color: var(--muted); font-size: 9px; }
+
+.errorMark { width: 38px; height: 38px; display: grid; place-items: center; border: 1px dashed #dfb7b4; border-radius: 50%; color: var(--red); font-size: 10px; }
+
+.recent { display: grid; gap: 10px; }
+.recentHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.recentHeader h2 { margin: 0; font-size: 13px; }
+.recentMore { display: inline-flex; align-items: center; gap: 3px; color: var(--green); font-size: 10px; text-decoration: none; }
+.recentMore:hover { text-decoration: underline; }
+
+.pagination { display: flex; align-items: center; justify-content: flex-end; gap: 7px; color: var(--muted); font-size: 10px; }
+.pagination span { margin-right: auto; }
+.pagination a, .pagination button { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--muted-strong); background: var(--surface); }
+.pagination a:hover { color: var(--ink); border-color: var(--surface-strong); }
+.pagination button:disabled { color: var(--line-strong); cursor: not-allowed; }
+
 
 @media (max-width: 1080px) {
   .confirmGrid { grid-template-columns: minmax(0, 1fr); }

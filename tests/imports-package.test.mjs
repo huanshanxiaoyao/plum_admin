@@ -10,7 +10,7 @@ import {
 import { summarize } from "../features/imports/import-contracts.ts";
 import { parseCsv } from "../features/imports/csv.ts";
 import { centerCrop } from "../features/imports/import-api.ts";
-import { buildZip } from "./helpers/zip-fixture.mjs";
+import { buildZip } from "./helpers/zip-fixture.ts";
 
 const HEADER =
   "row_key,display_name,gender,intro,opening_scene,character_settings,creator_declared_rating,portrait_file";

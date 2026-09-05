@@ -166,3 +166,55 @@ test("失败行不带 character_id，成功行带", () => {
     }
   }
 });
+
+test("更新行带回目标角色在库里的当前名字", () => {
+  // 这一列是「我要改的确实是这一个」的唯一凭据：character_id 是操作员填的，
+  // 拿它回显等于自证；抄成另一个合法 ID 时只有这个名字对得上不上。
+  const model = buildReviewModel(
+    read([
+      row(2, { row_key: "001", display_name: "露娜", character_id: "char_kai" }),
+      row(3, { row_key: "002", display_name: "新角色", character_id: "" }),
+    ]),
+    [
+      {
+        row_key: "001",
+        operation: "update",
+        owner_platform_user_id: "pu_1",
+        expected_revision: 3,
+        target_display_name: "凯",
+        changed_fields: ["display_name"],
+        portrait_action: "reuse",
+        portrait_media_id: "media_1",
+        prompt_budget: { blocks: [], total_tokens: 0, over_limit: false },
+        issues: [],
+      },
+      {
+        row_key: "002",
+        operation: "create",
+        owner_platform_user_id: "pu_1",
+        expected_revision: null,
+        target_display_name: null,
+        changed_fields: [],
+        portrait_action: "upload",
+        portrait_media_id: "",
+        prompt_budget: { blocks: [], total_tokens: 0, over_limit: false },
+        issues: [],
+      },
+    ],
+    "pu_1",
+  );
+  assert.equal(model.rows[0].targetDisplayName, "凯");
+  // 抄错目标不产生任何 issue——这正是它必须被显示出来的原因。
+  assert.deepEqual(model.rows[0].issues, []);
+  assert.equal(model.rows[0].blocked, false);
+  assert.equal(model.rows[1].targetDisplayName, null);
+});
+
+test("没跑服务端预检时不编造目标名称", () => {
+  const model = buildReviewModel(
+    read([row(2, { row_key: "001", display_name: "露娜", character_id: "char_abc" })]),
+    null,
+    "pu_1",
+  );
+  assert.equal(model.rows[0].targetDisplayName, null);
+});

@@ -11,12 +11,31 @@ const FLAG_ENCRYPTED = 0x0001;
 const FLAG_UTF8 = 0x0800;
 
 /**
+ * 一个待打进包的条目。字段刻意留了各种"打歪"的开关（`corruptData` / `crcOverride` /
+ * `encrypted` / `utf8: false`），被测代码要挡的正是这些真实世界里的坏包。
+ */
+type ZipFileSpec = {
+  readonly name: string;
+  /** 直接指定文件名字节，用来构造非 UTF-8（GBK 等）文件名。 */
+  readonly nameBytes?: Buffer;
+  readonly data?: Buffer;
+  /** 0 = 存储，8 = deflate（默认）。 */
+  readonly method?: number;
+  readonly corruptData?: boolean;
+  readonly crcOverride?: number;
+  readonly utf8?: boolean;
+  readonly encrypted?: boolean;
+};
+
+type ZipOptions = { readonly zip64?: boolean };
+
+/**
  * 按 ZIP 规范手工拼一个压缩包。刻意不用现成的打包库：被测代码要对付的正是真实世界里
  * 各种压缩工具产出的字节，用同一个库编解只会自证其说。
  */
-function buildZip(files, options = {}) {
-  const locals = [];
-  const centrals = [];
+function buildZip(files: readonly ZipFileSpec[], options: ZipOptions = {}): Blob {
+  const locals: Buffer[] = [];
+  const centrals: Buffer[] = [];
   let offset = 0;
 
   for (const file of files) {
@@ -73,7 +92,7 @@ function buildZip(files, options = {}) {
   const zip64Offset = centralOffset + centralBlock.length;
   const zip64 = Buffer.alloc(56);
   zip64.writeUInt32LE(SIGNATURE_ZIP64_EOCD, 0);
-  zip64.writeBigUInt64LE(44n, 4);
+  zip64.writeBigUInt64LE(BigInt(44), 4);
   zip64.writeUInt16LE(45, 12);
   zip64.writeUInt16LE(45, 14);
   zip64.writeBigUInt64LE(BigInt(files.length), 24);

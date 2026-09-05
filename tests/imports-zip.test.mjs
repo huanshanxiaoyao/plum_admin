@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { crc32 as zlibCrc32 } from "node:zlib";
 import { ZipArchive, ZipError, crc32 } from "../features/imports/zip-reader.ts";
-import { buildZip } from "./helpers/zip-fixture.mjs";
+import { buildZip } from "./helpers/zip-fixture.ts";
 
 const MANIFEST = "row_key,display_name\n001_luna,Luna\n";
 

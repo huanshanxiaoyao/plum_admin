@@ -2,33 +2,22 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getCurrentIdentity } from "../../lib/auth/session";
-import { adminDataSourceMode } from "../../lib/bff/config";
-import { adminApiFetch } from "../../lib/bff/client";
 import { formatDateTime } from "../admin-sections/presentation";
 import { canUseImports } from "./access";
-import type { ImportBatchDetail, ImportBatchResponse } from "./import-contracts";
-import { batchCounts, toBatchDetail } from "./import-contracts";
+import { getImportBatch } from "./data-source";
+import { batchCounts } from "./import-contracts";
 import { STATUS_HINTS, STATUS_LABELS, STATUS_TONES, OPERATION_LABELS } from "./labels";
-import { fixtureBatch } from "./fixtures";
 import { ResultExport } from "./result-export-button";
 import styles from "./imports.module.css";
 
 type Params = Promise<{ batchId: string }>;
-
-async function loadBatch(batchId: string): Promise<ImportBatchDetail | null> {
-  if (adminDataSourceMode() === "fixture") return fixtureBatch(batchId);
-  const response = await adminApiFetch<ImportBatchResponse>(
-    `imports/${encodeURIComponent(batchId)}`,
-  );
-  return toBatchDetail(response);
-}
 
 export async function ImportResultPage({ params }: { params: Params }) {
   const { batchId } = await params;
   const identity = await getCurrentIdentity();
   if (!identity || !canUseImports(identity.capabilities)) notFound();
 
-  const detail = await loadBatch(batchId);
+  const detail = await getImportBatch(batchId);
   if (!detail) notFound();
 
   const { batch, rows } = detail;

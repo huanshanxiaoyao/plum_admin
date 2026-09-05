@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { ChevronRight, RotateCcw, Search } from "lucide-react";
+import { ChevronRight, RotateCcw, Search, Upload } from "lucide-react";
 import type { CharacterListQuery, WorkListQuery } from "../admin-resources/contracts";
 import { listAdminCharacters, listAdminWorks } from "../admin-resources/data-source";
 import { AdminApiError } from "../../lib/bff/client";
+import { getCurrentIdentity } from "../../lib/auth/session";
+import { canUseImports } from "../imports/access";
 import { formatDateTime } from "../admin-sections/presentation";
 import styles from "./content-page.module.css";
 
@@ -122,6 +124,10 @@ export async function ContentPage({ searchParams }: ContentPageProps) {
     if (!(error instanceof AdminApiError)) throw error;
     loadError = error;
   }
+  // 运营的心智起点是角色列表，"再补一批角色"的念头在这一页产生。一级导航有入口，
+  // 但要求人先想到"这件事叫批量导入"才找得到——次级入口把它放在动机出现的地方。
+  const identity = await getCurrentIdentity();
+  const showImportEntry = identity ? canUseImports(identity.capabilities) : false;
   const activeQuery = view === "characters" ? characterQuery : workQuery;
   const hasFilters = Object.entries(activeQuery).some(([key, value]) => value !== undefined && key !== "limit");
 
@@ -129,10 +135,18 @@ export async function ContentPage({ searchParams }: ContentPageProps) {
     <div className={styles.page}>
       <header className={styles.pageHeader}>
         <div><span>CONTENT</span><h1>角色管理</h1><p>查看 Character 发布结果与 Work 创作流程元数据</p></div>
-        <nav className={styles.tabs} aria-label="内容视图">
-          <Link className={view === "characters" ? styles.activeTab : undefined} href="/characters?view=characters">Character</Link>
-          <Link className={view === "works" ? styles.activeTab : undefined} href="/characters?view=works">Work / 草稿</Link>
-        </nav>
+        <div className={styles.headerActions}>
+          <nav className={styles.tabs} aria-label="内容视图">
+            <Link className={view === "characters" ? styles.activeTab : undefined} href="/characters?view=characters">Character</Link>
+            <Link className={view === "works" ? styles.activeTab : undefined} href="/characters?view=works">Work / 草稿</Link>
+          </nav>
+          {showImportEntry && (
+            <Link className={styles.importEntry} href="/imports">
+              <Upload size={14} />
+              批量导入
+            </Link>
+          )}
+        </div>
       </header>
 
       <form className={styles.toolbar} action="/characters" method="get" aria-label="内容列表工具栏">

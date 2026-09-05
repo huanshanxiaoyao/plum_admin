@@ -15,6 +15,7 @@ import { parseCrop } from "./local-validation";
 import { readPackage, type ReadPackageResult } from "./package-reader";
 import { buildReviewModel, submittableRows, type ReviewModel } from "./review-model";
 import { PreflightTable } from "./preflight-table";
+import { usePortraitPreviews } from "./portrait-previews";
 import { OwnerPicker, type OwnerAccount } from "./owner-picker";
 import { ImportApiError, createUploadTransport, requestPreflight, submitImport } from "./import-api";
 import { runUploads, succeededPortraits, type UploadProgress, type UploadedPortrait } from "./upload-orchestrator";
@@ -97,6 +98,7 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
   const [batch, setBatch] = useState<ImportBatchDetail | null>(null);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const portraits = usePortraitPreviews(read);
   // 已传成功的立绘留在这里，重试时跳过——运营不该为一次网络抖动重传所有图片。
   const uploaded = useRef(new Map<string, UploadedPortrait>());
 
@@ -350,7 +352,7 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
             </ul>
           )}
 
-          <PreflightTable model={model} serverChecked={serverChecked} />
+          <PreflightTable model={model} serverChecked={serverChecked} portraits={portraits} />
 
           <section className={styles.confirm} aria-label="确认与提交">
             <h2>确认与提交</h2>

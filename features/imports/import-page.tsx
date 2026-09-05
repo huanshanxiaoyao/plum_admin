@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AlertTriangle, FileSpreadsheet, Image as ImageIcon, Package } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getCurrentIdentity } from "../../lib/auth/session";
@@ -15,6 +16,7 @@ import {
   MAX_ROWS_PER_PACKAGE,
   MAX_TAGS_PER_CHARACTER,
 } from "./manifest-schema";
+import { RecentBatches, RecentBatchesFallback } from "./recent-batches";
 import { TemplateDownload } from "./template-download";
 import styles from "./imports.module.css";
 
@@ -73,6 +75,11 @@ export async function ImportConsolePage() {
         submitBlockedReason={blockedReason}
         serverPreflight={serverPreflightAvailable()}
       />
+
+      {/* 台账取数不能挡住导入台：后端慢或挂了，运营仍要能打包、预检、提交。 */}
+      <Suspense fallback={<RecentBatchesFallback />}>
+        <RecentBatches />
+      </Suspense>
 
       <section className={styles.spec} aria-label="打包要点">
         <h2>打包要点</h2>

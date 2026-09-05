@@ -86,8 +86,85 @@ export const FIXTURE_BATCH: ImportBatch = {
 
 export const FIXTURE_DETAIL: ImportBatchDetail = { batch: FIXTURE_BATCH, rows: ROWS };
 
+/** 全绿的一批。台账里最常见的样子，也是「部分成功」的对照组。 */
+const CLEAN_ROWS: readonly ImportResultRow[] = [
+  {
+    row_key: "001_rin",
+    operation: "create",
+    status: "published",
+    character_id: "char_1a0c93",
+    work_id: "work_1a0c93",
+    review_id: null,
+    version_number: 1,
+    error_code: null,
+    error_message: null,
+  },
+  {
+    row_key: "002_sora",
+    operation: "create",
+    status: "published",
+    character_id: "char_1a0c94",
+    work_id: "work_1a0c94",
+    review_id: null,
+    version_number: 1,
+    error_code: null,
+    error_message: null,
+  },
+];
+
+const CLEAN_COUNTS = summarize(CLEAN_ROWS);
+
+const CLEAN_BATCH: ImportBatch = {
+  batch_id: "9b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e",
+  created_at: "2026-09-03T09:41:12.000Z",
+  updated_at: "2026-09-03T09:42:30.000Z",
+  operator_open_id: "ou_71ef6b6652b488fb",
+  owner_platform_user_id: OWNER,
+  reason: "2026-08 联动角色补齐",
+  adult_confirmed: false,
+  rights_confirmed: true,
+  status: "completed",
+  row_count: CLEAN_ROWS.length,
+  published_count: CLEAN_COUNTS.published,
+  pending_review_count: CLEAN_COUNTS.pending_review,
+  rejected_count: CLEAN_COUNTS.rejected,
+  failed_count: CLEAN_COUNTS.failed,
+};
+
+/**
+ * 仍在跑的一批：计数还没结算完，`row_count` 大于四类计数之和。
+ * 台账页必须能把这种「还没完」和「全成功」区分开，不然运营会以为漏了行。
+ */
+const RUNNING_BATCH: ImportBatch = {
+  batch_id: "3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a87",
+  created_at: "2026-09-05T03:02:55.000Z",
+  updated_at: "2026-09-05T03:03:10.000Z",
+  operator_open_id: "ou_2f8a41cc90bb37de",
+  owner_platform_user_id: "pu_3ac770",
+  reason: "官方角色第二批",
+  adult_confirmed: false,
+  rights_confirmed: true,
+  status: "running",
+  row_count: 12,
+  published_count: 4,
+  pending_review_count: 1,
+  rejected_count: 0,
+  failed_count: 0,
+};
+
+const DETAILS: readonly ImportBatchDetail[] = [
+  { batch: RUNNING_BATCH, rows: [] },
+  FIXTURE_DETAIL,
+  { batch: CLEAN_BATCH, rows: CLEAN_ROWS },
+];
+
+/** 台账按时间倒序，最新的在最前——和后端 `GET /admin/plum/imports` 一致。 */
+export const FIXTURE_BATCHES: readonly ImportBatch[] = DETAILS.map((detail) => detail.batch);
+
 export function fixtureBatch(batchId: string): ImportBatchDetail | null {
-  return batchId === FIXTURE_BATCH.batch_id ? FIXTURE_DETAIL : null;
+  return DETAILS.find((detail) => detail.batch.batch_id === batchId) ?? null;
 }
 
-export const FIXTURE_BATCHES: readonly ImportBatch[] = [FIXTURE_BATCH];
+export function fixtureBatchPage(limit: number, offset: number): readonly ImportBatch[] {
+  return FIXTURE_BATCHES.slice(offset, offset + limit);
+}

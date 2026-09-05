@@ -23,6 +23,13 @@ export type ReviewRow = {
   readonly displayName: string;
   readonly operation: ImportOperation;
   readonly characterId: string | null;
+  /**
+   * 目标角色在库里的**当前**名字，只有服务端预检过的更新行有值。
+   *
+   * 这是更新行唯一的目标核对手段：`characterId` 是操作员自己填的，拿它回显等于自证；
+   * 抄成另一个同样合法的 ID 时，本地和服务端都是绿灯，只有这个名字对不上。
+   */
+  readonly targetDisplayName: string | null;
   readonly ownerPlatformUserId: string | null;
   readonly portraitPath: string | null;
   readonly issues: readonly ReviewIssue[];
@@ -101,6 +108,7 @@ export function buildReviewModel(
       operation: server?.operation ?? ((characterId ? "update" : "create") as ImportOperation),
       // 契约的预检行不回传 character_id，本地这一列就是唯一来源。
       characterId,
+      targetDisplayName: server?.target_display_name ?? null,
       // 服务端已经把「行内留空则落到默认归属」算过一遍，它的结论优先。
       ownerPlatformUserId:
         server?.owner_platform_user_id ?? (text(row.values, "owner_platform_user_id") || defaultOwner),

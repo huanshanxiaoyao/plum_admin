@@ -40,14 +40,59 @@ function IssueList({ issues }: { issues: readonly ReviewIssue[] }) {
   );
 }
 
-function Row({ row, serverChecked }: { row: ReviewRow; serverChecked: boolean }) {
+/**
+ * 更新行要覆盖的那个角色，**在库里现在叫什么**。
+ *
+ * 更新是整行覆盖并发新版，而且没有批次回滚。`character_id` 抄成另一个同样合法的 ID
+ * 时（粘贴串行、上一批清单贴错列、手敲差一位），本地校验和服务端预检全是绿的——回显
+ * 操作员自己填的 ID 是自证，发现不了任何问题。只有拿库里的名字和这一行的名字并排放，
+ * 人才有机会看出"我要改的是露娜，它说的是凯"。
+ *
+ * 改名是合法操作，所以不同名不是错误，只是需要被看见。
+ */
+function TargetName({ row, serverChecked }: { row: ReviewRow; serverChecked: boolean }) {
+  if (!row.targetDisplayName) {
+    return serverChecked ? null : <small className={styles.pendingServer}>目标名称需服务端预检</small>;
+  }
+  const renamed = row.displayName.trim() !== "" && row.displayName.trim() !== row.targetDisplayName;
+  return (
+    <small className={renamed ? styles.targetRenamed : styles.targetName}>
+      {renamed ? `${row.targetDisplayName} → ${row.displayName.trim()}` : row.targetDisplayName}
+    </small>
+  );
+}
+
+/**
+ * 上传前的本地缩略图。错配图片是**合法**的——预检和机审都不会拦"这一行配错了图"，
+ * 只有人看得出来。所以它必须在提交之前出现，而不是等结果页。
+ */
+function Portrait({ src, path }: { src: string | undefined; path: string | null }) {
+  if (!path) return <small className={styles.pendingServer}>无立绘</small>;
+  if (!src) return <code className={styles.portraitMissing}>{path}</code>;
+  // 包里的图不是可信来源，但它只在本地 blob URL 里渲染，不外发也不进 DOM 属性以外的地方。
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className={styles.portrait} src={src} alt={`立绘预览：${path}`} loading="lazy" />;
+}
+
+function Row({
+  row,
+  serverChecked,
+  portraitSrc,
+}: {
+  row: ReviewRow;
+  serverChecked: boolean;
+  portraitSrc: string | undefined;
+}) {
   return (
     <tr className={row.blocked ? styles.rowBlocked : undefined}>
       <td>
-        <div className={styles.identity}>
-          <strong>{row.displayName || "(无名称)"}</strong>
-          <code>{row.rowKey}</code>
-          <small>第 {row.line} 行</small>
+        <div className={styles.rowIdentity}>
+          <Portrait src={portraitSrc} path={row.portraitPath} />
+          <div className={styles.identity}>
+            <strong>{row.displayName || "(无名称)"}</strong>
+            <code>{row.rowKey}</code>
+            <small>第 {row.line} 行</small>
+          </div>
         </div>
       </td>
       <td>
@@ -56,8 +101,8 @@ function Row({ row, serverChecked }: { row: ReviewRow; serverChecked: boolean })
         </span>
         {row.operation === "update" && (
           <div className={styles.identity}>
-            {/* 预检不回传目标角色名，只能把要覆盖的 ID 原样回显，让人自己核一眼。 */}
             <code>{row.characterId ?? (serverChecked ? "目标未解析" : "--")}</code>
+            <TargetName row={row} serverChecked={serverChecked} />
           </div>
         )}
       </td>
@@ -98,9 +143,12 @@ function Row({ row, serverChecked }: { row: ReviewRow; serverChecked: boolean })
 export function PreflightTable({
   model,
   serverChecked,
+  portraits,
 }: {
   model: ReviewModel;
   serverChecked: boolean;
+  /** 立绘路径 → 本地 blob URL。没解出来的行退回只显示文件名。 */
+  portraits: ReadonlyMap<string, string>;
 }) {
   return (
     <section className={styles.table} aria-label="预检结果">
@@ -128,7 +176,12 @@ export function PreflightTable({
             </tr>
           ) : (
             model.rows.map((row) => (
-              <Row key={`${row.rowKey}-${row.line}`} row={row} serverChecked={serverChecked} />
+              <Row
+                key={`${row.rowKey}-${row.line}`}
+                row={row}
+                serverChecked={serverChecked}
+                portraitSrc={row.portraitPath ? portraits.get(row.portraitPath) : undefined}
+              />
             ))
           )}
         </tbody>

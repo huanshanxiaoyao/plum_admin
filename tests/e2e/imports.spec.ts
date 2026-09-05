@@ -1,6 +1,30 @@
 import { expect, test } from "@playwright/test";
+import { buildZip } from "../helpers/zip-fixture.ts";
 
 const FIXTURE_BATCH_ID = "0f3d1a2b3c4d5e6f7a8b9c0d1e2f3a4b";
+
+const PORTRAIT_PATH = "images/001_luna.png";
+
+/** 真的 1x1 PNG。用假字节的话 <img> 解不出像素，缩略图这条就只验到了 DOM 里有个空框。 */
+const PNG_1X1 = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);
+
+const MANIFEST = [
+  "row_key,display_name,gender,intro,opening_scene,character_settings,creator_declared_rating,portrait_file",
+  `001_luna,露娜,female,月之城的守夜人,你在城墙下遇见她,冷静寡言,general,${PORTRAIT_PATH}`,
+  "",
+].join("\n");
+
+/** 和单测共用同一个手拼夹具：这里要走的正是浏览器里那条真实的解包路径。 */
+async function packageBytes(): Promise<Buffer> {
+  const zip = buildZip([
+    { name: "manifest.csv", data: Buffer.from(MANIFEST, "utf8") },
+    { name: PORTRAIT_PATH, data: PNG_1X1 },
+  ]);
+  return Buffer.from(await zip.arrayBuffer());
+}
 
 async function signIn(page: import("@playwright/test").Page, role: "operator" | "admin") {
   await page.goto("/login");
@@ -101,4 +125,70 @@ test("unknown batch ids render the not-found page instead of an empty result", a
   // /characters/:id 同样如此），所以判据是渲染出来的界面，不是状态码。
   await expect(page.getByRole("heading", { name: "页面不存在" })).toBeVisible();
   await expect(page.getByRole("region", { name: "逐行结果" })).toHaveCount(0);
+});
+
+test("角色管理页把批量导入放在动机出现的地方", async ({ page }) => {
+  await signIn(page, "operator");
+  await page.goto("/characters");
+  // 同样不用 goto：运营是在看角色列表时才想到"这批要批量加"，入口必须在那一页点得到。
+  await page.getByRole("link", { name: "批量导入" }).click();
+  await expect(page).toHaveURL("/imports");
+  await expect(page.getByRole("heading", { name: "角色导入" })).toBeVisible();
+});
+
+test("选完包就能看见立绘缩略图，不用等结果页", async ({ page }) => {
+  await signIn(page, "operator");
+  await page.goto("/imports");
+
+  const file = {
+    name: "plum-import.zip",
+    mimeType: "application/zip",
+    buffer: await packageBytes(),
+  };
+  const preflight = page.getByRole("region", { name: "预检结果" });
+  // 选包的 onChange 挂在客户端组件上，hydration 完成前投进去的文件会掉在地上。
+  // 与其 sleep 一个猜出来的秒数，不如重投到界面真的开始解包为止。
+  await expect
+    .poll(async () => {
+      await page.locator('input[type="file"]').setInputFiles(file);
+      return preflight.count();
+    })
+    .toBeGreaterThan(0);
+
+  await expect(preflight).toContainText("露娜");
+
+  // 配错图是合法的——预检和机审都拦不住，只有人看得出来。所以图必须在提交前出现。
+  const thumbnail = preflight.getByRole("img", { name: `立绘预览：${PORTRAIT_PATH}` });
+  await expect(thumbnail).toBeVisible();
+  await thumbnail.scrollIntoViewIfNeeded();
+  // 只判断 <img> 在不在等于没测：blob URL 撤早了照样是个空框。要它真解出了像素。
+  await expect
+    .poll(() => thumbnail.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBeGreaterThan(0);
+});
+
+test("跑完一批还能从台账找回来，并且写明没有回滚", async ({ page }) => {
+  await signIn(page, "operator");
+  await page.goto("/imports");
+
+  await page.getByRole("link", { name: "全部批次" }).click();
+  await expect(page).toHaveURL("/imports/batches");
+  await expect(page.getByRole("heading", { name: "导入历史" })).toBeVisible();
+
+  // 台账是唯一的事后补救入口，"没有回滚"必须写在这里。
+  await expect(page.getByText("导入不提供批次回滚。")).toBeVisible();
+
+  const ledger = page.getByRole("region", { name: "导入批次台账" });
+  // 仍在跑的批次计数不齐，要写明白差多少行，否则会被当成漏了行。
+  await expect(ledger).toContainText("进行中");
+  await expect(ledger).toContainText("7 行处理中");
+
+  // 只有三批，翻页到头：两个方向都必须是禁用按钮，而不是点了没反应的链接。
+  await expect(page.getByRole("button", { name: "上一页" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "下一页" })).toBeDisabled();
+
+  // 列出来却点不进去等于没做——这一条挡的就是那种半成品。
+  await ledger.locator(`a[href="/imports/${FIXTURE_BATCH_ID}"]`).click();
+  await expect(page).toHaveURL(`/imports/${FIXTURE_BATCH_ID}`);
+  await expect(page.getByRole("heading", { name: "导入结果" })).toBeVisible();
 });
