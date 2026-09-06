@@ -9,6 +9,8 @@ test("daily routes resolve to operations access", () => {
   assert.equal(requiredCapability("GET", "works/work-01"), "operations.access");
   assert.equal(requiredCapability("GET", "creators/pusr-01"), "operations.access");
   assert.equal(requiredCapability("GET", "users/pusr-01"), "operations.access");
+  assert.equal(requiredCapability("GET", "users/pusr-01/wallet"), "operations.access");
+  assert.equal(requiredCapability("POST", "users/pusr-01/wallet/grants"), "operations.access");
   assert.equal(requiredCapability("GET", "overview"), "operations.access");
 });
 
@@ -74,7 +76,9 @@ test("phase-one-excluded and unknown routes remain closed", () => {
   assert.equal(requiredCapability("DELETE", "users/pusr-01"), null);
   assert.equal(requiredCapability("GET", "../../health"), null);
   assert.equal(requiredCapability("POST", "arbitrary/proxy/path"), null);
-  assert.equal(requiredCapability("GET", "users/pusr-01/wallet"), null);
+  assert.equal(requiredCapability("POST", "users/pusr-01/wallet"), null);
+  assert.equal(requiredCapability("GET", "users/pusr-01/wallet/grants"), null);
+  assert.equal(requiredCapability("POST", "users/pusr-01/wallet/grants/extra"), null);
   assert.equal(requiredCapability("GET", "moderation/tasks"), null);
   assert.equal(requiredCapability("GET", "tags"), null);
   assert.equal(requiredCapability("GET", "works/work-01/content"), null);

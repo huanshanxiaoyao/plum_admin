@@ -43,10 +43,22 @@
 .value { min-width: 0; display: grid; gap: 5px; }
 .value dt { color: var(--muted); font-size: 9px; }
 .value dd { min-width: 0; margin: 0; overflow-wrap: anywhere; color: var(--ink); font-size: 11px; }
+.walletContent { min-width: 0; }
+.walletSummary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 28px; margin: 0; }
+.walletSummary .value:first-child dd { color: var(--green); font-size: 16px; font-weight: 750; }
+.expiryLots { min-width: 0; padding: 22px 0; }
+.expiryLots h3 { margin: 0 0 9px; color: var(--muted-strong); font-size: 9px; }
+.expiryLots > span { color: var(--muted); font-size: 10px; }
+.expiryLots ul { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; background: var(--line); }
+.expiryLots li { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 10px; background: var(--surface); }
+.expiryLots strong { color: var(--ink); font-size: 10px; }
+.expiryLots span { color: var(--muted); font-size: 9px; text-align: right; }
+.walletUnavailable { display: flex; align-items: flex-start; gap: 7px; margin: 0; padding: 9px 10px; border: 1px solid #ead1aa; border-radius: 5px; color: var(--amber); background: var(--amber-soft); font-size: 10px; line-height: 1.5; }
+.walletUnavailable svg { flex: 0 0 auto; margin-top: 1px; }
 .related { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 24px; }
 .related a { min-height: 36px; display: inline-flex; align-items: center; gap: 7px; padding: 0 11px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--green); background: var(--surface); font-size: 10px; font-weight: 700; text-decoration: none; }
 .detailError { min-height: 420px; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--muted); }
 .detailError strong { color: var(--red); font-size: 13px; } .detailError span { font-size: 10px; }
 @media (max-width: 900px) { .toolbar { align-items: stretch; flex-wrap: wrap; overflow: visible; } .search { width: 100%; } .control { flex: 1 1 145px; } }
-@media (max-width: 720px) { .detailHeader { min-height: 116px; flex-direction: column; justify-content: flex-start; gap: 8px; } .detailHeader > .badge { margin: 0 0 16px; } .band { grid-template-columns: 1fr; gap: 16px; } .valueGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 520px) { .pageHeader { min-height: 96px; } .control, .toolbar button, .reset { flex-basis: 100%; width: 100%; } .control select, .control input { width: 100%; max-width: none; } .valueGrid { grid-template-columns: 1fr; } .related { align-items: stretch; flex-direction: column; } .related a { justify-content: center; } }
+@media (max-width: 720px) { .detailHeader { min-height: 116px; flex-direction: column; justify-content: flex-start; gap: 8px; } .detailHeader > .badge { margin: 0 0 16px; } .band { grid-template-columns: 1fr; gap: 16px; } .valueGrid, .walletSummary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .pageHeader { min-height: 96px; } .control, .toolbar button, .reset { flex-basis: 100%; width: 100%; } .control select, .control input { width: 100%; max-width: none; } .valueGrid, .walletSummary { grid-template-columns: 1fr; } .expiryLots li { align-items: flex-start; flex-direction: column; gap: 3px; } .expiryLots span { text-align: left; } .related { align-items: stretch; flex-direction: column; } .related a { justify-content: center; } }

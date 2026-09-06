@@ -19,6 +19,11 @@ export type WorkSummary = AdminApiSchemas["AdminWorkItem"];
 export type CreatorSummary = AdminApiSchemas["AdminCreatorItem"];
 
 export type UserSummary = AdminApiSchemas["AdminProductUserItem"];
+export type UserWallet = AdminApiSchemas["AdminUserWalletData"];
+export type UserWalletResponse = AdminApiSchemas["AdminUserWalletResponse"];
+export type CrystalGrantRequest = AdminApiSchemas["AdminCrystalGrantRequest"];
+export type CrystalGrantData = AdminApiSchemas["AdminCrystalGrantData"];
+export type CrystalGrantResponse = AdminApiSchemas["AdminCrystalGrantResponse"];
 
 export type OverviewData = AdminApiSchemas["AdminOverviewData"];
 export type OverviewResponse = AdminApiSchemas["AdminOverviewResponse"];
@@ -149,6 +154,14 @@ function isPositiveInteger(value: unknown): boolean {
 
 function isNonNegativeInteger(value: unknown): boolean {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+function isIntegerInRange(value: unknown, minimum: number, maximum: number): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= minimum && value <= maximum;
+}
+
+function isNonNegativeNumber(value: unknown): boolean {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
 function isUtcTimestamp(value: unknown): boolean {
@@ -294,6 +307,38 @@ function isUser(value: unknown): value is UserSummary {
     isUtcTimestamp(value.created_at) &&
     isUtcTimestamp(value.updated_at)
   );
+}
+
+function isCrystalExpiry(value: unknown): boolean {
+  return isRecord(value) &&
+    isNonNegativeNumber(value.amount) &&
+    isNonNegativeInteger(value.amount_micros) &&
+    isUtcTimestamp(value.expires_at);
+}
+
+function isUserWallet(value: unknown): value is UserWallet {
+  return isRecord(value) &&
+    hasString(value, "platform_user_id") &&
+    hasNumber(value, "balance") &&
+    isNonNegativeInteger(value.balance_micros) &&
+    isNonNegativeNumber(value.expiring_total) &&
+    isNonNegativeNumber(value.never_expires) &&
+    Array.isArray(value.expiring) &&
+    value.expiring.every(isCrystalExpiry);
+}
+
+function isCrystalGrant(value: unknown): value is CrystalGrantData {
+  return isRecord(value) &&
+    hasString(value, "transaction_id") &&
+    hasString(value, "audit_event_id") &&
+    hasString(value, "platform_user_id") &&
+    isIntegerInRange(value.amount, 1, 5000) &&
+    isPositiveInteger(value.amount_micros) &&
+    hasNumber(value, "balance_before") &&
+    hasNumber(value, "balance_after") &&
+    isIntegerInRange(value.validity_days, 1, 90) &&
+    isUtcTimestamp(value.expires_at) &&
+    typeof value.replayed === "boolean";
 }
 
 function isSubscription(value: unknown): value is SubscriptionSummary {
@@ -449,6 +494,10 @@ export const parseCreatorListResponse = (value: unknown) => parseTypedList("crea
 export const parseCreatorResponse = (value: unknown) => parseSingle("creator", value, isCreator);
 export const parseUserListResponse = (value: unknown) => parseTypedList("user", value, isUser);
 export const parseUserResponse = (value: unknown) => parseSingle("user", value, isUser);
+export const parseUserWalletResponse = (value: unknown): UserWalletResponse =>
+  parseSingle("user wallet", value, isUserWallet) as UserWalletResponse;
+export const parseCrystalGrantResponse = (value: unknown): CrystalGrantResponse =>
+  parseSingle("crystal grant", value, isCrystalGrant) as CrystalGrantResponse;
 export const parseModerationReviewListResponse = (value: unknown) =>
   parseTypedList("moderation review", value, isModerationReview);
 export const parseModerationReviewResponse = (value: unknown) =>

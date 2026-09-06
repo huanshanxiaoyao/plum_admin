@@ -26,6 +26,7 @@ import {
   parseModerationReviewListResponse,
   parseUserListResponse,
   parseUserResponse,
+  parseUserWalletResponse,
   parseOverviewResponse,
   parseWorkListResponse,
   parseWorkResponse,
@@ -42,6 +43,7 @@ import {
   fixtureModerationReviewList,
   fixtureUser,
   fixtureUserList,
+  fixtureUserWallet,
   fixtureWork,
   fixtureWorkList,
   fixtureOverview,
@@ -323,6 +325,21 @@ export async function getAdminUser(platformUserId: string) {
   }
   try {
     return parseUserResponse(await adminApiGet(`users/${encodeURIComponent(platformUserId)}`));
+  } catch (error) {
+    unexpected(error);
+  }
+}
+
+export async function getAdminUserWallet(platformUserId: string) {
+  if (adminDataSourceMode() === "fixture") {
+    const response = fixtureUserWallet(platformUserId);
+    if (!response) throw new AdminApiError(409, "wallet_unavailable", "该用户当前不可充值水晶。");
+    return response;
+  }
+  try {
+    return parseUserWalletResponse(
+      await adminApiGet(`users/${encodeURIComponent(platformUserId)}/wallet`),
+    );
   } catch (error) {
     unexpected(error);
   }

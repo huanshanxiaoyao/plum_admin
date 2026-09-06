@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { ArrowLeft, ChevronRight, ExternalLink, RotateCcw, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ChevronRight, ExternalLink, RotateCcw, Search } from "lucide-react";
 import { notFound } from "next/navigation";
 import { AdminApiError } from "../../lib/bff/client";
 import type { UserListQuery } from "../admin-resources/contracts";
-import { getAdminUser, listAdminUsers } from "../admin-resources/data-source";
+import { adminApiWritesEnabled, adminDataSourceMode } from "../../lib/bff/config";
+import { getAdminUser, getAdminUserWallet, listAdminUsers } from "../admin-resources/data-source";
 import { formatDateTime } from "../admin-sections/presentation";
+import { CrystalGrantForm } from "./crystal-grant-form";
 import styles from "./user-pages.module.css";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -103,6 +105,13 @@ function value(label: string, content: React.ReactNode) {
   return <div className={styles.value}><dt>{label}</dt><dd>{content ?? "--"}</dd></div>;
 }
 
+function walletErrorText(error: AdminApiError): string {
+  if (error.code === "membership_inactive") return "该用户的 Plum Membership 未启用，不能查询钱包或充值。";
+  if (error.code === "wallet_account_unavailable") return "该用户没有有效的 Plum 账号，不能查询钱包或充值。";
+  if (error.code === "wallet_account_conflict") return "该用户关联了多个有效 Plum 账号，请先修复账号归属。";
+  return `钱包加载失败（${error.status}）：${error.message}`;
+}
+
 export async function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   let response;
@@ -114,6 +123,21 @@ export async function UserDetailPage({ params }: { params: Promise<{ id: string 
     throw error;
   }
   const user = response.data;
+  let wallet;
+  let walletError: AdminApiError | undefined;
+  if (user.membership_status === "active") {
+    try {
+      wallet = await getAdminUserWallet(user.platform_user_id);
+    } catch (error) {
+      if (!(error instanceof AdminApiError)) throw error;
+      walletError = error;
+    }
+  }
+  const remoteMode = adminDataSourceMode() === "remote";
+  const canWrite = remoteMode && adminApiWritesEnabled();
+  const blockedReason = !remoteMode
+    ? "当前是 fixture 数据源，人工充值不可用。"
+    : "Admin API 写入未启用（ADMIN_API_WRITE_ENABLED），人工充值不可用。";
   const ownerQuery = encodeURIComponent(user.platform_user_id);
   return <article className={styles.detailPage}>
     <Link className={styles.back} href="/users"><ArrowLeft size={15} />返回用户列表</Link>
@@ -135,6 +159,40 @@ export async function UserDetailPage({ params }: { params: Promise<{ id: string 
       {value("Work", user.work_count.toLocaleString())}
       {value("Character", user.character_count.toLocaleString())}
     </dl></section>
+
+    <section className={`${styles.band} ${styles.walletBand}`} aria-labelledby="user-wallet">
+      <h2 id="user-wallet">水晶钱包</h2>
+      <div className={styles.walletContent}>
+        {user.membership_status !== "active" ? (
+          <p className={styles.walletUnavailable}><AlertTriangle size={14} />Membership 已禁用，不能查询钱包或充值。</p>
+        ) : walletError || !wallet ? (
+          <p className={styles.walletUnavailable}><AlertTriangle size={14} />{walletError ? walletErrorText(walletError) : "钱包暂不可用。"}</p>
+        ) : (
+          <>
+            <dl className={styles.walletSummary}>
+              {value("当前余额", `${wallet.data.balance.toLocaleString("zh-CN")} 水晶`)}
+              {value("有期限余额", `${wallet.data.expiring_total.toLocaleString("zh-CN")} 水晶`)}
+              {value("永久余额", `${wallet.data.never_expires.toLocaleString("zh-CN")} 水晶`)}
+            </dl>
+            <div className={styles.expiryLots}>
+              <h3>到期批次</h3>
+              {wallet.data.expiring.length === 0 ? <span>暂无</span> : <ul>{wallet.data.expiring.map((lot) => (
+                <li key={`${lot.expires_at}-${lot.amount_micros}`}>
+                  <strong>{lot.amount.toLocaleString("zh-CN")} 水晶</strong>
+                  <span>{formatDateTime(lot.expires_at)} 到期</span>
+                </li>
+              ))}</ul>}
+            </div>
+            <CrystalGrantForm
+              platformUserId={user.platform_user_id}
+              displayName={user.display_name}
+              canWrite={canWrite}
+              blockedReason={blockedReason}
+            />
+          </>
+        )}
+      </div>
+    </section>
 
     {user.is_creator && <nav className={styles.related} aria-label="用户关联内容">
       <Link href={`/creators/${ownerQuery}`}>查看 Creator<ExternalLink size={13} /></Link>

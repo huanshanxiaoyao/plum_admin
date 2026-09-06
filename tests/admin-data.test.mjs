@@ -4,6 +4,7 @@ import {
   parseCharacterListResponse,
   parseCharacterResponse,
   parseCharacterVersionListResponse,
+  parseCrystalGrantResponse,
   parseCreatorListResponse,
   parseCreatorResponse,
   parseListResponse,
@@ -12,6 +13,7 @@ import {
   parseModerationReviewListResponse,
   parseUserListResponse,
   parseUserResponse,
+  parseUserWalletResponse,
   parseWorkListResponse,
   parseWorkResponse,
   parseOverviewResponse,
@@ -28,6 +30,7 @@ import {
   fixtureModerationReviewList,
   fixtureUser,
   fixtureUserList,
+  fixtureUserWallet,
   fixtureWork,
   fixtureWorkList,
   fixtureOverview,
@@ -82,6 +85,8 @@ test("fixture responses satisfy the runtime API contract", () => {
   assert.equal(parseCreatorResponse(fixtureCreator("pusr_accept_creator_active")).data.display_name, "Mira Studio");
   assert.equal(parseUserListResponse(fixtureUserList({ limit: 50 })).data.length, 6);
   assert.equal(parseUserResponse(fixtureUser("pusr_accept_member_free")).data.display_name, "Rowan");
+  assert.equal(parseUserWalletResponse(fixtureUserWallet("pusr_accept_member_free")).data.balance, 405);
+  assert.equal(fixtureUserWallet("pusr_accept_member_disabled"), null);
   assert.equal(parseOverviewResponse(fixtureOverview()).data.active_membership_count, 5);
 });
 
@@ -154,6 +159,28 @@ test("runtime contract rejects malformed and payment-connected responses", () =>
   const invalid = structuredClone(subscriptions);
   invalid.data[0].billing_connected = true;
   assert.throws(() => parseListResponse("subscriptions", invalid), /Invalid/);
+});
+
+test("manual crystal grant response is validated at the browser boundary", () => {
+  const response = {
+    data: {
+      transaction_id: "tx_manual_001",
+      audit_event_id: "10242",
+      platform_user_id: "pusr_accept_member_free",
+      amount: 500,
+      amount_micros: 500_000_000,
+      balance_before: 405,
+      balance_after: 905,
+      validity_days: 30,
+      expires_at: "2026-10-05T03:10:00.000Z",
+      replayed: false,
+    },
+    meta: { request_id: "req_manual_001" },
+  };
+  assert.equal(parseCrystalGrantResponse(response).data.balance_after, 905);
+  const invalid = structuredClone(response);
+  invalid.data.amount = 5001;
+  assert.throws(() => parseCrystalGrantResponse(invalid), /Invalid/);
 });
 
 test("development defaults to fixtures and production forbids them", () => {

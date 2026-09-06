@@ -547,6 +547,144 @@
         "title": "AdminCreatorResponse",
         "type": "object"
       },
+      "AdminCrystalExpiryItem": {
+        "properties": {
+          "amount": {
+            "minimum": 0.0,
+            "title": "Amount",
+            "type": "number"
+          },
+          "amount_micros": {
+            "minimum": 0.0,
+            "title": "Amount Micros",
+            "type": "integer"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "title": "Expires At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "amount_micros",
+          "expires_at"
+        ],
+        "title": "AdminCrystalExpiryItem",
+        "type": "object"
+      },
+      "AdminCrystalGrantData": {
+        "properties": {
+          "amount": {
+            "maximum": 5000.0,
+            "minimum": 1.0,
+            "title": "Amount",
+            "type": "integer"
+          },
+          "amount_micros": {
+            "exclusiveMinimum": 0.0,
+            "title": "Amount Micros",
+            "type": "integer"
+          },
+          "audit_event_id": {
+            "title": "Audit Event Id",
+            "type": "string"
+          },
+          "balance_after": {
+            "title": "Balance After",
+            "type": "number"
+          },
+          "balance_before": {
+            "title": "Balance Before",
+            "type": "number"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "platform_user_id": {
+            "title": "Platform User Id",
+            "type": "string"
+          },
+          "replayed": {
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "transaction_id": {
+            "title": "Transaction Id",
+            "type": "string"
+          },
+          "validity_days": {
+            "maximum": 90.0,
+            "minimum": 1.0,
+            "title": "Validity Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "audit_event_id",
+          "platform_user_id",
+          "amount",
+          "amount_micros",
+          "balance_before",
+          "balance_after",
+          "validity_days",
+          "expires_at",
+          "replayed"
+        ],
+        "title": "AdminCrystalGrantData",
+        "type": "object"
+      },
+      "AdminCrystalGrantRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "maximum": 5000.0,
+            "minimum": 1.0,
+            "title": "Amount",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "validity_days": {
+            "default": 30,
+            "maximum": 90.0,
+            "minimum": 1.0,
+            "title": "Validity Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "amount",
+          "reason"
+        ],
+        "title": "AdminCrystalGrantRequest",
+        "type": "object"
+      },
+      "AdminCrystalGrantResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminCrystalGrantData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "AdminCrystalGrantResponse",
+        "type": "object"
+      },
       "AdminError": {
         "properties": {
           "code": {
@@ -2559,6 +2697,65 @@
           }
         },
         "title": "AdminUserUpdateRequest",
+        "type": "object"
+      },
+      "AdminUserWalletData": {
+        "properties": {
+          "balance": {
+            "title": "Balance",
+            "type": "number"
+          },
+          "balance_micros": {
+            "title": "Balance Micros",
+            "type": "integer"
+          },
+          "expiring": {
+            "items": {
+              "$ref": "#/components/schemas/AdminCrystalExpiryItem"
+            },
+            "title": "Expiring",
+            "type": "array"
+          },
+          "expiring_total": {
+            "minimum": 0.0,
+            "title": "Expiring Total",
+            "type": "number"
+          },
+          "never_expires": {
+            "minimum": 0.0,
+            "title": "Never Expires",
+            "type": "number"
+          },
+          "platform_user_id": {
+            "title": "Platform User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "platform_user_id",
+          "balance",
+          "balance_micros",
+          "expiring_total",
+          "never_expires",
+          "expiring"
+        ],
+        "title": "AdminUserWalletData",
+        "type": "object"
+      },
+      "AdminUserWalletResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminUserWalletData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "AdminUserWalletResponse",
         "type": "object"
       },
       "AdminWorkItem": {
@@ -7176,6 +7373,297 @@
           }
         },
         "summary": "Admin User",
+        "tags": [
+          "plum-admin-users"
+        ]
+      }
+    },
+    "/admin/plum/users/{platform_user_id}/wallet": {
+      "get": {
+        "description": "Return current Crystal balance and expiry lots for one active Plum member.",
+        "operationId": "admin_user_wallet_admin_plum_users__platform_user_id__wallet_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "platform_user_id",
+            "required": true,
+            "schema": {
+              "title": "Platform User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserWalletResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin User Wallet",
+        "tags": [
+          "plum-admin-users"
+        ]
+      }
+    },
+    "/admin/plum/users/{platform_user_id}/wallet/grants": {
+      "post": {
+        "description": "Grant one expiring, audited Crystal lot to an active Plum member.",
+        "operationId": "admin_grant_user_crystals_admin_plum_users__platform_user_id__wallet_grants_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "platform_user_id",
+            "required": true,
+            "schema": {
+              "title": "Platform User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 8,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminCrystalGrantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCrystalGrantResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Grant User Crystals",
         "tags": [
           "plum-admin-users"
         ]

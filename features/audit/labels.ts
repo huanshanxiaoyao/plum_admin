@@ -7,6 +7,7 @@
  */
 
 export const ACTION_LABELS: Record<string, string> = {
+  "plum.wallet.manual_grant": "人工充值水晶",
   "plum.character.import": "发起批量导入",
   "plum.character.create": "导入·新建角色",
   "plum.character.revise": "导入·更新角色",
@@ -19,6 +20,7 @@ export const ACTION_LABELS: Record<string, string> = {
 
 /** 下拉里的可筛动作。顺序按运营追查时的常用度排，不按字母序。 */
 export const FILTERABLE_ACTIONS = [
+  "plum.wallet.manual_grant",
   "plum.character.import",
   "plum.character.create",
   "plum.character.revise",
@@ -30,6 +32,7 @@ export const FILTERABLE_ACTIONS = [
 ] as const;
 
 export const RESOURCE_LABELS: Record<string, string> = {
+  entitlement_ledger: "水晶账本流水",
   plum_character_import_batch: "导入批次",
   plum_character_import_row: "导入行",
   plum_moderation_review: "复核单",
@@ -49,6 +52,14 @@ export const METADATA_LABELS: Record<string, string> = {
   owner_platform_user_id: "归属账号",
   review_id: "复核单",
   decision: "处置",
+  platform_user_id: "用户 ID",
+  amount: "充值数量",
+  amount_micros: "充值微单位",
+  balance_before: "充值前余额",
+  balance_after: "充值后余额",
+  validity_days: "有效天数",
+  expires_at: "到期时间",
+  idempotency_key: "幂等键",
 };
 
 export function actionLabel(action: string): string {

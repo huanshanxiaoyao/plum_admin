@@ -543,6 +543,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/plum/users/{platform_user_id}/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin User Wallet
+         * @description Return current Crystal balance and expiry lots for one active Plum member.
+         */
+        get: operations["admin_user_wallet_admin_plum_users__platform_user_id__wallet_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plum/users/{platform_user_id}/wallet/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Grant User Crystals
+         * @description Grant one expiring, audited Crystal lot to an active Plum member.
+         */
+        post: operations["admin_grant_user_crystals_admin_plum_users__platform_user_id__wallet_grants_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/plum/works": {
         parameters: {
             query?: never;
@@ -798,6 +838,61 @@ export interface components {
         /** AdminCreatorResponse */
         AdminCreatorResponse: {
             data: components["schemas"]["AdminCreatorItem"];
+            meta: components["schemas"]["ResponseMeta"];
+        };
+        /** AdminCrystalExpiryItem */
+        AdminCrystalExpiryItem: {
+            /** Amount */
+            amount: number;
+            /** Amount Micros */
+            amount_micros: number;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** AdminCrystalGrantData */
+        AdminCrystalGrantData: {
+            /** Amount */
+            amount: number;
+            /** Amount Micros */
+            amount_micros: number;
+            /** Audit Event Id */
+            audit_event_id: string;
+            /** Balance After */
+            balance_after: number;
+            /** Balance Before */
+            balance_before: number;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Platform User Id */
+            platform_user_id: string;
+            /** Replayed */
+            replayed: boolean;
+            /** Transaction Id */
+            transaction_id: string;
+            /** Validity Days */
+            validity_days: number;
+        };
+        /** AdminCrystalGrantRequest */
+        AdminCrystalGrantRequest: {
+            /** Amount */
+            amount: number;
+            /** Reason */
+            reason: string;
+            /**
+             * Validity Days
+             * @default 30
+             */
+            validity_days: number;
+        };
+        /** AdminCrystalGrantResponse */
+        AdminCrystalGrantResponse: {
+            data: components["schemas"]["AdminCrystalGrantData"];
             meta: components["schemas"]["ResponseMeta"];
         };
         /** AdminError */
@@ -1602,6 +1697,26 @@ export interface components {
             role?: ("operator" | "admin") | null;
             /** Status */
             status?: ("active" | "disabled") | null;
+        };
+        /** AdminUserWalletData */
+        AdminUserWalletData: {
+            /** Balance */
+            balance: number;
+            /** Balance Micros */
+            balance_micros: number;
+            /** Expiring */
+            expiring: components["schemas"]["AdminCrystalExpiryItem"][];
+            /** Expiring Total */
+            expiring_total: number;
+            /** Never Expires */
+            never_expires: number;
+            /** Platform User Id */
+            platform_user_id: string;
+        };
+        /** AdminUserWalletResponse */
+        AdminUserWalletResponse: {
+            data: components["schemas"]["AdminUserWalletData"];
+            meta: components["schemas"]["ResponseMeta"];
         };
         /** AdminWorkItem */
         AdminWorkItem: {
@@ -4317,6 +4432,187 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminProductUserResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_user_wallet_admin_plum_users__platform_user_id__wallet_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                platform_user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserWalletResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_grant_user_crystals_admin_plum_users__platform_user_id__wallet_grants_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                platform_user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCrystalGrantRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCrystalGrantResponse"];
                 };
             };
             /** @description Bad Request */

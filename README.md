@@ -7,9 +7,9 @@ Plum 内部管理后台。飞书登录、两角色 RBAC、后台成员管理、�
 已完成管理前端工程基础、开发环境 Mock Identity、飞书 OAuth 授权码流程 + PKCE、签名 HttpOnly Session、两角色 Capability、显式路径白名单 BFF、CSRF 防护和基础后台界面。
 
 M1 身份链路已于 2026-08-30 在 `admin.plum.top` 完成真实飞书登录、Operator 自注册和首位 Admin 验证。
-业务写请求仍由 `ADMIN_API_WRITE_ENABLED` 显式控制。开启后，角色批量导入和内容复核处置会真实执行，并写入操作审计账本。
+业务写请求仍由 `ADMIN_API_WRITE_ENABLED` 显式控制。开启后，角色批量导入、内容复核处置和测试期人工水晶充值会真实执行，并写入操作审计账本。
 
-生产 Remote 模式只显示已有真实后端 API 的模块：指标工作台、Character/Work/Creator/User、角色导入、内容复核，以及仅 Admin 可见的操作审计和后台成员。Subscription 仍只保留为非生产 Fixture 原型。已交付列表支持详情、筛选和分页；运行时响应校验会拒绝未授权的正文、Subscription、Wallet、完整手机号和邮箱等私有信息。
+生产 Remote 模式只显示已有真实后端 API 的模块：指标工作台、Character/Work/Creator/User、角色导入、内容复核，以及仅 Admin 可见的操作审计和后台成员。用户详情支持查询水晶钱包并为测试用户人工充值；Subscription 仍只保留为非生产 Fixture 原型。已交付列表支持详情、筛选和分页；运行时响应校验会拒绝未授权的正文、Subscription、完整手机号和邮箱等私有信息。
 
 新机器安装、配置、首位 Admin、监控和回滚步骤见
 [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)。
@@ -67,7 +67,7 @@ npm run contract:check
 
 `contract:check` 已纳入 `npm run verify`，生成类型过期会直接失败。当前快照包含 M1 的
 `session`、`me`、`admin-users`，以及已交付的 `characters`、`character versions`、`works`、
-`creators`、`users`、`overview`、`imports`、`moderation` 和 `audit-events`；后端新增路径时必须先显式加入 Admin 契约，再同步快照和生成类型。
+`creators`、`users`、`user wallet/grants`、`overview`、`imports`、`moderation` 和 `audit-events`；后端新增路径时必须先显式加入 Admin 契约，再同步快照和生成类型。
 生成类型负责编译期漂移，现有运行时 Guard 继续拒绝不可信远端响应。
 
 ## 权限
