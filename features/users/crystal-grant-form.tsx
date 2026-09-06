@@ -25,7 +25,7 @@ function grantErrorText(error: unknown): string {
   if (!(error instanceof AdminApiError)) return error instanceof Error ? error.message : "充值失败，请重试。";
   if (error.code === "membership_inactive") return "该用户的 Plum Membership 未启用，不能充值。";
   if (error.code === "wallet_account_unavailable") return "该用户没有有效的 Plum 账号，不能充值。";
-  if (error.code === "wallet_account_conflict") return "该用户关联了多个有效 Plum 账号，请先修复账号归属。";
+  if (error.code === "wallet_account_conflict") return "该用户的 Plum 账号归属数据不一致，请先修复账号归属。";
   if (error.code === "idempotency_conflict") return "本次请求的幂等键发生冲突，请重新确认后提交。";
   return error.message;
 }

@@ -108,7 +108,7 @@ function value(label: string, content: React.ReactNode) {
 function walletErrorText(error: AdminApiError): string {
   if (error.code === "membership_inactive") return "该用户的 Plum Membership 未启用，不能查询钱包或充值。";
   if (error.code === "wallet_account_unavailable") return "该用户没有有效的 Plum 账号，不能查询钱包或充值。";
-  if (error.code === "wallet_account_conflict") return "该用户关联了多个有效 Plum 账号，请先修复账号归属。";
+  if (error.code === "wallet_account_conflict") return "该用户的 Plum 账号归属数据不一致，请先修复账号归属。";
   return `钱包加载失败（${error.status}）：${error.message}`;
 }
 
