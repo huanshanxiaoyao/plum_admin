@@ -122,12 +122,13 @@ test("可筛动作都有中文名，且都在后端认的两个前缀里", () =>
   assert.equal(resourceLabel("plum_unknown_thing"), "plum_unknown_thing");
 });
 
-test("fixture 覆盖导入与复核两类写操作，还有一次明文读取", () => {
-  // 只有导入的样例证明不了「共用写开关放开后两类操作都留得下账」。
+test("fixture 覆盖导入、复核与人工充值，还有一次明文读取", () => {
+  // 只有导入的样例证明不了「共用写开关放开后各类操作都留得下账」。
   const { data } = fixtureAuditEvents({ limit: 50 });
   const actions = new Set(data.map((event) => event.action));
   assert.ok(actions.has("plum.character.import"));
   assert.ok(actions.has("plum_moderation.purge"));
+  assert.ok(actions.has("plum.wallet.manual_grant"));
   assert.equal(data.some((event) => event.plaintext), true);
   for (const event of data) {
     assert.equal(isAuditEvent(event), true, event.id);

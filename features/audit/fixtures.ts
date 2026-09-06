@@ -7,6 +7,27 @@ import type { AuditEvent, AuditListQuery } from "./audit-contracts.ts";
  */
 const EVENTS: readonly AuditEvent[] = [
   {
+    id: "10242",
+    occurred_at: "2026-09-05T03:10:00.000Z",
+    actor_open_id: "ou_71ef6b6652b488fb",
+    actor_display_name: "林运营",
+    action: "plum.wallet.manual_grant",
+    resource_type: "entitlement_ledger",
+    resource_id: "tx_manual_001",
+    plaintext: false,
+    reason: "第二轮测试额度",
+    request_path: "/admin/plum/users/pusr_accept_member_free/wallet/grants",
+    metadata: {
+      platform_user_id: "pusr_accept_member_free",
+      amount: 500,
+      balance_before: 405,
+      balance_after: 905,
+      validity_days: 30,
+      expires_at: "2026-10-05T03:10:00.000Z",
+      idempotency_key: "7f04ce5d-3896-4e98-a450-70233c6f6a11",
+    },
+  },
+  {
     id: "10241",
     occurred_at: "2026-09-05T02:16:02.000Z",
     actor_open_id: "ou_71ef6b6652b488fb",

@@ -543,12 +543,16 @@ sort=created_at.desc
 
 ### 8.5 用户与 Membership
 
-**交付阶段：用户和 Membership 只读为一期；所有写操作、Subscription、Wallet 和 Ledger 为后续。**
+**交付阶段：用户和 Membership 查询已交付；测试期人工充值已交付。Subscription、钱包流水和 Membership 写操作仍为后续。**
 
 | Method | Path | Capability | 说明 |
 | --- | --- | --- | --- |
 | GET | `/admin/plum/users` | `operations.access` | Plum 用户分页列表 |
 | GET | `/admin/plum/users/{id}` | `operations.access` | 用户详情摘要 |
+| GET | `/admin/plum/users/{id}/wallet` | `operations.access` | 当前水晶余额与到期批次 |
+| POST | `/admin/plum/users/{id}/wallet/grants` | `operations.access` | 人工充值 1–5000 水晶，有效期 1–90 天 |
+
+充值仅允许 Active Plum Membership 且恰好绑定一个有效 Plum 账号的用户。请求必须携带 `Idempotency-Key` 和不超过 500 字的原因；账本写入使用 `manual_adjustment`，水晶批次、余额和 `plum.wallet.manual_grant` 审计在同一事务内提交。Operator 与 Admin 均可操作。
 
 以下接口保留为后续方向，不能加入一期 Router、BFF Allowlist 或导航：
 
@@ -557,7 +561,6 @@ sort=created_at.desc
 | POST | `/admin/plum/users/{id}/membership/disable` | `membership.manage` | 禁用 Plum Membership |
 | POST | `/admin/plum/users/{id}/membership/enable` | `membership.manage` | 恢复 Plum Membership |
 | GET | `/admin/plum/subscriptions` | `operations.access` | 订阅分页列表 |
-| GET | `/admin/plum/users/{id}/wallet` | `operations.access` | 钱包摘要 |
 | GET | `/admin/plum/users/{id}/wallet/ledger` | `operations.access` | 钱包流水分页 |
 
 后续若接入 Subscription，响应必须显式返回 `billing_connected: false`，直到真实支付系统上线，避免前端将 Free Plan 记录描述为支付成功。

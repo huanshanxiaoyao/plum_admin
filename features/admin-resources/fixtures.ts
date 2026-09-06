@@ -18,6 +18,7 @@ import type {
   SingleResponse,
   UserListQuery,
   UserSummary,
+  UserWalletResponse,
   WorkListQuery,
   WorkListResponse,
   WorkSummary,
@@ -605,6 +606,32 @@ export function fixtureUserList(query: UserListQuery): ListResponse<UserSummary>
 export function fixtureUser(platformUserId: string): SingleResponse<UserSummary> | null {
   const user = USERS.find((item) => item.platform_user_id === platformUserId);
   return user ? { data: user, meta: { request_id: "00000000-0000-4000-8000-000000000001" } } : null;
+}
+
+export function fixtureUserWallet(platformUserId: string): UserWalletResponse | null {
+  const user = USERS.find((item) => item.platform_user_id === platformUserId);
+  if (!user || user.membership_status !== "active") return null;
+  const index = USERS.indexOf(user);
+  const expiring = [
+    {
+      amount: 300 + index * 25,
+      amount_micros: (300 + index * 25) * 1_000_000,
+      expires_at: "2026-09-30T12:00:00.000Z",
+    },
+  ];
+  const neverExpires = index * 10;
+  const expiringTotal = expiring.reduce((total, item) => total + item.amount, 0);
+  return {
+    data: {
+      platform_user_id: platformUserId,
+      balance: expiringTotal + neverExpires,
+      balance_micros: (expiringTotal + neverExpires) * 1_000_000,
+      expiring_total: expiringTotal,
+      never_expires: neverExpires,
+      expiring,
+    },
+    meta: { request_id: "00000000-0000-4000-8000-000000000001" },
+  };
 }
 
 export function fixtureOverview(): OverviewResponse {

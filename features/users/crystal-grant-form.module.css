@@ -1,0 +1,26 @@
+.form { min-width: 0; padding-top: 22px; border-top: 1px solid var(--line); }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.heading > div { display: flex; align-items: center; gap: 7px; color: var(--green); }
+.heading h3 { margin: 0; color: var(--ink); font-size: 11px; }
+.heading > span { padding: 3px 6px; border: 1px solid #ead1aa; border-radius: 4px; color: var(--amber); background: var(--amber-soft); font-size: 9px; font-weight: 700; }
+.form fieldset { display: grid; grid-template-columns: minmax(140px, .8fr) minmax(140px, .8fr) minmax(220px, 1.6fr) auto; align-items: end; gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.form label { min-width: 0; display: grid; grid-template-columns: 1fr auto; gap: 5px; }
+.form label > span { grid-column: 1 / -1; color: var(--muted-strong); font-size: 9px; font-weight: 700; }
+.form input, .form textarea { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid var(--line-strong); border-radius: 5px; outline: none; color: var(--ink); background: var(--surface); font: inherit; font-size: 11px; }
+.form input { height: 38px; padding: 0 9px; }
+.form textarea { grid-column: 1 / -1; min-height: 70px; padding: 9px; resize: vertical; }
+.form input:focus, .form textarea:focus { border-color: var(--green); box-shadow: 0 0 0 2px var(--green-soft); }
+.form label small { align-self: center; color: var(--muted); font-size: 8px; }
+.reason small { grid-column: 2; grid-row: 3; margin-top: -18px; margin-right: 7px; pointer-events: none; }
+.form button { min-width: 112px; height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; border: 1px solid var(--green); border-radius: 5px; color: #fff; background: var(--green); font-size: 10px; font-weight: 750; cursor: pointer; }
+.form fieldset:disabled { opacity: .62; }
+.form button:disabled { cursor: not-allowed; }
+.blocked, .error, .success { display: flex; align-items: flex-start; gap: 7px; margin: 0 0 13px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 5px; font-size: 9px; line-height: 1.5; }
+.blocked, .error { color: var(--red); border-color: #dfb7b4; background: var(--red-soft); }
+.success { margin: 12px 0 0; color: var(--green); border-color: #bcdac7; background: var(--green-soft); }
+.blocked svg, .error svg, .success svg { flex: 0 0 auto; margin-top: 1px; }
+.spinning { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 1000px) { .form fieldset { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reason { grid-column: 1 / -1; } .form button { justify-self: start; } }
+@media (max-width: 560px) { .form fieldset { grid-template-columns: 1fr; } .reason { grid-column: auto; } .form button { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .spinning { animation: none; } }

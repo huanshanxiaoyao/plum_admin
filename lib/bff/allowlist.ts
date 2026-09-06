@@ -15,6 +15,9 @@ const RULES: readonly AllowRule[] = [
   { methods: ["GET"], path: /^works(?:\/[^/]+)?$/, capability: DAILY },
   { methods: ["GET"], path: /^creators(?:\/[^/]+)?$/, capability: DAILY },
   { methods: ["GET"], path: /^users(?:\/[^/]+)?$/, capability: DAILY },
+  { methods: ["GET"], path: /^users\/[^/]+\/wallet$/, capability: DAILY },
+  // 测试期人工充值：Operator 与 Admin 均可操作，后端负责幂等、账户边界与原子审计。
+  { methods: ["POST"], path: /^users\/[^/]+\/wallet\/grants$/, capability: DAILY },
   { methods: ["GET"], path: /^moderation\/backlog$/, capability: DAILY },
   { methods: ["GET"], path: /^moderation\/reviews(?:\/[^/]+)?$/, capability: DAILY },
   // 三处置与认领都只要 operations.access：purge 不额外限制 admin，是已拍板的产品决定。
