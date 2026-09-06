@@ -190,7 +190,28 @@ ss -ltn | rg ':3001|:8180|:80|:443'
 
 ## 8. 日常发布与回滚
 
-发布前记录两个仓库 Commit、数据库 schema 版本、服务启动时间和 `.env` 备份位置。只在前端 Commit 变化时
+合并到 `main` 后，GitHub Actions 的 `CI` workflow 全绿会自动触发
+`.github/workflows/deploy-ec201.yml`：锁定该次 CI 对应的 Commit，通过 SSH 更新
+`/opt/workspace/plum_admin`，安装锁文件依赖、完成生产构建、重启用户级 systemd 服务，并依次检查本机和公网
+健康端点。部署任务使用并发锁串行执行，不会取消已经开始的发布。
+若较旧 CI 的部署任务晚于新版本到达，脚本会确认生产环境已位于 `origin/main` 上更晚的 Commit 后跳过旧任务，
+不会用新代码冒充旧 Commit 重复构建。CI 也会使用 `actionlint` 检查所有 workflow 的 YAML、表达式和 shell。
+
+首次启用前，在 GitHub `ec201` Environment 配置与 `plum_chat` 相同的 Secrets：
+
+- `EC2_HOST`、`EC2_USER`、`EC2_SSH_KEY`：EC201 SSH 连接信息。
+- `FEISHU_APP_ID`、`FEISHU_APP_SECRET`、`FEISHU_DEPLOY_CHAT_ID`：部署开始和结果通知；通知失败不会阻断发布。
+
+EC201 上仍须先按第 3、4 节准备权限为 `600` 的 `.env` 和
+`plum-admin-frontend.service`。生产 Git 工作区存在未提交改动、`.env` 缺失或权限错误、Node/npm 版本不符、
+构建失败、服务启动失败、任一健康检查失败时，自动发布会停止并发送失败通知。不要在生产工作区保留临时改动；
+脚本不会 reset 或 stash 它们。
+
+特殊发布窗口不希望 merge 后自动上线时，在 merge commit message 中加入 `[skip deploy]`。需要重跑或已完成
+特殊情况处置后，在 GitHub Actions 的 `Deploy EC201` 页面使用 `Run workflow`；人工触发不受
+`[skip deploy]` 限制。
+
+发布前仍应记录两个仓库 Commit、数据库 schema 版本、服务启动时间和 `.env` 备份位置。需要在机器上人工发布时
 执行：
 
 ```bash

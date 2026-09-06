@@ -1,0 +1,304 @@
+name: Deploy EC201
+
+# main 上的 CI 全绿后自动部署。需要临时阻止自动发布时，在 merge commit message
+# 中加入 [skip deploy]；workflow_dispatch 始终允许人工重跑。
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: plum-admin-deploy-ec201
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: ec201
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      !contains(github.event.workflow_run.head_commit.message, '[skip deploy]'))
+
+    env:
+      # workflow_run 的 GITHUB_SHA 可能已是更新的 main head，部署必须锁定触发 CI 的提交。
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      DEPLOY_ACTOR: ${{ github.event.workflow_run.actor.login || github.actor }}
+
+    steps:
+      - name: Collect deployment context
+        id: release
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT_MESSAGE: ${{ github.event.workflow_run.head_commit.message }}
+        run: |
+          set -u
+
+          COMMIT_TITLE=${COMMIT_MESSAGE%%$'\n'*}
+          COMMIT_TITLE=${COMMIT_TITLE:-"Commit ${DEPLOY_SHA:0:7}"}
+          COMMIT_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$DEPLOY_SHA"
+          CONTEXT=$(jq -cn \
+            --arg title "$COMMIT_TITLE" \
+            --arg body "${COMMIT_MESSAGE:-}" \
+            --arg author "$DEPLOY_ACTOR" \
+            --arg url "$COMMIT_URL" \
+            '{kind: "commit", title: $title, body: $body, author: $author, url: $url}')
+
+          if PULLS=$(curl -fsS --connect-timeout 5 --max-time 15 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/commits/$DEPLOY_SHA/pulls"); then
+            PR=$(jq -c '[.[] | select(.merged_at != null and .base.ref == "main")] | sort_by(.merged_at) | last // empty' <<<"$PULLS")
+            if [ -n "$PR" ]; then
+              CONTEXT=$(jq -c '{
+                kind: "pull_request",
+                number,
+                title,
+                body: (.body // ""),
+                author: (.user.login // "unknown"),
+                url: .html_url
+              }' <<<"$PR")
+            fi
+          fi
+
+          printf 'context=%s\n' "$CONTEXT" >> "$GITHUB_OUTPUT"
+          printf 'started_at=%s\n' "$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Feishu - deployment started
+        continue-on-error: true
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          FEISHU_DEPLOY_CHAT_ID: ${{ secrets.FEISHU_DEPLOY_CHAT_ID }}
+          RELEASE_CONTEXT: ${{ steps.release.outputs.context }}
+        run: |
+          set -e
+
+          AUTH_PAYLOAD=$(jq -n \
+            --arg app_id "$FEISHU_APP_ID" \
+            --arg app_secret "$FEISHU_APP_SECRET" \
+            '{app_id: $app_id, app_secret: $app_secret}')
+          TOKEN=$(curl -fsS --connect-timeout 5 --max-time 15 \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d "$AUTH_PAYLOAD" \
+            https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal \
+            | jq -er '.tenant_access_token')
+
+          CONTEXT=${RELEASE_CONTEXT:-"{}"}
+          RELEASE_KIND=$(jq -r '.kind // "commit"' <<<"$CONTEXT")
+          RELEASE_TITLE=$(jq -r '.title // "Unknown release"' <<<"$CONTEXT")
+          RELEASE_AUTHOR=$(jq -r '.author // "unknown"' <<<"$CONTEXT")
+          RELEASE_URL=$(jq -r '.url // ""' <<<"$CONTEXT")
+          if [ "$RELEASE_KIND" = "pull_request" ]; then
+            PR_NUMBER=$(jq -r '.number' <<<"$CONTEXT")
+            RELEASE_LABEL="PR #$PR_NUMBER: $RELEASE_TITLE"
+            LINK_LABEL="PR"
+          else
+            RELEASE_LABEL="$RELEASE_TITLE"
+            LINK_LABEL="Commit"
+          fi
+
+          TEXT=$(printf 'Plum Admin deployment started\nEnvironment: EC201\nRelease: %s\nAuthor: %s\nCommit: %.7s\nTriggered by: %s\n%s: %s\nRun: %s/%s/actions/runs/%s' \
+            "$RELEASE_LABEL" "$RELEASE_AUTHOR" "$DEPLOY_SHA" "$DEPLOY_ACTOR" \
+            "$LINK_LABEL" "$RELEASE_URL" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
+          MESSAGE_PAYLOAD=$(jq -n \
+            --arg receive_id "$FEISHU_DEPLOY_CHAT_ID" \
+            --arg text "$TEXT" \
+            '{receive_id: $receive_id, msg_type: "text", content: ({text: $text} | tojson)}')
+          RESPONSE=$(curl -fsS --connect-timeout 5 --max-time 15 \
+            -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id" \
+            -d "$MESSAGE_PAYLOAD")
+          test "$(jq -r '.code' <<<"$RESPONSE")" = "0"
+
+      - name: Deploy Plum Admin to EC201
+        id: deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: DEPLOY_SHA
+          command_timeout: 20m
+          script: |
+            set -euo pipefail
+
+            exec 9>/tmp/plum-admin-ec201-deploy.lock
+            if ! flock -n 9; then
+              echo "ABORT: another Plum Admin deployment is already running."
+              exit 1
+            fi
+
+            APP_DIR=/opt/workspace/plum_admin
+            SERVICE=plum-admin-frontend.service
+            LOCAL_HEALTH_URL=http://127.0.0.1:3001/api/health
+            PUBLIC_HEALTH_URL=https://admin.plum.top/api/health
+
+            cd "$APP_DIR"
+
+            # 生产目录有人工调试改动时拒绝覆盖，保留现场交给人工处理。
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "ABORT: production worktree has uncommitted changes."
+              git status --short
+              exit 1
+            fi
+            if [ ! -f .env ]; then
+              echo "ABORT: $APP_DIR/.env is missing."
+              exit 1
+            fi
+            if [ "$(stat -c %a .env)" != "600" ]; then
+              echo "ABORT: $APP_DIR/.env must have mode 600."
+              exit 1
+            fi
+
+            git fetch --no-tags origin main
+            git checkout main
+            if ! git merge-base --is-ancestor "$DEPLOY_SHA" origin/main; then
+              echo "ABORT: deployment commit is not part of origin/main: $DEPLOY_SHA"
+              exit 1
+            fi
+
+            HEAD_SHA=$(git rev-parse HEAD)
+            if ! git merge-base --is-ancestor "$HEAD_SHA" origin/main; then
+              echo "ABORT: production main is ahead of or has diverged from origin/main: $HEAD_SHA"
+              exit 1
+            fi
+            if [ "$HEAD_SHA" != "$DEPLOY_SHA" ] && \
+              git merge-base --is-ancestor "$DEPLOY_SHA" "$HEAD_SHA"; then
+              echo "SKIP: $DEPLOY_SHA was already superseded by production commit $HEAD_SHA."
+              exit 0
+            fi
+            if ! git merge-base --is-ancestor "$HEAD_SHA" "$DEPLOY_SHA"; then
+              echo "ABORT: cannot fast-forward production main from $HEAD_SHA to $DEPLOY_SHA."
+              exit 1
+            fi
+
+            git merge --ff-only "$DEPLOY_SHA"
+            HEAD_SHA=$(git rev-parse HEAD)
+            if [ "$HEAD_SHA" != "$DEPLOY_SHA" ]; then
+              echo "ABORT: production HEAD does not match deployment commit $DEPLOY_SHA."
+              exit 1
+            fi
+            echo "Deploying $(git rev-parse --short HEAD)"
+
+            export NVM_DIR="$HOME/.nvm"
+            if [ -s "$NVM_DIR/nvm.sh" ]; then
+              # nvm.sh 并不保证在 nounset 下可加载；加载完成后立即恢复严格模式。
+              set +u
+              . "$NVM_DIR/nvm.sh"
+              nvm use 22
+              set -u
+            fi
+            test "$(node -p 'process.versions.node.split(`.`)[0]')" = "22"
+            test "$(npm --version | cut -d. -f1)" = "10"
+
+            npm ci
+            npm run build
+            test -s .cache/next/BUILD_ID
+
+            # user-level systemd 在非交互 SSH 中需要显式指定用户总线目录。
+            export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+            systemctl --user restart "$SERVICE"
+            systemctl --user status "$SERVICE" --no-pager -n 50
+
+            for attempt in $(seq 1 15); do
+              if HEALTH_RESPONSE=$(curl -fsS --max-time 5 "$LOCAL_HEALTH_URL"); then
+                if jq -e '.status == "ok" and .service == "plum-admin"' \
+                  <<<"$HEALTH_RESPONSE" >/dev/null; then
+                  echo "Local health check passed."
+                  break
+                fi
+              fi
+              if [ "$attempt" = "15" ]; then
+                echo "ABORT: local health check did not pass within 30 seconds."
+                exit 1
+              fi
+              echo "Waiting for local health check ($attempt/15)..."
+              sleep 2
+            done
+
+            PUBLIC_HEALTH_RESPONSE=$(curl -fsS --max-time 10 "$PUBLIC_HEALTH_URL")
+            jq -e '.status == "ok" and .service == "plum-admin"' \
+              <<<"$PUBLIC_HEALTH_RESPONSE" >/dev/null
+            echo "Deployment successful: $HEAD_SHA"
+
+      - name: Notify Feishu - deployment result
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          FEISHU_DEPLOY_CHAT_ID: ${{ secrets.FEISHU_DEPLOY_CHAT_ID }}
+          DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
+          RELEASE_CONTEXT: ${{ steps.release.outputs.context }}
+          DEPLOY_STARTED_AT: ${{ steps.release.outputs.started_at }}
+        run: |
+          set -e
+
+          AUTH_PAYLOAD=$(jq -n \
+            --arg app_id "$FEISHU_APP_ID" \
+            --arg app_secret "$FEISHU_APP_SECRET" \
+            '{app_id: $app_id, app_secret: $app_secret}')
+          TOKEN=$(curl -fsS --connect-timeout 5 --max-time 15 \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d "$AUTH_PAYLOAD" \
+            https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal \
+            | jq -er '.tenant_access_token')
+
+          if [ "$DEPLOY_OUTCOME" = "success" ]; then
+            STATUS="succeeded"
+          else
+            STATUS="failed"
+          fi
+
+          NOW=$(date +%s)
+          if [[ "$DEPLOY_STARTED_AT" =~ ^[0-9]+$ ]]; then
+            ELAPSED=$((NOW - DEPLOY_STARTED_AT))
+            DURATION=$(printf '%dm %ds' "$((ELAPSED / 60))" "$((ELAPSED % 60))")
+          else
+            DURATION="unknown"
+          fi
+
+          CONTEXT=${RELEASE_CONTEXT:-"{}"}
+          RELEASE_KIND=$(jq -r '.kind // "commit"' <<<"$CONTEXT")
+          RELEASE_TITLE=$(jq -r '.title // "Unknown release"' <<<"$CONTEXT")
+          RELEASE_AUTHOR=$(jq -r '.author // "unknown"' <<<"$CONTEXT")
+          RELEASE_URL=$(jq -r '.url // ""' <<<"$CONTEXT")
+          RELEASE_NOTES=$(jq -r '(.body // "" | gsub("\r"; "") | if length == 0 then "No description provided." elif length > 1800 then .[0:1800] + "\n..." else . end)' <<<"$CONTEXT")
+          if [ "$RELEASE_KIND" = "pull_request" ]; then
+            PR_NUMBER=$(jq -r '.number' <<<"$CONTEXT")
+            RELEASE_LABEL="PR #$PR_NUMBER: $RELEASE_TITLE"
+            LINK_LABEL="PR"
+          else
+            RELEASE_LABEL="$RELEASE_TITLE"
+            LINK_LABEL="Commit"
+          fi
+
+          TEXT=$(printf 'Plum Admin deployment %s\nEnvironment: EC201\nDuration: %s\nRelease: %s\nAuthor: %s\n\nRelease notes:\n%s\n\n%s: %s\nCommit: %.7s\nTriggered by: %s\nRun: %s/%s/actions/runs/%s' \
+            "$STATUS" "$DURATION" "$RELEASE_LABEL" "$RELEASE_AUTHOR" "$RELEASE_NOTES" \
+            "$LINK_LABEL" "$RELEASE_URL" "$DEPLOY_SHA" "$DEPLOY_ACTOR" \
+            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
+          MESSAGE_PAYLOAD=$(jq -n \
+            --arg receive_id "$FEISHU_DEPLOY_CHAT_ID" \
+            --arg text "$TEXT" \
+            '{receive_id: $receive_id, msg_type: "text", content: ({text: $text} | tojson)}')
+          RESPONSE=$(curl -fsS --connect-timeout 5 --max-time 15 \
+            -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id" \
+            -d "$MESSAGE_PAYLOAD")
+          test "$(jq -r '.code' <<<"$RESPONSE")" = "0"
