@@ -6,6 +6,16 @@ on:
     branches: [main]
 
 jobs:
+  workflows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint GitHub Actions workflows
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
