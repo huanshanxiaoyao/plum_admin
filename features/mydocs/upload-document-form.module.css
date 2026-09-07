@@ -1,0 +1,98 @@
+.form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.titleField {
+  display: grid;
+  gap: 6px;
+}
+
+.titleField > span {
+  color: var(--muted-strong);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.titleField input, .filePicker, .form button {
+  height: 38px;
+  box-sizing: border-box;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font: inherit;
+  font-size: 11px;
+}
+
+.titleField input {
+  width: 100%;
+  min-width: 0;
+  padding: 0 10px;
+  outline: none;
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.titleField input:focus, .filePicker:focus-within {
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px var(--green-soft);
+}
+
+.filePicker {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  color: var(--muted-strong);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.filePicker span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filePicker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.form button {
+  min-width: 92px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  border-color: var(--green);
+  color: #fff;
+  background: var(--green);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.form button:disabled { cursor: not-allowed; opacity: .58; }
+.constraint { grid-column: 1 / -1; color: var(--muted); font-size: 9px; }
+.error, .success { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin: 0; font-size: 11px; }
+.error { color: var(--red); }
+.success { color: var(--green); }
+.spinning { animation: spin 850ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 720px) {
+  .form { grid-template-columns: 1fr; align-items: stretch; }
+  .form button { width: 100%; }
+}
