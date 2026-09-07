@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { groupIssuesByRow, readPackage } from "../features/imports/package-reader.ts";
 import { failedUploads, runUploads, succeededPortraits } from "../features/imports/upload-orchestrator.ts";
-import { readImageSetId, readPresignedUpload } from "../features/imports/import-api.ts";
+import { readImageSet, readPresignedUpload } from "../features/imports/import-api.ts";
 import {
   RESULT_COLUMNS,
   buildResultManifest,
@@ -251,6 +251,16 @@ const IMAGE_SET_RESPONSE = {
   meta: { request_id: "req_2" },
 };
 
+test("图片集复用旧 media 时，按图片集自己的 source_media_id 报", () => {
+  // 图片集按「图片内容 + 裁剪」去重。重传同一个包时上传拿到的是新 media id，建图片集却
+  // 命中上一次那条记录——它绑的是旧 media。导入行必须跟图片集走，否则后端比对
+  // source_media_id 不一致，整行 character_image_set_not_ready。
+  const reused = {
+    data: { image_set: { id: "cimg_old", source_media_id: "mda_old", processing_status: "ready" } },
+  };
+  assert.deepEqual(readImageSet(reused), { id: "cimg_old", sourceMediaId: "mda_old" });
+});
+
 test("预签发响应按后端实际的字段名解析", () => {
   const granted = readPresignedUpload(PRESIGN_RESPONSE);
   assert.equal(granted.mediaId, "mda_abc");
@@ -259,7 +269,10 @@ test("预签发响应按后端实际的字段名解析", () => {
 });
 
 test("图片集响应按后端实际的字段名解析", () => {
-  assert.equal(readImageSetId(IMAGE_SET_RESPONSE), "cimg_abc");
+  assert.deepEqual(readImageSet(IMAGE_SET_RESPONSE), {
+    id: "cimg_abc",
+    sourceMediaId: "mda_abc",
+  });
 });
 
 test("字段名对不上时报出缺的是哪个字段，而不是让下游炸", () => {
@@ -279,7 +292,7 @@ test("字段名对不上时报出缺的是哪个字段，而不是让下游炸",
       return true;
     },
   );
-  assert.throws(() => readImageSetId({ data: { image_set_id: "cimg_abc" } }), {
+  assert.throws(() => readImageSet({ data: { image_set_id: "cimg_abc" } }), {
     code: "image_set_contract_mismatch",
   });
 });

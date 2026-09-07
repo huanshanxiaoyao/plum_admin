@@ -86,7 +86,11 @@ type PresignedUpload = {
   };
 };
 
-type ImageSetResponse = { readonly data: { readonly image_set: { readonly id: string } } };
+type ImageSetResponse = {
+  readonly data: {
+    readonly image_set: { readonly id: string; readonly source_media_id: string };
+  };
+};
 
 export type PresignedUploadGrant = {
   readonly mediaId: string;
@@ -120,17 +124,36 @@ export function readPresignedUpload(payload: unknown): PresignedUploadGrant {
   return { mediaId: mediaId!, url: url!, fields: fields! };
 }
 
-/** 同上：图片集响应也是开放对象，`data.image_set.id` 同样没有编译期保护。 */
-export function readImageSetId(payload: unknown): string {
-  const id = (payload as ImageSetResponse | null)?.data?.image_set?.id;
-  if (typeof id !== "string" || !id) {
+export type ImageSetRef = {
+  readonly id: string;
+  /**
+   * 图片集**自己**绑定的源 media，不一定是刚上传的那个。
+   *
+   * 图片集按「图片内容哈希 + 两个裁剪」去重（后端 `ON CONFLICT(owner, input_hash)`），
+   * 重传同一个包时上传会拿到新的 media id，建图片集却会命中上一次的那条记录——它绑的是
+   * 上一次的 media。导入行必须按这条记录的 `source_media_id` 来报，否则后端比对
+   * `source_media_id != portrait_media_id`，整行报 `character_image_set_not_ready`。
+   */
+  readonly sourceMediaId: string;
+};
+
+/** 同上：图片集响应也是开放对象，字段名同样没有编译期保护。 */
+export function readImageSet(payload: unknown): ImageSetRef {
+  const imageSet = (payload as ImageSetResponse | null)?.data?.image_set;
+  const id = imageSet?.id;
+  const sourceMediaId = imageSet?.source_media_id;
+  const missing = [
+    typeof id === "string" && id ? null : "data.image_set.id",
+    typeof sourceMediaId === "string" && sourceMediaId ? null : "data.image_set.source_media_id",
+  ].filter((field): field is string => field !== null);
+  if (missing.length > 0) {
     throw new ImportApiError(
       0,
       "image_set_contract_mismatch",
-      "图片集响应缺少 data.image_set.id，后端返回的结构与前端预期不一致。",
+      `图片集响应缺少 ${missing.join("、")}，后端返回的结构与前端预期不一致。`,
     );
   }
-  return id;
+  return { id: id!, sourceMediaId: sourceMediaId! };
 }
 
 export type CropBox = { x: number; y: number; width: number; height: number };
@@ -181,7 +204,16 @@ function uploadHost(url: string): string {
 }
 
 export type TransportOptions = {
+  /** 批次默认归属。只在行上没有解析出归属时兜底。 */
   readonly ownerPlatformUserId: string;
+  /**
+   * row_key → 这一行的归属账号。
+   *
+   * 立绘必须传到**角色最终归属的那个账号**名下，不能一律用批次默认值：媒体、图片集和
+   * 角色草稿都是 owner-scoped 的，服务端按 `(image_set_id, owner)` 查图片集，两边的
+   * owner 不一致就查不到，整行报 `character_image_set_not_ready`。
+   */
+  readonly owners: ReadonlyMap<string, string>;
   readonly crops: ReadonlyMap<string, { portrait?: CropBox; avatar?: CropBox }>;
 };
 
@@ -203,8 +235,12 @@ export function createUploadTransport(
       const blob = new Blob([bytes as BlobPart], { type: image.contentType });
       const { width, height } = await measure(blob);
 
+      // 这一行的归属账号——媒体、complete、图片集三步必须用同一个，且必须与导入行的
+      // 归属一致，否则服务端按 owner 查不到图片集。
+      const ownerId = options.owners.get(task.rowKey) || options.ownerPlatformUserId;
+
       const grantBody: MediaUploadRequest = {
-        owner_platform_user_id: options.ownerPlatformUserId,
+        owner_platform_user_id: ownerId,
         filename: image.path,
         kind: "image",
         purpose: "character_portrait",
@@ -241,19 +277,31 @@ export function createUploadTransport(
       }
 
       await postJson(`/media/uploads/${encodeURIComponent(granted.mediaId)}/complete`, {
-        owner_platform_user_id: options.ownerPlatformUserId,
+        owner_platform_user_id: ownerId,
       });
 
       const crop = options.crops.get(task.rowKey);
+      const portraitCrop = cropRect(crop?.portrait, PORTRAIT_ASPECT, { width, height });
+      const avatarCrop = cropRect(crop?.avatar, AVATAR_ASPECT, { width, height });
       const imageSetBody: ImageSetRequest = {
-        owner_platform_user_id: options.ownerPlatformUserId,
+        owner_platform_user_id: ownerId,
         source_media_id: granted.mediaId,
-        portrait_crop: cropRect(crop?.portrait, PORTRAIT_ASPECT, { width, height }),
-        avatar_crop: cropRect(crop?.avatar, AVATAR_ASPECT, { width, height }),
+        portrait_crop: portraitCrop,
+        avatar_crop: avatarCrop,
       };
-      const imageSet = await postJson<ImageSetResponse>("/media/image-sets", imageSetBody);
+      const imageSet = readImageSet(
+        await postJson<ImageSetResponse>("/media/image-sets", imageSetBody),
+      );
 
-      return { mediaId: granted.mediaId, imageSetId: readImageSetId(imageSet) };
+      // 报给导入行的是**图片集绑定的**那个 media，不是刚上传的 `granted.mediaId`：重传同一
+      // 个包时图片集会命中内容去重，返回上一次那条记录，两个 id 就不是一回事了。
+      // 裁剪也跟着一起回去——导入行要把同样的值再发一遍，服务端逐字段比对。
+      return {
+        mediaId: imageSet.sourceMediaId,
+        imageSetId: imageSet.id,
+        portraitCrop,
+        avatarCrop,
+      };
     },
   };
 }
