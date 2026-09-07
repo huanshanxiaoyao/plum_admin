@@ -11,6 +11,7 @@
  * 传输层通过参数注入，所以这套编排逻辑不依赖浏览器也不依赖后端，可以直接单测。
  */
 
+import type { CropRect } from "./import-contracts.ts";
 import type { PackageImage } from "./package-reader.ts";
 
 export type UploadTask = {
@@ -21,6 +22,15 @@ export type UploadTask = {
 export type UploadedPortrait = {
   readonly mediaId: string;
   readonly imageSetId: string;
+  /**
+   * 建图片集时**实际用的**两个裁剪，原样带回来。
+   *
+   * 导入行必须把同样的裁剪再发一遍：服务端拿它和图片集里存的比对，对不上就拒绝
+   * （`character_crop_invalid`）。运营留空时裁剪是按图片真实像素算出来的，只有传输层
+   * 知道结果——不带回来，调用方就只能重算一遍，算出不一样的值就是一次静默失败。
+   */
+  readonly portraitCrop: CropRect;
+  readonly avatarCrop: CropRect;
 };
 
 export type UploadTransport = {

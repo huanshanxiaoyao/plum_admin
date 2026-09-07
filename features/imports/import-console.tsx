@@ -204,6 +204,13 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
         }),
       );
 
+      // 立绘要传到这一行自己的归属账号名下。行级归属由服务端预检解析（本地只能看列里
+      // 填没填），和提交时后端给这一行算出来的归属是同一个值；不一致的话，服务端按
+      // owner 查不到图片集，整行报 character_image_set_not_ready。
+      const owners = new Map(
+        rows.map((row) => [row.rowKey, row.ownerPlatformUserId ?? owner.platformUserId]),
+      );
+
       const tasks = rows
         .filter((row) => row.portraitPath && read.images.has(row.portraitPath))
         .map((row) => ({ rowKey: row.rowKey, image: read.images.get(row.portraitPath!)! }));
@@ -212,6 +219,7 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
         tasks,
         createUploadTransport(read.archive, {
           ownerPlatformUserId: owner.platformUserId,
+          owners,
           crops,
         }),
         { done: uploaded.current, onProgress: setProgress },
@@ -246,8 +254,16 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
             ...rowPayload(values),
             // operation 不发：服务端按 character_id 自己判定，多发一个字段是 422。
             expected_revision: row.server?.expected_revision ?? null,
+            // 带 image_set_id 的行必须同时带上两个裁剪：服务端拿它们和图片集里存的逐字段
+            // 比对，缺了就是 character_crop_invalid。值用建图片集时的那一份，不重算——
+            // 运营留空时裁剪是按图片真实像素算的，重算出不一样的值就是一次静默失败。
             ...(portrait
-              ? { portrait_media_id: portrait.mediaId, image_set_id: portrait.imageSetId }
+              ? {
+                  portrait_media_id: portrait.mediaId,
+                  image_set_id: portrait.imageSetId,
+                  portrait_crop: portrait.portraitCrop,
+                  avatar_crop: portrait.avatarCrop,
+                }
               : {}),
           };
         }),
