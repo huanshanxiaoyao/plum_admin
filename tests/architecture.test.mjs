@@ -76,3 +76,11 @@ test("admin business routes are explicit instead of catch-all", () => {
   assert.equal(existsSync(join(ROOT, "app", "mydocs", "page.tsx")), true);
   assert.equal(existsSync(join(ROOT, "app", "mydocs", "[id]", "page.tsx")), true);
 });
+
+test("evaluation reports live outside the operations shell", () => {
+  // 不在 (admin) 分组里：它不套 AdminShell，也就拿不到那份布局的登录判定，
+  // 因此页面与 Route Handler 都自己做鉴权。
+  assert.equal(existsSync(join(ROOT, "app", "(admin)", "eval")), false);
+  assert.equal(existsSync(join(ROOT, "app", "eval", "page.tsx")), true);
+  assert.equal(existsSync(join(ROOT, "app", "eval", "[runId]", "route.ts")), true);
+});

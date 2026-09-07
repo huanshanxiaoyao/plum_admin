@@ -45,15 +45,20 @@ function isActivePath(pathname: string, href: string): boolean {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** 页面底部的次级入口。不属于日常运营导航，因此不进 `ADMIN_MODULES`。 */
+export type AdminFooterLink = { href: string; label: string };
+
 export function AdminShell({
   identity,
   navigation,
   environmentLabel,
+  footerLinks = [],
   children,
 }: {
   identity: AdminIdentity;
   navigation: readonly AdminModule[];
   environmentLabel: string;
+  footerLinks?: readonly AdminFooterLink[];
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -140,6 +145,15 @@ export function AdminShell({
           </div>
         </header>
         <main className={styles.content}>{children}</main>
+        {footerLinks.length > 0 && (
+          <footer className={styles.pageFooter}>
+            {footerLinks.map((link) => (
+              <Link key={link.href} href={link.href}>
+                {link.label}
+              </Link>
+            ))}
+          </footer>
+        )}
       </div>
     </div>
   );

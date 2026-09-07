@@ -23,6 +23,7 @@ export default defineConfig({
       ADMIN_DATA_SOURCE: "fixture",
       ADMIN_API_WRITE_ENABLED: "true",
       PROJECT_DOCUMENTS_DIR: ".artifacts/playwright/project-documents",
+      ADMIN_EVAL_REPORTS_DIR: "tests/fixtures/eval-reports",
     },
   },
   projects: [

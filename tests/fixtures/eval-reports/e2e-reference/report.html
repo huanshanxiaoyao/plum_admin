@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="zh">
+<head><meta charset="utf-8"><title>记忆评测报告 · e2e</title></head>
+<body>
+<h1>记忆评测报告 · e2e</h1>
+<p id="origin">origin unknown</p>
+<script>
+  // 沙箱生效时文档处于不透明源，origin 为字符串 "null"。e2e 用它断言 CSP sandbox 真的落地了。
+  document.getElementById("origin").textContent = "origin=" + window.origin;
+</script>
+</body>
+</html>
