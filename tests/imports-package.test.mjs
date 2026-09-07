@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { groupIssuesByRow, readPackage } from "../features/imports/package-reader.ts";
-import { runUploads, succeededPortraits } from "../features/imports/upload-orchestrator.ts";
+import { failedUploads, runUploads, succeededPortraits } from "../features/imports/upload-orchestrator.ts";
 import {
   RESULT_COLUMNS,
   buildResultManifest,
@@ -186,6 +186,40 @@ test("succeededPortraits 只收成功的行，可直接作为下一轮的 done",
   });
   const done = succeededPortraits(outcomes);
   assert.deepEqual([...done.keys()], ["a"]);
+});
+
+test("failedUploads 保留每行的失败原因，而不只是失败的行号", async () => {
+  // 只知道"哪几行失败"是不够的：运营看到「失败 N」而不知道为什么，就只能来找研发翻日志。
+  const outcomes = await runUploads(tasks("a", "b"), fakeTransport({ b: "fail" }), {
+    concurrency: 1,
+  });
+  const failures = failedUploads(outcomes);
+  assert.deepEqual([...failures.keys()], ["b"]);
+  assert.match(failures.get("b").message, /上传失败：b/);
+  assert.equal(typeof failures.get("b").code, "string");
+});
+
+test("failedUploads 与 succeededPortraits 互补，覆盖每一行", async () => {
+  const outcomes = await runUploads(tasks("a", "b", "c"), fakeTransport({ b: "fail" }), {
+    concurrency: 1,
+  });
+  const done = succeededPortraits(outcomes);
+  const failures = failedUploads(outcomes);
+  assert.equal(done.size + failures.size, 3);
+  assert.equal([...failures.keys()].some((key) => done.has(key)), false);
+});
+
+test("transport 抛出带 code 的错误时，code 被原样保留", async () => {
+  // 传输层用 code 区分"S3 返回了非 2xx"和"请求根本没发出去"，两者的排查方向完全不同。
+  const transport = {
+    async upload() {
+      const error = new Error("浏览器没能连上对象存储。");
+      error.code = "media_upload_unreachable";
+      throw error;
+    },
+  };
+  const failures = failedUploads(await runUploads(tasks("a"), transport));
+  assert.equal(failures.get("a").code, "media_upload_unreachable");
 });
 
 // --- 结果清单导出 ---

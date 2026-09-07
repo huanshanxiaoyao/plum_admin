@@ -28,9 +28,14 @@ export type UploadTransport = {
   upload(task: UploadTask): Promise<UploadedPortrait>;
 };
 
+export type UploadFailure = {
+  readonly code: string;
+  readonly message: string;
+};
+
 export type UploadOutcome =
   | { readonly rowKey: string; readonly ok: true; readonly portrait: UploadedPortrait }
-  | { readonly rowKey: string; readonly ok: false; readonly code: string; readonly message: string };
+  | ({ readonly rowKey: string; readonly ok: false } & UploadFailure);
 
 export type UploadProgress = {
   readonly total: number;
@@ -120,5 +125,23 @@ export function succeededPortraits(
     outcomes
       .filter((outcome): outcome is Extract<UploadOutcome, { ok: true }> => outcome.ok)
       .map((outcome) => [outcome.rowKey, outcome.portrait]),
+  );
+}
+
+/**
+ * 失败的行及其原因。
+ *
+ * 编排层已经把每一行的 `code` / `message` 捞出来了，之前却只用来过滤"哪些行不提交"，
+ * 原因就地丢掉——运营看到的是「失败 9」，不知道为什么，排查只能翻服务器日志。
+ * 这些失败往往在服务端一侧毫无痕迹（浏览器被 CSP 或跨域拦下时，请求根本没发出去），
+ * 所以浏览器里这份原因是唯一的现场。
+ */
+export function failedUploads(
+  outcomes: readonly UploadOutcome[],
+): ReadonlyMap<string, UploadFailure> {
+  return new Map(
+    outcomes
+      .filter((outcome): outcome is Extract<UploadOutcome, { ok: false }> => !outcome.ok)
+      .map((outcome) => [outcome.rowKey, { code: outcome.code, message: outcome.message }]),
   );
 }

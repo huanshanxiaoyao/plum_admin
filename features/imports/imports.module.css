@@ -154,6 +154,8 @@
 .issues code { margin-right: 4px; padding: 0 4px; border-radius: 3px; background: var(--surface-subtle); font-family: inherit; font-size: 9px; }
 .issueError { color: var(--red); }
 .issueNotice { color: var(--muted); }
+/* 报错码跟在原因后面，给排查用；别抢运营要读的那句话。 */
+.failureCode { margin-left: 5px; color: var(--muted); font-size: 9px; }
 
 .empty { min-height: 180px; display: grid; place-content: center; justify-items: center; gap: 7px; color: var(--muted); }
 .emptyMark { width: 38px; height: 38px; display: grid; place-items: center; border: 1px dashed var(--line-strong); border-radius: 50%; font-size: 10px; }
@@ -199,6 +201,9 @@
 .doneCard { display: grid; place-items: center; gap: 8px; padding: 34px 24px; border: 1px solid #bcdac7; border-radius: 6px; color: var(--green); background: var(--green-soft); }
 .doneCard strong { color: var(--ink); font-size: 15px; }
 .doneCard p { margin: 0; color: var(--muted-strong); font-size: 10px; }
+/* 完成态是绿的，没提交上去的行必须从这片绿里跳出来。 */
+.doneWarning { display: flex; align-items: flex-start; gap: 5px; max-width: 46ch; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); text-align: left; }
+.doneCard .doneWarning { color: var(--red); }
 .doneActions { display: flex; gap: 8px; margin-top: 6px; }
 
 .summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; }
