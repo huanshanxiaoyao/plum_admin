@@ -18,7 +18,14 @@ import { PreflightTable } from "./preflight-table";
 import { usePortraitPreviews } from "./portrait-previews";
 import { OwnerPicker, type OwnerAccount } from "./owner-picker";
 import { ImportApiError, createUploadTransport, requestPreflight, submitImport } from "./import-api";
-import { runUploads, succeededPortraits, type UploadProgress, type UploadedPortrait } from "./upload-orchestrator";
+import {
+  failedUploads,
+  runUploads,
+  succeededPortraits,
+  type UploadFailure,
+  type UploadProgress,
+  type UploadedPortrait,
+} from "./upload-orchestrator";
 import type {
   ImportBatchDetail,
   ImportRowPayload,
@@ -95,6 +102,10 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
   const [reason, setReason] = useState("");
   const [declared, setDeclared] = useState(false);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
+  // 上一次提交里立绘没传上去的行。留到下一次提交前才清，运营才有机会看清楚原因。
+  const [uploadFailures, setUploadFailures] = useState<ReadonlyMap<string, UploadFailure>>(
+    () => new Map(),
+  );
   const [batch, setBatch] = useState<ImportBatchDetail | null>(null);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +121,7 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
     setModel(null);
     setServerChecked(false);
     setProgress(null);
+    setUploadFailures(new Map());
     setBatch(null);
     setError("");
     uploaded.current = new Map();
@@ -122,6 +134,7 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
       setError("");
       setBatch(null);
       setProgress(null);
+      setUploadFailures(new Map());
       setServerChecked(false);
       uploaded.current = new Map();
       setFileName(file.name);
@@ -173,6 +186,7 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
 
     setStage("submitting");
     setError("");
+    setUploadFailures(new Map());
     try {
       const byRowKey = new Map(
         read.rows.map((row) => [(row.values.row_key ?? "").trim(), row.values]),
@@ -204,30 +218,39 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
       );
       uploaded.current = new Map(succeededPortraits(outcomes));
 
-      const uploadFailures = new Map(
-        outcomes.filter((outcome) => !outcome.ok).map((outcome) => [outcome.rowKey, outcome]),
-      );
+      const failures = failedUploads(outcomes);
+      setUploadFailures(failures);
+
+      // 立绘没传上去的行不提交：带着空立绘发布出去的角色比失败更难收拾。
+      const submitting = rows.filter((row) => !failures.has(row.rowKey));
+      // 一行都不剩时不要发空 rows：那必然被契约挡回一个 422，运营看到的是"导入提交失败"
+      // 这种与真正原因无关的话。原因已经逐行落在表里了，这里只要把人指过去。
+      if (submitting.length === 0) {
+        setError(
+          `${failures.size} 行的立绘全部上传失败，没有可提交的行。逐行原因见上方表格的「校验」列；` +
+            `修好后可以直接再点提交，已经传上去的立绘不会重传。`,
+        );
+        setStage("reviewed");
+        return;
+      }
 
       const body: ExecuteBody = {
         batch_id: batchId,
         default_owner_platform_user_id: owner.platformUserId,
         reason: reason.trim(),
         confirmations: { adult_confirmed: true, rights_confirmed: true },
-        rows: rows
-          // 立绘没传上去的行不提交：带着空立绘发布出去的角色比失败更难收拾。
-          .filter((row) => !uploadFailures.has(row.rowKey))
-          .map((row) => {
-            const portrait = uploaded.current.get(row.rowKey);
-            const values = byRowKey.get(row.rowKey) ?? {};
-            return {
-              ...rowPayload(values),
-              // operation 不发：服务端按 character_id 自己判定，多发一个字段是 422。
-              expected_revision: row.server?.expected_revision ?? null,
-              ...(portrait
-                ? { portrait_media_id: portrait.mediaId, image_set_id: portrait.imageSetId }
-                : {}),
-            };
-          }),
+        rows: submitting.map((row) => {
+          const portrait = uploaded.current.get(row.rowKey);
+          const values = byRowKey.get(row.rowKey) ?? {};
+          return {
+            ...rowPayload(values),
+            // operation 不发：服务端按 character_id 自己判定，多发一个字段是 422。
+            expected_revision: row.server?.expected_revision ?? null,
+            ...(portrait
+              ? { portrait_media_id: portrait.mediaId, image_set_id: portrait.imageSetId }
+              : {}),
+          };
+        }),
       };
       const response = await submitImport(body);
       setBatch(toBatchDetail(response));
@@ -254,6 +277,17 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
           已发布 {counts.published} · 待复核 {counts.pending_review} · 被拒{" "}
           {counts.rejected} · 失败 {counts.failed}
         </p>
+        {/*
+          部分行的立绘没传上去时，这些行压根没进这一批，上面的计数里不会出现它们。
+          完成态又把预检表整个换掉了，不在这儿说一句，这些行就静悄悄地消失了。
+        */}
+        {uploadFailures.size > 0 && (
+          <p className={styles.doneWarning} role="alert">
+            <AlertTriangle size={14} />
+            另有 {uploadFailures.size} 行因立绘上传失败未提交，不在以上计数内。重新选择同一个包再导
+            一次即可——批次号由包内容决定，已经导入的行会命中幂等重放，不会重复创建。
+          </p>
+        )}
         <div className={styles.doneActions}>
           <Link className={styles.primaryAction} href={`/imports/${encodeURIComponent(batch.batch.batch_id)}`}>
             查看逐行结果
@@ -352,7 +386,12 @@ export function ImportConsole({ canSubmit, submitBlockedReason, serverPreflight 
             </ul>
           )}
 
-          <PreflightTable model={model} serverChecked={serverChecked} portraits={portraits} />
+          <PreflightTable
+            model={model}
+            serverChecked={serverChecked}
+            portraits={portraits}
+            uploadFailures={uploadFailures}
+          />
 
           <section className={styles.confirm} aria-label="确认与提交">
             <h2>确认与提交</h2>

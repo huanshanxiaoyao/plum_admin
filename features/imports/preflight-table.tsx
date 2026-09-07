@@ -1,6 +1,7 @@
 import { AlertCircle, CircleCheck, Info } from "lucide-react";
 import { OPERATION_LABELS } from "./labels";
 import type { ReviewIssue, ReviewModel, ReviewRow } from "./review-model";
+import type { UploadFailure } from "./upload-orchestrator";
 import styles from "./imports.module.css";
 
 function BudgetBar({ used, limit, label }: { used: number; limit: number; label: string }) {
@@ -16,8 +17,21 @@ function BudgetBar({ used, limit, label }: { used: number; limit: number; label:
   );
 }
 
-function IssueList({ issues }: { issues: readonly ReviewIssue[] }) {
-  if (issues.length === 0) {
+/**
+ * 校验结果，以及这一行的立绘**上传**失败原因。
+ *
+ * 上传失败不是校验问题——它发生在提交按下之后，行本身是通过的。但运营看的是同一格：
+ * 「这一行为什么没进去」。原因分两处显示等于没显示，所以合并在这里，且上传失败时不再
+ * 显示"通过"——那一行确实没有导进去，绿字会直接误导。
+ */
+function IssueList({
+  issues,
+  uploadFailure,
+}: {
+  issues: readonly ReviewIssue[];
+  uploadFailure: UploadFailure | undefined;
+}) {
+  if (issues.length === 0 && !uploadFailure) {
     return (
       <span className={styles.rowOk}>
         <CircleCheck size={13} />
@@ -36,6 +50,17 @@ function IssueList({ issues }: { issues: readonly ReviewIssue[] }) {
           </span>
         </li>
       ))}
+      {uploadFailure && (
+        <li className={styles.issueError}>
+          <AlertCircle size={12} />
+          <span>
+            <code>立绘上传</code>
+            {uploadFailure.message}
+            {/* code 给的是排查用的锚点：运营截图给到研发，不用再问"具体报什么错"。 */}
+            <small className={styles.failureCode}>{uploadFailure.code}</small>
+          </span>
+        </li>
+      )}
     </ul>
   );
 }
@@ -78,13 +103,15 @@ function Row({
   row,
   serverChecked,
   portraitSrc,
+  uploadFailure,
 }: {
   row: ReviewRow;
   serverChecked: boolean;
   portraitSrc: string | undefined;
+  uploadFailure: UploadFailure | undefined;
 }) {
   return (
-    <tr className={row.blocked ? styles.rowBlocked : undefined}>
+    <tr className={row.blocked || uploadFailure ? styles.rowBlocked : undefined}>
       <td>
         <div className={styles.rowIdentity}>
           <Portrait src={portraitSrc} path={row.portraitPath} />
@@ -134,7 +161,7 @@ function Row({
         )}
       </td>
       <td>
-        <IssueList issues={row.issues} />
+        <IssueList issues={row.issues} uploadFailure={uploadFailure} />
       </td>
     </tr>
   );
@@ -144,11 +171,14 @@ export function PreflightTable({
   model,
   serverChecked,
   portraits,
+  uploadFailures,
 }: {
   model: ReviewModel;
   serverChecked: boolean;
   /** 立绘路径 → 本地 blob URL。没解出来的行退回只显示文件名。 */
   portraits: ReadonlyMap<string, string>;
+  /** row_key → 上一次提交时的立绘上传失败原因。没提交过就是空的。 */
+  uploadFailures: ReadonlyMap<string, UploadFailure>;
 }) {
   return (
     <section className={styles.table} aria-label="预检结果">
@@ -181,6 +211,7 @@ export function PreflightTable({
                 row={row}
                 serverChecked={serverChecked}
                 portraitSrc={row.portraitPath ? portraits.get(row.portraitPath) : undefined}
+                uploadFailure={uploadFailures.get(row.rowKey)}
               />
             ))
           )}

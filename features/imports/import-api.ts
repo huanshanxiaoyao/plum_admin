@@ -114,6 +114,15 @@ async function measure(blob: Blob): Promise<{ width: number; height: number }> {
   }
 }
 
+/** 只为错误信息取个主机名；取不到就退回整串——排查时看到什么都比看不到强。 */
+function uploadHost(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
 export type TransportOptions = {
   readonly ownerPlatformUserId: string;
   readonly crops: ReadonlyMap<string, { portrait?: CropBox; avatar?: CropBox }>;
@@ -155,7 +164,20 @@ export function createUploadTransport(
         form.append(key, value);
       }
       form.append("file", blob);
-      const uploaded = await fetch(granted.data.upload.url, { method: "POST", body: form });
+      // fetch 在这里抛异常只有一种含义：请求压根没走通——页面 CSP 的 connect-src 没放行
+      // 对象存储、Bucket CORS 没放行本站 origin、DNS 或断网。这类失败在 S3 和后端两侧都不
+      // 留任何痕迹，浏览器给的又只是一句 "Failed to fetch"，不在这里点名就只能靠猜。
+      let uploaded: Response;
+      try {
+        uploaded = await fetch(granted.data.upload.url, { method: "POST", body: form });
+      } catch {
+        throw new ImportApiError(
+          0,
+          "media_upload_unreachable",
+          `浏览器没能连上 ${uploadHost(granted.data.upload.url)}：请求未发出或未返回，` +
+            `通常是本站 CSP connect-src 或该 Bucket 的 CORS 没放行。`,
+        );
+      }
       if (!uploaded.ok) {
         throw new ImportApiError(uploaded.status, "media_upload_failed", "立绘直传对象存储失败。");
       }
