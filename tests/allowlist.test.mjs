@@ -31,6 +31,7 @@ test("character import endpoints are reachable by operators", () => {
   assert.equal(requiredCapability("POST", "imports/media/uploads"), "operations.access");
   assert.equal(requiredCapability("POST", "imports/media/uploads/med_1/complete"), "operations.access");
   assert.equal(requiredCapability("POST", "imports/media/image-sets"), "operations.access");
+  assert.equal(requiredCapability("GET", "imports/media/image-sets/cimg_1"), "operations.access");
 });
 
 test("import rules do not widen into neighbouring paths", () => {
@@ -38,6 +39,8 @@ test("import rules do not widen into neighbouring paths", () => {
   assert.equal(requiredCapability("DELETE", "imports/0f3d1a2b"), null);
   assert.equal(requiredCapability("GET", "imports/a/b"), null);
   assert.equal(requiredCapability("GET", "imports/media/uploads"), null);
+  assert.equal(requiredCapability("GET", "imports/media/image-sets"), null);
+  assert.equal(requiredCapability("GET", "imports/media/image-sets/cimg_1/extra"), null);
   assert.equal(requiredCapability("POST", "imports/characters/schema"), null);
   assert.equal(requiredCapability("POST", "imports/media/uploads/med_1"), null);
 });

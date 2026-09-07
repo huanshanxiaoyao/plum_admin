@@ -52,6 +52,23 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   return payload as T;
 }
 
+async function getJson<T>(path: string): Promise<T> {
+  const response = await fetch(`${BASE}${path}`, { cache: "no-store" });
+  const payload: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const error =
+      payload && typeof payload === "object" && "error" in payload
+        ? (payload.error as { code?: string; message?: string })
+        : null;
+    throw new ImportApiError(
+      response.status,
+      error?.code ?? "request_failed",
+      error?.message ?? "请求失败，请稍后重试。",
+    );
+  }
+  return payload as T;
+}
+
 export function requestPreflight(body: object): Promise<PreflightResponse> {
   return postJson<PreflightResponse>("/characters/preflight", body);
 }
@@ -88,7 +105,12 @@ type PresignedUpload = {
 
 type ImageSetResponse = {
   readonly data: {
-    readonly image_set: { readonly id: string; readonly source_media_id: string };
+    readonly image_set: {
+      readonly id: string;
+      readonly source_media_id: string;
+      readonly processing_status: string;
+      readonly error_code?: string | null;
+    };
   };
 };
 
@@ -135,6 +157,8 @@ export type ImageSetRef = {
    * `source_media_id != portrait_media_id`，整行报 `character_image_set_not_ready`。
    */
   readonly sourceMediaId: string;
+  readonly processingStatus: "pending" | "processing" | "ready" | "failed";
+  readonly errorCode: string | null;
 };
 
 /** 同上：图片集响应也是开放对象，字段名同样没有编译期保护。 */
@@ -142,9 +166,14 @@ export function readImageSet(payload: unknown): ImageSetRef {
   const imageSet = (payload as ImageSetResponse | null)?.data?.image_set;
   const id = imageSet?.id;
   const sourceMediaId = imageSet?.source_media_id;
+  const processingStatus = imageSet?.processing_status;
+  const validStatus = ["pending", "processing", "ready", "failed"].includes(
+    processingStatus ?? "",
+  );
   const missing = [
     typeof id === "string" && id ? null : "data.image_set.id",
     typeof sourceMediaId === "string" && sourceMediaId ? null : "data.image_set.source_media_id",
+    validStatus ? null : "data.image_set.processing_status",
   ].filter((field): field is string => field !== null);
   if (missing.length > 0) {
     throw new ImportApiError(
@@ -153,7 +182,61 @@ export function readImageSet(payload: unknown): ImageSetRef {
       `图片集响应缺少 ${missing.join("、")}，后端返回的结构与前端预期不一致。`,
     );
   }
-  return { id: id!, sourceMediaId: sourceMediaId! };
+  return {
+    id: id!,
+    sourceMediaId: sourceMediaId!,
+    processingStatus: processingStatus as ImageSetRef["processingStatus"],
+    errorCode:
+      typeof imageSet?.error_code === "string" && imageSet.error_code
+        ? imageSet.error_code
+        : null,
+  };
+}
+
+const IMAGE_SET_POLL_INTERVAL_MS = 1_000;
+const IMAGE_SET_READY_TIMEOUT_MS = 5 * 60_000;
+
+type WaitForImageSetOptions = {
+  readonly pollIntervalMs?: number;
+  readonly timeoutMs?: number;
+};
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+/** Wait until the renderer has produced the exact variants moderation will inspect. */
+export async function waitForImageSetReady(
+  initial: ImageSetRef,
+  ownerPlatformUserId: string,
+  options: WaitForImageSetOptions = {},
+): Promise<ImageSetRef> {
+  const pollIntervalMs = Math.max(0, options.pollIntervalMs ?? IMAGE_SET_POLL_INTERVAL_MS);
+  const deadline = Date.now() + Math.max(0, options.timeoutMs ?? IMAGE_SET_READY_TIMEOUT_MS);
+  let imageSet = initial;
+
+  for (;;) {
+    if (imageSet.processingStatus === "ready") return imageSet;
+    if (imageSet.processingStatus === "failed") {
+      const code = imageSet.errorCode || "character_image_processing_failed";
+      throw new ImportApiError(0, code, `立绘处理失败（${code}）。`);
+    }
+    if (Date.now() >= deadline) {
+      throw new ImportApiError(
+        0,
+        "character_image_processing_timeout",
+        "等待立绘处理完成超时，请稍后重试。",
+      );
+    }
+
+    await delay(pollIntervalMs);
+    const query = new URLSearchParams({ owner_platform_user_id: ownerPlatformUserId });
+    imageSet = readImageSet(
+      await getJson<ImageSetResponse>(
+        `/media/image-sets/${encodeURIComponent(imageSet.id)}?${query.toString()}`,
+      ),
+    );
+  }
 }
 
 export type CropBox = { x: number; y: number; width: number; height: number };
@@ -289,8 +372,9 @@ export function createUploadTransport(
         portrait_crop: portraitCrop,
         avatar_crop: avatarCrop,
       };
-      const imageSet = readImageSet(
-        await postJson<ImageSetResponse>("/media/image-sets", imageSetBody),
+      const imageSet = await waitForImageSetReady(
+        readImageSet(await postJson<ImageSetResponse>("/media/image-sets", imageSetBody)),
+        ownerId,
       );
 
       // 报给导入行的是**图片集绑定的**那个 media，不是刚上传的 `granted.mediaId`：重传同一
