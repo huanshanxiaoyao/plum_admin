@@ -139,7 +139,9 @@ test("project documents are admin-uploaded and rendered without executing HTML s
 
   const suffix = `${testInfo.project.name}-${Date.now()}`;
   const htmlTitle = `HTML 渲染 ${suffix}`;
-  await page.locator('input[type="file"]').setInputFiles({
+  const fileInput = page.locator('input[type="file"]');
+  await expect(fileInput).toBeEnabled();
+  await fileInput.setInputFiles({
     name: `render-${suffix}.html`,
     mimeType: "text/html",
     buffer: Buffer.from(`<!doctype html>
@@ -161,7 +163,9 @@ test("project documents are admin-uploaded and rendered without executing HTML s
 
   await page.goto("/mydocs");
   const markdownTitle = `Markdown 渲染 ${suffix}`;
-  await page.locator('input[type="file"]').setInputFiles({
+  const nextFileInput = page.locator('input[type="file"]');
+  await expect(nextFileInput).toBeEnabled();
+  await nextFileInput.setInputFiles({
     name: `guide-${suffix}.md`,
     mimeType: "text/markdown",
     buffer: Buffer.from("# Markdown 内容已渲染\n\n| 项目 | 状态 |\n| --- | --- |\n| HTML | 正常 |\n\n<script>document.body.dataset.uploadCompromised='true'</script>"),

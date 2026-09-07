@@ -2,12 +2,16 @@
 
 import { AlertTriangle, CheckCircle2, FileUp, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useRef, useState, useSyncExternalStore } from "react";
 import {
   PROJECT_DOCUMENT_MAX_BYTES,
   PROJECT_DOCUMENT_MAX_TITLE_LENGTH,
 } from "@/lib/project-documents/model";
 import styles from "./upload-document-form.module.css";
+
+const emptySubscribe = () => () => undefined;
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
 
 function responseError(body: unknown): string | null {
   if (!body || typeof body !== "object" || !("error" in body)) return null;
@@ -15,9 +19,11 @@ function responseError(body: unknown): string | null {
   if (!error || typeof error !== "object" || !("message" in error)) return null;
   return typeof error.message === "string" ? error.message : null;
 }
+
 export function UploadDocumentForm() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const ready = useSyncExternalStore(emptySubscribe, clientSnapshot, serverSnapshot);
   const [file, setFile] = useState<File | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -62,6 +68,7 @@ export function UploadDocumentForm() {
           type="file"
           name="file"
           accept=".md,.markdown,.html,.htm,text/markdown,text/html"
+          disabled={!ready || pending}
           required
           onChange={(event) => {
             setFile(event.target.files?.[0] ?? null);
@@ -70,7 +77,7 @@ export function UploadDocumentForm() {
           }}
         />
       </label>
-      <button type="submit" disabled={!file || pending}>
+      <button type="submit" disabled={!ready || !file || pending}>
         {pending ? <LoaderCircle className={styles.spinning} size={15} /> : <FileUp size={15} />}
         {pending ? "上传中" : "上传"}
       </button>
