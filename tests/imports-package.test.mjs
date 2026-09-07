@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { groupIssuesByRow, readPackage } from "../features/imports/package-reader.ts";
 import { failedUploads, runUploads, succeededPortraits } from "../features/imports/upload-orchestrator.ts";
-import { readImageSet, readPresignedUpload } from "../features/imports/import-api.ts";
+import {
+  ImportApiError,
+  readImageSet,
+  readPresignedUpload,
+  waitForImageSetReady,
+} from "../features/imports/import-api.ts";
 import {
   RESULT_COLUMNS,
   buildResultManifest,
@@ -258,7 +263,12 @@ test("图片集复用旧 media 时，按图片集自己的 source_media_id 报",
   const reused = {
     data: { image_set: { id: "cimg_old", source_media_id: "mda_old", processing_status: "ready" } },
   };
-  assert.deepEqual(readImageSet(reused), { id: "cimg_old", sourceMediaId: "mda_old" });
+  assert.deepEqual(readImageSet(reused), {
+    id: "cimg_old",
+    sourceMediaId: "mda_old",
+    processingStatus: "ready",
+    errorCode: null,
+  });
 });
 
 test("预签发响应按后端实际的字段名解析", () => {
@@ -272,7 +282,69 @@ test("图片集响应按后端实际的字段名解析", () => {
   assert.deepEqual(readImageSet(IMAGE_SET_RESPONSE), {
     id: "cimg_abc",
     sourceMediaId: "mda_abc",
+    processingStatus: "pending",
+    errorCode: null,
   });
+});
+
+test("图片集 ready 前持续轮询，ready 后才返回", async () => {
+  const originalFetch = globalThis.fetch;
+  const statuses = ["processing", "ready"];
+  const requested = [];
+  globalThis.fetch = async (url) => {
+    requested.push(String(url));
+    const processingStatus = statuses.shift();
+    return new Response(
+      JSON.stringify({
+        data: {
+          image_set: {
+            id: "cimg_abc",
+            source_media_id: "mda_abc",
+            processing_status: processingStatus,
+            error_code: null,
+          },
+        },
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  };
+  try {
+    const ready = await waitForImageSetReady(readImageSet(IMAGE_SET_RESPONSE), "owner_1", {
+      pollIntervalMs: 0,
+      timeoutMs: 1_000,
+    });
+    assert.equal(ready.processingStatus, "ready");
+    assert.equal(requested.length, 2);
+    assert.match(requested[0], /owner_platform_user_id=owner_1/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("图片集失败时保留 worker 的错误码", async () => {
+  const failed = readImageSet({
+    data: {
+      image_set: {
+        id: "cimg_failed",
+        source_media_id: "mda_failed",
+        processing_status: "failed",
+        error_code: "character_image_decode_failed",
+      },
+    },
+  });
+  await assert.rejects(
+    waitForImageSetReady(failed, "owner_1"),
+    (error) =>
+      error instanceof ImportApiError && error.code === "character_image_decode_failed",
+  );
+});
+
+test("图片集等待超时后不会继续提交", async () => {
+  await assert.rejects(
+    waitForImageSetReady(readImageSet(IMAGE_SET_RESPONSE), "owner_1", { timeoutMs: 0 }),
+    (error) =>
+      error instanceof ImportApiError && error.code === "character_image_processing_timeout",
+  );
 });
 
 test("字段名对不上时报出缺的是哪个字段，而不是让下游炸", () => {
