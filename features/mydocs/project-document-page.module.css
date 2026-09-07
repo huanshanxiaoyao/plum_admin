@@ -1,0 +1,87 @@
+.page {
+  width: 100%;
+  min-width: 0;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 22px;
+  line-height: 1.4;
+  font-weight: 650;
+}
+
+.header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.back {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--muted-strong);
+  background: var(--surface);
+}
+
+.back:hover {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+.htmlFrame {
+  width: 100%;
+  min-height: max(640px, calc(100dvh - 180px));
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+}
+
+.markdown {
+  max-width: 920px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.markdown > :first-child { margin-top: 0; }
+.markdown > :last-child { margin-bottom: 0; }
+.markdown h1, .markdown h2, .markdown h3, .markdown h4 { margin: 1.7em 0 .65em; line-height: 1.4; }
+.markdown h1 { font-size: 26px; }
+.markdown h2 { padding-bottom: 7px; border-bottom: 1px solid var(--line); font-size: 21px; }
+.markdown h3 { font-size: 17px; }
+.markdown h4 { font-size: 15px; }
+.markdown p, .markdown ul, .markdown ol, .markdown blockquote, .markdown pre, .markdown table { margin: 0 0 1.15em; }
+.markdown a { color: var(--green); text-underline-offset: 3px; }
+.markdown img { max-width: 100%; height: auto; }
+.markdown blockquote { margin-left: 0; padding: 2px 16px; border-left: 3px solid var(--line-strong); color: var(--muted-strong); }
+.markdown code { padding: 2px 5px; border-radius: 3px; background: var(--surface-subtle); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .9em; }
+.markdown pre { max-width: 100%; overflow: auto; padding: 14px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-subtle); }
+.markdown pre code { padding: 0; background: transparent; }
+.markdown table { width: 100%; border-collapse: collapse; }
+.markdown th, .markdown td { padding: 8px 10px; border: 1px solid var(--line); text-align: left; }
+.markdown th { background: var(--surface-subtle); }
+.markdown hr { margin: 24px 0; border: 0; border-top: 1px solid var(--line); }
+
+@media (max-width: 640px) {
+  .htmlFrame { min-height: calc(100dvh - 160px); }
+  .markdown { font-size: 13px; }
+  .markdown h1 { font-size: 23px; }
+  .markdown h2 { font-size: 19px; }
+}

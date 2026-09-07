@@ -83,6 +83,7 @@ FEISHU_REDIRECT_URI=https://admin.plum.top/api/auth/feishu/callback
 
 ```bash
 chmod 600 .env
+install -d -m 700 data/project-documents
 npm run lint
 npm run typecheck
 npm test
@@ -225,6 +226,10 @@ systemctl --user restart plum-admin-frontend.service
 curl -fsS http://127.0.0.1:3001/api/health
 curl -fsS https://admin.plum.top/api/health
 ```
+
+`data/project-documents/` 保存后台上传的 Markdown/HTML 文档，不在 Git 内，也不属于
+`ai4all_bridge` 的数据库/文件备份范围。发布和回滚不会清理它；生产主机快照或独立备份必须覆盖该目录，
+恢复后目录权限保持 `700`、文件权限保持 `600`。
 
 前端异常时切回已记录的上一 Commit，重新执行 `npm ci`、`npm run build` 并重启。Migration 129 是扩展式迁移，
 回滚前端或后端代码时不要删除 `plum_admin_users`。认证异常时优先关闭入口或回滚前端，不要通过开放写开关、

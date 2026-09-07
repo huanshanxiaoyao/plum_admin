@@ -54,4 +54,6 @@ test("admin business routes are explicit instead of catch-all", () => {
   assert.equal(existsSync(join(ROOT, "app", "(admin)", "imports", "[batchId]", "page.tsx")), true);
   assert.equal(existsSync(join(ROOT, "app", "(admin)", "imports", "package-guide", "page.tsx")), true);
   assert.equal(existsSync(join(ROOT, "app", "(admin)", "imports", "user-guide", "page.tsx")), true);
+  assert.equal(existsSync(join(ROOT, "app", "mydocs", "page.tsx")), true);
+  assert.equal(existsSync(join(ROOT, "app", "mydocs", "[id]", "page.tsx")), true);
 });

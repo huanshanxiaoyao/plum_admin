@@ -132,3 +132,62 @@ test("disabled member state can clear the session and return to login", async ({
   await page.getByRole("button", { name: "退出并重新登录" }).click();
   await expect(page).toHaveURL("/login");
 });
+
+test("project documents are admin-uploaded and rendered without executing HTML scripts", async ({ page }, testInfo) => {
+  await signIn(page, "admin");
+  await page.goto("/mydocs");
+
+  const suffix = `${testInfo.project.name}-${Date.now()}`;
+  const htmlTitle = `HTML 渲染 ${suffix}`;
+  await page.locator('input[type="file"]').setInputFiles({
+    name: `render-${suffix}.html`,
+    mimeType: "text/html",
+    buffer: Buffer.from(`<!doctype html>
+      <html><head><style>body{font-family:sans-serif}#proof{color:rgb(32,122,77)}</style></head>
+      <body><h1 id="proof">HTML 内容已渲染</h1>
+      <script>parent.document.body.dataset.uploadCompromised="true";document.body.dataset.scriptRan="true"</script>
+      </body></html>`),
+  });
+  await page.getByLabel("文档标题").fill(htmlTitle);
+  await page.getByRole("button", { name: "上传", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("已上传");
+  await page.getByRole("link", { name: new RegExp(htmlTitle) }).click();
+
+  const frame = page.frameLocator(`iframe[title="${htmlTitle}"]`);
+  await expect(frame.getByRole("heading", { name: "HTML 内容已渲染" })).toBeVisible();
+  expect(await frame.locator("#proof").evaluate((node) => getComputedStyle(node).color)).toBe("rgb(32, 122, 77)");
+  await expect(frame.locator("body")).not.toHaveAttribute("data-script-ran");
+  await expect(page.locator("body")).not.toHaveAttribute("data-upload-compromised");
+
+  await page.goto("/mydocs");
+  const markdownTitle = `Markdown 渲染 ${suffix}`;
+  await page.locator('input[type="file"]').setInputFiles({
+    name: `guide-${suffix}.md`,
+    mimeType: "text/markdown",
+    buffer: Buffer.from("# Markdown 内容已渲染\n\n| 项目 | 状态 |\n| --- | --- |\n| HTML | 正常 |\n\n<script>document.body.dataset.uploadCompromised='true'</script>"),
+  });
+  await page.getByLabel("文档标题").fill(markdownTitle);
+  await page.getByRole("button", { name: "上传", exact: true }).click();
+  await page.getByRole("link", { name: new RegExp(markdownTitle) }).click();
+  await expect(page.getByRole("heading", { name: "Markdown 内容已渲染" })).toBeVisible();
+  await expect(page.getByRole("table")).toBeVisible();
+  await expect(page.getByRole("article").locator("script")).toHaveCount(0);
+  await expect(page.locator("body")).not.toHaveAttribute("data-upload-compromised");
+});
+
+test("operators can read project docs but cannot upload them", async ({ page }) => {
+  await signIn(page, "operator");
+  await page.goto("/mydocs");
+  await expect(page.getByRole("heading", { name: "项目文档" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "上传", exact: true })).toHaveCount(0);
+
+  const response = await page.request.post("/api/mydocs", {
+    headers: { Origin: "http://127.0.0.1:3101" },
+    multipart: {
+      title: "越权文档",
+      file: { name: "blocked.md", mimeType: "text/markdown", buffer: Buffer.from("blocked") },
+    },
+  });
+  expect(response.status()).toBe(403);
+  expect((await response.json()).error.code).toBe("admin_permission_denied");
+});

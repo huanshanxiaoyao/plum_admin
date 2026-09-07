@@ -22,6 +22,7 @@ export default defineConfig({
       ADMIN_SESSION_SECRET: "e2e-session-secret-at-least-32-characters",
       ADMIN_DATA_SOURCE: "fixture",
       ADMIN_API_WRITE_ENABLED: "true",
+      PROJECT_DOCUMENTS_DIR: ".artifacts/playwright/project-documents",
     },
   },
   projects: [
