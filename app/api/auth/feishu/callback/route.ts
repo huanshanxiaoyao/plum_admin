@@ -26,6 +26,7 @@ import {
   oauthTransactionCookieOptions,
 } from "@/lib/auth/oauth-cookies";
 import { publicUrl } from "@/lib/server/origin";
+import { loginUrl } from "@/lib/auth/return-to";
 
 const SAFE_DENIAL_CODES = new Set([
   "admin_user_disabled",
@@ -48,12 +49,12 @@ export async function GET(request: NextRequest) {
     return clearOAuthCookie(redirect(request, "/login?error=invalid_oauth_state"));
   }
   if (request.nextUrl.searchParams.has("error")) {
-    return clearOAuthCookie(redirect(request, "/login?error=authorization_declined"));
+    return clearOAuthCookie(redirect(request, loginUrl(transaction.returnTo, "authorization_declined")));
   }
 
   const code = request.nextUrl.searchParams.get("code");
   if (!code || code.length > 2048) {
-    return clearOAuthCookie(redirect(request, "/login?error=login_failed"));
+    return clearOAuthCookie(redirect(request, loginUrl(transaction.returnTo, "login_failed")));
   }
 
   let feishuIdentity: Awaited<ReturnType<typeof fetchFeishuIdentity>> | undefined;
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
     feishuIdentity = await fetchFeishuIdentity(accessToken);
     const identity = await registerRemoteAdminIdentity(feishuIdentity);
     const sessionToken = await createSessionToken(identity, secret);
-    const response = clearOAuthCookie(redirect(request, "/"));
+    const response = clearOAuthCookie(redirect(request, transaction.returnTo));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, sessionCookieOptions());
     response.cookies.set(DENIED_IDENTITY_COOKIE_NAME, "", {
       ...deniedIdentityCookieOptions(),
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
         ? error.code
         : "unexpected_error";
     console.error("Plum Admin OAuth callback failed", { code: errorCode });
-    return clearOAuthCookie(redirect(request, "/login?error=login_failed"));
+    return clearOAuthCookie(redirect(request, loginUrl(transaction.returnTo, "login_failed")));
   }
 }
 

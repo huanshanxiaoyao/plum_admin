@@ -8,6 +8,7 @@ import {
   ChevronDown,
   CircleUserRound,
   ClipboardList,
+  BookOpen,
   House,
   LogOut,
   Menu,
@@ -35,6 +36,7 @@ const NAV_ICONS: Record<AdminModuleKey, LucideIcon> = {
   subscriptions: ReceiptText,
   audit: ClipboardList,
   staff: Users,
+  mydocs: BookOpen,
 };
 
 function isActivePath(pathname: string, href: string): boolean {

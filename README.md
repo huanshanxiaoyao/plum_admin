@@ -16,6 +16,16 @@ M1 身份链路已于 2026-08-30 在 `admin.plum.top` 完成真实飞书登录�
 
 角色导入的运营资料见[打包规范](./docs/CHARACTER_IMPORT_PACKAGE_GUIDE.md)和[详细使用说明](./docs/CHARACTER_IMPORT_USER_GUIDE.md)。
 
+## 项目文档索引
+
+`/mydocs` 展示项目文档标题和链接，复用后台飞书会话及 `operations.access` 权限。
+未登录访问会跳转到登录页，登录成功后自动返回索引；无需增加飞书回调地址或环境变量。
+
+首批链接为角色导入使用指南和打包规范。后续在
+[`features/mydocs/documents.ts`](./features/mydocs/documents.ts) 的 `PROJECT_DOCUMENTS`
+中维护 `{ title, href }`，随应用重新发布即可；`href` 支持站内路径和外部 HTTPS 文档地址。
+索引的访问控制不替代目标文档权限：飞书文档仍需配置飞书共享范围，私有正文或附件不得直接放在 `public/`。
+
 ## 本地启动
 
 需要 Node.js 22 和 npm 10；版本约束与 CI 保持一致。

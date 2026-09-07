@@ -11,10 +11,12 @@ export function LoginForm({
   mockEnabled,
   feishuEnabled,
   initialError,
+  returnTo,
 }: {
   mockEnabled: boolean;
   feishuEnabled: boolean;
   initialError?: string;
+  returnTo: string;
 }) {
   const router = useRouter();
   const [role, setRole] = useState<AdminRole>("operator");
@@ -31,7 +33,7 @@ export function LoginForm({
         body: JSON.stringify({ role }),
       });
       if (!response.ok) throw new Error("登录失败，请稍后重试。");
-      router.replace("/");
+      router.replace(returnTo);
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "登录失败，请稍后重试。");
@@ -43,7 +45,11 @@ export function LoginForm({
     return (
       <div className={styles.form}>
         {error && <p className={styles.error}>{error}</p>}
-        <Link className={styles.submit} href="/api/auth/feishu/start" prefetch={false}>
+        <Link
+          className={styles.submit}
+          href={`/api/auth/feishu/start?${new URLSearchParams({ returnTo })}`}
+          prefetch={false}
+        >
           <span>使用飞书登录</span>
           <LogIn size={18} />
         </Link>

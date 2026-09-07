@@ -4,6 +4,7 @@ import { getCurrentIdentity } from "@/lib/auth/session";
 import { isMockAuthEnabled } from "@/lib/auth/mock-identities";
 import { isFeishuAuthEnabled } from "@/lib/auth/auth-mode";
 import { AdminApiError } from "@/lib/bff/client";
+import { safeReturnTo } from "@/lib/auth/return-to";
 import { LoginForm } from "./login-form";
 import styles from "./login.module.css";
 
@@ -17,10 +18,12 @@ const LOGIN_ERRORS: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; returnTo?: string | string[] }>;
 }) {
+  const params = await searchParams;
+  const returnTo = safeReturnTo(params.returnTo);
   try {
-    if (await getCurrentIdentity()) redirect("/");
+    if (await getCurrentIdentity()) redirect(returnTo);
   } catch (error) {
     if (!(error instanceof AdminApiError) || (error.status !== 401 && error.status !== 403)) {
       throw error;
@@ -39,7 +42,8 @@ export default async function LoginPage({
         <LoginForm
           mockEnabled={isMockAuthEnabled()}
           feishuEnabled={isFeishuAuthEnabled()}
-          initialError={LOGIN_ERRORS[(await searchParams).error ?? ""]}
+          initialError={LOGIN_ERRORS[params.error ?? ""]}
+          returnTo={returnTo}
         />
         <footer>admin.plum.top</footer>
       </section>

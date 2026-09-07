@@ -10,7 +10,8 @@ export type AdminModuleKey =
   | "users"
   | "subscriptions"
   | "audit"
-  | "staff";
+  | "staff"
+  | "mydocs";
 
 export type AdminModuleSection = Exclude<AdminModuleKey, "dashboard">;
 
@@ -96,6 +97,14 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
     label: "后台成员",
     availability: "shipped",
     capability: "staff.manage",
+  },
+  {
+    key: "mydocs",
+    section: "mydocs",
+    href: "/mydocs",
+    label: "项目文档",
+    availability: "shipped",
+    capability: "operations.access",
   },
 ];
 

@@ -15,6 +15,7 @@ test("remote mode exposes only shipped modules allowed by RBAC", () => {
     "moderation",
     "creators",
     "users",
+    "mydocs",
   ]);
   assert.deepEqual(keys("remote", "admin"), [
     "dashboard",
@@ -25,6 +26,7 @@ test("remote mode exposes only shipped modules allowed by RBAC", () => {
     "users",
     "audit",
     "staff",
+    "mydocs",
   ]);
 });
 
@@ -37,6 +39,7 @@ test("fixture mode keeps prototype modules without exposing staff to operators",
     "creators",
     "users",
     "subscriptions",
+    "mydocs",
   ]);
   assert.deepEqual(keys("fixture", "admin"), [
     "dashboard",
@@ -48,6 +51,7 @@ test("fixture mode keeps prototype modules without exposing staff to operators",
     "subscriptions",
     "audit",
     "staff",
+    "mydocs",
   ]);
 });
 

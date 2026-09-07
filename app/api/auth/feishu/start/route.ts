@@ -7,6 +7,7 @@ import {
 } from "@/lib/auth/feishu-provider";
 import { createOAuthTransaction } from "@/lib/auth/oauth-state";
 import { getSessionSecret } from "@/lib/auth/session";
+import { loginUrl, safeReturnTo } from "@/lib/auth/return-to";
 import {
   OAUTH_TRANSACTION_COOKIE_NAME,
   oauthTransactionCookieOptions,
@@ -17,9 +18,10 @@ export async function GET(request: NextRequest) {
   if (!isFeishuAuthEnabled()) {
     return new Response(null, { status: 404 });
   }
+  const returnTo = safeReturnTo(request.nextUrl.searchParams.get("returnTo"));
   try {
     const config = loadFeishuOAuthConfig();
-    const transaction = await createOAuthTransaction(getSessionSecret());
+    const transaction = await createOAuthTransaction(getSessionSecret(), Date.now(), returnTo);
     const response = NextResponse.redirect(buildFeishuAuthorizeUrl(config, transaction), 302);
     response.headers.set("Cache-Control", "no-store");
     response.cookies.set(
@@ -29,6 +31,6 @@ export async function GET(request: NextRequest) {
     );
     return response;
   } catch {
-    return NextResponse.redirect(publicUrl(request, "/login?error=login_configuration"), 302);
+    return NextResponse.redirect(publicUrl(request, loginUrl(returnTo, "login_configuration")), 302);
   }
 }

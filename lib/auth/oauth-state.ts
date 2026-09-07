@@ -1,3 +1,5 @@
+import { safeReturnTo } from "./return-to.ts";
+
 const OAUTH_TRANSACTION_LIFETIME_MS = 10 * 60 * 1000;
 const DENIED_IDENTITY_LIFETIME_MS = 5 * 60 * 1000;
 
@@ -6,6 +8,7 @@ type OAuthTransactionPayload = {
   state: string;
   codeVerifier: string;
   expiresAt: number;
+  returnTo: string;
 };
 
 type DeniedIdentityPayload = {
@@ -84,6 +87,7 @@ function isSafeOpaqueValue(value: unknown, minLength: number, maxLength: number)
 export async function createOAuthTransaction(
   secret: string,
   now = Date.now(),
+  returnTo = "/",
 ): Promise<OAuthTransaction> {
   const state = randomBase64Url(32);
   const codeVerifier = randomBase64Url(64);
@@ -93,6 +97,7 @@ export async function createOAuthTransaction(
     state,
     codeVerifier,
     expiresAt: now + OAUTH_TRANSACTION_LIFETIME_MS,
+    returnTo: safeReturnTo(returnTo),
   };
   return {
     state,
@@ -107,7 +112,7 @@ export async function verifyOAuthTransaction(
   expectedState: string | null,
   secret: string,
   now = Date.now(),
-): Promise<Pick<OAuthTransaction, "state" | "codeVerifier"> | null> {
+): Promise<(Pick<OAuthTransaction, "state" | "codeVerifier"> & { returnTo: string }) | null> {
   const value = await verifyPayload(token, secret);
   if (!value || typeof value !== "object") return null;
   const payload = value as Partial<OAuthTransactionPayload>;
@@ -122,7 +127,7 @@ export async function verifyOAuthTransaction(
   ) {
     return null;
   }
-  return { state: payload.state, codeVerifier: payload.codeVerifier };
+  return { state: payload.state, codeVerifier: payload.codeVerifier, returnTo: safeReturnTo(payload.returnTo) };
 }
 
 export async function createDeniedIdentityToken(
