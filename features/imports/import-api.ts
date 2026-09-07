@@ -65,16 +65,73 @@ async function sha256Base64(bytes: Uint8Array): Promise<string> {
   return btoa(String.fromCharCode(...new Uint8Array(digest)));
 }
 
-// 这两个响应的 data 在契约里是 additionalProperties:true 的开放对象，
-// 生成类型给不出字段。窄化成实际用到的那几个字段，是刻意的。
+/**
+ * 这两个响应的 `data` 在契约里是 `additionalProperties: true` 的开放对象，生成类型给不出
+ * 字段，字段名只能在这里手写——**写错了 TypeScript 不会报，契约检查也不会报，只有运行时炸**。
+ *
+ * 2026-09-07 就栽在这里：读的是 `data.media_id` / `upload.url` / `upload.fields`，后端给的
+ * 是 `data.media.media_id` / `upload.upload_url` / `upload.upload_fields`，四个键错了三个。
+ * `Object.entries(undefined)` 抛出的 "Cannot convert undefined or null to object" 是运营
+ * 能看到的全部信息，它不指向任何一个可修的地方。所以这里不只是写对，还要在运行时验一遍。
+ *
+ * 字段名的权威来源是后端自己的测试 `tests/products/plum/test_creator_media.py`。
+ */
 type PresignedUpload = {
   readonly data: {
-    readonly media_id: string;
-    readonly upload: { readonly url: string; readonly fields: Record<string, string> };
+    readonly media: { readonly media_id: string };
+    readonly upload: {
+      readonly upload_url: string;
+      readonly upload_fields: Record<string, string>;
+    };
   };
 };
 
-type ImageSetResponse = { readonly data: { readonly image_set_id: string } };
+type ImageSetResponse = { readonly data: { readonly image_set: { readonly id: string } } };
+
+export type PresignedUploadGrant = {
+  readonly mediaId: string;
+  readonly url: string;
+  readonly fields: Readonly<Record<string, string>>;
+};
+
+/**
+ * 把开放对象读成直传要用的三个值，缺哪个就点名哪个。
+ *
+ * 开放对象没有编译期保护，后端换个字段名就是一次静默失效；报出字段名，下一次至少能一眼
+ * 看出是契约漂移，而不是从"某个东西是 undefined"开始猜。
+ */
+export function readPresignedUpload(payload: unknown): PresignedUploadGrant {
+  const data = (payload as PresignedUpload | null)?.data;
+  const mediaId = data?.media?.media_id;
+  const url = data?.upload?.upload_url;
+  const fields = data?.upload?.upload_fields;
+  const missing = [
+    typeof mediaId === "string" && mediaId ? null : "data.media.media_id",
+    typeof url === "string" && url ? null : "data.upload.upload_url",
+    fields && typeof fields === "object" ? null : "data.upload.upload_fields",
+  ].filter((field): field is string => field !== null);
+  if (missing.length > 0) {
+    throw new ImportApiError(
+      0,
+      "media_upload_contract_mismatch",
+      `预签发响应缺少 ${missing.join("、")}，后端返回的结构与前端预期不一致。`,
+    );
+  }
+  return { mediaId: mediaId!, url: url!, fields: fields! };
+}
+
+/** 同上：图片集响应也是开放对象，`data.image_set.id` 同样没有编译期保护。 */
+export function readImageSetId(payload: unknown): string {
+  const id = (payload as ImageSetResponse | null)?.data?.image_set?.id;
+  if (typeof id !== "string" || !id) {
+    throw new ImportApiError(
+      0,
+      "image_set_contract_mismatch",
+      "图片集响应缺少 data.image_set.id，后端返回的结构与前端预期不一致。",
+    );
+  }
+  return id;
+}
 
 export type CropBox = { x: number; y: number; width: number; height: number };
 
@@ -157,24 +214,25 @@ export function createUploadTransport(
         width,
         height,
       };
-      const granted = await postJson<PresignedUpload>("/media/uploads", grantBody);
+      const granted = readPresignedUpload(await postJson<PresignedUpload>("/media/uploads", grantBody));
 
       const form = new FormData();
-      for (const [key, value] of Object.entries(granted.data.upload.fields)) {
+      for (const [key, value] of Object.entries(granted.fields)) {
         form.append(key, value);
       }
+      // `file` 必须最后 append：S3 POST 策略只校验它之前的表单字段。
       form.append("file", blob);
       // fetch 在这里抛异常只有一种含义：请求压根没走通——页面 CSP 的 connect-src 没放行
       // 对象存储、Bucket CORS 没放行本站 origin、DNS 或断网。这类失败在 S3 和后端两侧都不
       // 留任何痕迹，浏览器给的又只是一句 "Failed to fetch"，不在这里点名就只能靠猜。
       let uploaded: Response;
       try {
-        uploaded = await fetch(granted.data.upload.url, { method: "POST", body: form });
+        uploaded = await fetch(granted.url, { method: "POST", body: form });
       } catch {
         throw new ImportApiError(
           0,
           "media_upload_unreachable",
-          `浏览器没能连上 ${uploadHost(granted.data.upload.url)}：请求未发出或未返回，` +
+          `浏览器没能连上 ${uploadHost(granted.url)}：请求未发出或未返回，` +
             `通常是本站 CSP connect-src 或该 Bucket 的 CORS 没放行。`,
         );
       }
@@ -182,20 +240,20 @@ export function createUploadTransport(
         throw new ImportApiError(uploaded.status, "media_upload_failed", "立绘直传对象存储失败。");
       }
 
-      await postJson(`/media/uploads/${encodeURIComponent(granted.data.media_id)}/complete`, {
+      await postJson(`/media/uploads/${encodeURIComponent(granted.mediaId)}/complete`, {
         owner_platform_user_id: options.ownerPlatformUserId,
       });
 
       const crop = options.crops.get(task.rowKey);
       const imageSetBody: ImageSetRequest = {
         owner_platform_user_id: options.ownerPlatformUserId,
-        source_media_id: granted.data.media_id,
+        source_media_id: granted.mediaId,
         portrait_crop: cropRect(crop?.portrait, PORTRAIT_ASPECT, { width, height }),
         avatar_crop: cropRect(crop?.avatar, AVATAR_ASPECT, { width, height }),
       };
       const imageSet = await postJson<ImageSetResponse>("/media/image-sets", imageSetBody);
 
-      return { mediaId: granted.data.media_id, imageSetId: imageSet.data.image_set_id };
+      return { mediaId: granted.mediaId, imageSetId: readImageSetId(imageSet) };
     },
   };
 }

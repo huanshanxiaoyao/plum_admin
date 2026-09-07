@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { groupIssuesByRow, readPackage } from "../features/imports/package-reader.ts";
 import { failedUploads, runUploads, succeededPortraits } from "../features/imports/upload-orchestrator.ts";
+import { readImageSetId, readPresignedUpload } from "../features/imports/import-api.ts";
 import {
   RESULT_COLUMNS,
   buildResultManifest,
@@ -220,6 +221,67 @@ test("transport 抛出带 code 的错误时，code 被原样保留", async () =>
   };
   const failures = failedUploads(await runUploads(tasks("a"), transport));
   assert.equal(failures.get("a").code, "media_upload_unreachable");
+});
+
+// --- 直传响应的字段名 ---
+
+/**
+ * 后端 `POST /imports/media/uploads` 的真实响应。
+ *
+ * 字段名抄自后端自己的测试 tests/products/plum/test_creator_media.py——那是权威来源。
+ * 这两个响应的 data 在契约里是 additionalProperties:true 的开放对象，写错字段名
+ * TypeScript 和 contract:check 都不会报，只会在运营点下提交之后炸。2026-09-07 的
+ * 「立绘上传 0 / 9」就是这么来的：四个键错了三个。
+ */
+const PRESIGN_RESPONSE = {
+  data: {
+    media: { media_id: "mda_abc", mime: "image/png", bytes: 1024, upload_status: "pending" },
+    upload: {
+      method: "POST",
+      upload_url: "https://bucket.s3.ap-southeast-1.amazonaws.com/",
+      upload_fields: { key: "plum/creator-portraits/x/mda_abc", "Content-Type": "image/png" },
+      expires_in: 600,
+    },
+  },
+  meta: { request_id: "req_1" },
+};
+
+const IMAGE_SET_RESPONSE = {
+  data: { image_set: { id: "cimg_abc", source_media_id: "mda_abc", processing_status: "pending" } },
+  meta: { request_id: "req_2" },
+};
+
+test("预签发响应按后端实际的字段名解析", () => {
+  const granted = readPresignedUpload(PRESIGN_RESPONSE);
+  assert.equal(granted.mediaId, "mda_abc");
+  assert.equal(granted.url, "https://bucket.s3.ap-southeast-1.amazonaws.com/");
+  assert.equal(granted.fields["Content-Type"], "image/png");
+});
+
+test("图片集响应按后端实际的字段名解析", () => {
+  assert.equal(readImageSetId(IMAGE_SET_RESPONSE), "cimg_abc");
+});
+
+test("字段名对不上时报出缺的是哪个字段，而不是让下游炸", () => {
+  // 这一条盯的正是事故当天的形状：前端曾按 data.media_id / upload.url / upload.fields 读，
+  // 于是 Object.entries(undefined) 抛出 "Cannot convert undefined or null to object"——
+  // 那句话不指向任何一个可修的地方。
+  const wrong = {
+    data: { media_id: "mda_abc", upload: { url: "https://example.test/", fields: {} } },
+  };
+  assert.throws(
+    () => readPresignedUpload(wrong),
+    (error) => {
+      assert.equal(error.code, "media_upload_contract_mismatch");
+      assert.match(error.message, /data\.media\.media_id/);
+      assert.match(error.message, /data\.upload\.upload_url/);
+      assert.match(error.message, /data\.upload\.upload_fields/);
+      return true;
+    },
+  );
+  assert.throws(() => readImageSetId({ data: { image_set_id: "cimg_abc" } }), {
+    code: "image_set_contract_mismatch",
+  });
 });
 
 // --- 结果清单导出 ---
