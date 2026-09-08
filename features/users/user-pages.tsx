@@ -7,6 +7,8 @@ import { adminApiWritesEnabled, adminDataSourceMode } from "../../lib/bff/config
 import { getAdminUser, getAdminUserWallet, listAdminUsers } from "../admin-resources/data-source";
 import { formatDateTime } from "../admin-sections/presentation";
 import { CrystalGrantForm } from "./crystal-grant-form";
+import { GovernanceForm } from "../admin-resources/governance-form";
+import { governanceWriteAvailability } from "../admin-resources/governance-access";
 import styles from "./user-pages.module.css";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -123,6 +125,7 @@ export async function UserDetailPage({ params }: { params: Promise<{ id: string 
     throw error;
   }
   const user = response.data;
+  const governanceAccess = await governanceWriteAvailability("membership.manage");
   let wallet;
   let walletError: AdminApiError | undefined;
   if (user.membership_status === "active") {
@@ -151,6 +154,10 @@ export async function UserDetailPage({ params }: { params: Promise<{ id: string 
       {value("更新时间", formatDateTime(user.updated_at))}
       {value("最近活跃", formatDateTime(user.last_activity_at ?? null))}
     </dl></section>
+
+    <section className={styles.band} aria-labelledby="user-governance"><h2 id="user-governance">用户封禁</h2>
+      <GovernanceForm kind="membership" id={user.platform_user_id} displayName={user.display_name} status={user.membership_status} {...governanceAccess} />
+    </section>
 
     <section className={styles.band} aria-labelledby="user-profile"><h2 id="user-profile">公开资料与创作</h2><dl className={styles.valueGrid}>
       {value("Profile ID", user.profile_id ?? "--")}

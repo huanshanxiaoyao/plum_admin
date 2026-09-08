@@ -5,6 +5,8 @@ import { AdminApiError } from "../../lib/bff/client";
 import { formatDateTime } from "../admin-sections/presentation";
 import { getAdminCharacter, getAdminWork, listAdminCharacterVersions } from "../admin-resources/data-source";
 import styles from "./detail-pages.module.css";
+import { GovernanceForm } from "../admin-resources/governance-form";
+import { governanceWriteAvailability } from "../admin-resources/governance-access";
 
 type DetailParams = Promise<{ id: string }>;
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -57,6 +59,7 @@ export async function CharacterDetailPage({ params, searchParams }: { params: De
   if (!loaded.ok) return <DetailError error={loaded.error} />;
   const { response, versions } = loaded;
   const character = response.data;
+  const governanceAccess = await governanceWriteAvailability("operations.access");
     const nextHref = versions.page.next_cursor
       ? `/characters/${encodeURIComponent(id)}?sort=${sort}&cursor=${encodeURIComponent(versions.page.next_cursor)}`
       : null;
@@ -78,6 +81,10 @@ export async function CharacterDetailPage({ params, searchParams }: { params: De
           {value("创建时间", formatDateTime(character.created_at))}
           {value("更新时间", formatDateTime(character.updated_at))}
         </dl></section>
+
+        <section className={styles.band} aria-labelledby="character-rating"><h2 id="character-rating">修改当前版本分级</h2>
+          <GovernanceForm kind="rating" id={character.id} displayName={character.display_name} rating={character.content_rating} contentVersion={character.content_version} {...governanceAccess} />
+        </section>
 
         <section className={styles.band} aria-labelledby="character-owner"><h2 id="character-owner">创作者与统计</h2><dl className={styles.valueGrid}>
           {value("创作者", character.creator.display_name)}
@@ -104,6 +111,14 @@ export async function WorkDetailPage({ params }: { params: DetailParams }) {
   const loaded = await loadWorkDetail(id);
   if (!loaded.ok) return <DetailError error={loaded.error} />;
   const work = loaded.response.data;
+  let character;
+  try {
+    character = work.published_character_id ? (await getAdminCharacter(work.published_character_id)).data : null;
+  } catch (error) {
+    if (error instanceof AdminApiError) return <DetailError error={error} />;
+    throw error;
+  }
+  const governanceAccess = await governanceWriteAvailability("operations.access");
   return (
       <article className={styles.page}>
         <Link className={styles.back} href="/characters?view=works"><ArrowLeft size={15} />返回 Work 列表</Link>
@@ -124,6 +139,10 @@ export async function WorkDetailPage({ params }: { params: DetailParams }) {
           {value("创建时间", formatDateTime(work.created_at))}
           {value("更新时间", formatDateTime(work.updated_at))}
         </dl></section>
+
+        {character && <section className={styles.band} aria-labelledby="work-rating"><h2 id="work-rating">修改当前版本分级</h2>
+          <GovernanceForm kind="rating" id={character.id} displayName={character.display_name} rating={character.content_rating} contentVersion={character.content_version} {...governanceAccess} />
+        </section>}
 
         <section className={styles.band} aria-labelledby="work-owner"><h2 id="work-owner">Owner</h2><dl className={styles.valueGrid}>
           {value("显示名称", work.owner.display_name)}

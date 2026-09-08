@@ -2,6 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { encodeBackendPath, requiredCapability } from "../lib/bff/allowlist.ts";
 
+test("governance writes require the scoped capability and exact PATCH path", () => {
+  assert.equal(requiredCapability("PATCH", "users/pusr-01/membership"), "membership.manage");
+  assert.equal(requiredCapability("PATCH", "characters/char-01/rating"), "operations.access");
+  assert.equal(requiredCapability("POST", "users/pusr-01/membership"), null);
+  assert.equal(requiredCapability("PATCH", "users/pusr-01/membership/extra"), null);
+  assert.equal(requiredCapability("PATCH", "characters/char-01/rating/extra"), null);
+});
+
 test("daily routes resolve to operations access", () => {
   assert.equal(requiredCapability("GET", "characters"), "operations.access");
   assert.equal(requiredCapability("GET", "characters/char-01"), "operations.access");
