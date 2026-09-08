@@ -16,6 +16,8 @@ const RULES: readonly AllowRule[] = [
   { methods: ["GET"], path: /^creators(?:\/[^/]+)?$/, capability: DAILY },
   { methods: ["GET"], path: /^users(?:\/[^/]+)?$/, capability: DAILY },
   { methods: ["GET"], path: /^users\/[^/]+\/wallet$/, capability: DAILY },
+  { methods: ["PATCH"], path: /^users\/[^/]+\/membership$/, capability: "membership.manage" },
+  { methods: ["PATCH"], path: /^characters\/[^/]+\/rating$/, capability: DAILY },
   // 测试期人工充值：Operator 与 Admin 均可操作，后端负责幂等、账户边界与原子审计。
   { methods: ["POST"], path: /^users\/[^/]+\/wallet\/grants$/, capability: DAILY },
   { methods: ["GET"], path: /^moderation\/backlog$/, capability: DAILY },

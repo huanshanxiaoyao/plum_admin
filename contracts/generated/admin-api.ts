@@ -98,6 +98,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/plum/characters/{character_id}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Admin Update Character Rating
+         * @description Update the current published version's platform rating and distribution filter.
+         */
+        patch: operations["admin_update_character_rating_admin_plum_characters__character_id__rating_patch"];
+        trace?: never;
+    };
     "/admin/plum/characters/{character_id}/takedown": {
         parameters: {
             query?: never;
@@ -563,6 +583,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/plum/users/{platform_user_id}/membership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Admin Update Membership
+         * @description Ban or restore one Plum member with an audit reason and stale-state check.
+         */
+        patch: operations["admin_update_membership_admin_plum_users__platform_user_id__membership_patch"];
+        trace?: never;
+    };
     "/admin/plum/users/{platform_user_id}/wallet": {
         parameters: {
             query?: never;
@@ -744,6 +784,23 @@ export interface components {
             data: components["schemas"]["AdminCharacterItem"][];
             meta: components["schemas"]["ResponseMeta"];
             page: components["schemas"]["PageInfo"];
+        };
+        /** AdminCharacterRatingRequest */
+        AdminCharacterRatingRequest: {
+            /**
+             * Content Rating
+             * @enum {string}
+             */
+            content_rating: "general" | "mature";
+            /** Expected Content Version */
+            expected_content_version: number;
+            /**
+             * Expected Rating
+             * @enum {string}
+             */
+            expected_rating: "general" | "mature";
+            /** Reason */
+            reason: string;
         };
         /** AdminCharacterResponse */
         AdminCharacterResponse: {
@@ -1369,6 +1426,21 @@ export interface components {
                 [key: string]: unknown;
             };
             meta: components["schemas"]["ResponseMeta"];
+        };
+        /** AdminMembershipUpdateRequest */
+        AdminMembershipUpdateRequest: {
+            /**
+             * Expected Status
+             * @enum {string}
+             */
+            expected_status: "active" | "disabled";
+            /** Reason */
+            reason: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "disabled";
         };
         /** AdminModerationBacklog */
         AdminModerationBacklog: {
@@ -2232,6 +2304,15 @@ export interface operations {
                     "application/json": components["schemas"]["AdminErrorResponse"];
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -2313,6 +2394,116 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_update_character_rating_admin_plum_characters__character_id__rating_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                character_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCharacterRatingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCharacterResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2412,6 +2603,15 @@ export interface operations {
                     "application/json": components["schemas"]["AdminErrorResponse"];
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -2497,6 +2697,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2598,6 +2807,15 @@ export interface operations {
                     "application/json": components["schemas"]["AdminErrorResponse"];
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -2679,6 +2897,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4510,6 +4737,15 @@ export interface operations {
                     "application/json": components["schemas"]["AdminErrorResponse"];
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -4591,6 +4827,116 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_update_membership_admin_plum_users__platform_user_id__membership_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                platform_user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminMembershipUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminProductUserResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4686,6 +5032,15 @@ export interface operations {
                     "application/json": components["schemas"]["AdminErrorResponse"];
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -4772,6 +5127,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4873,6 +5237,15 @@ export interface operations {
                     "application/json": components["schemas"]["AdminErrorResponse"];
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -4954,6 +5327,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

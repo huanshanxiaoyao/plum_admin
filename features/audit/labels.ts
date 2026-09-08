@@ -7,6 +7,9 @@
  */
 
 export const ACTION_LABELS: Record<string, string> = {
+  "plum.user.ban": "封禁用户",
+  "plum.user.unban": "解除封禁",
+  "plum.character.rating": "修改作品分级",
   "plum.wallet.manual_grant": "人工充值水晶",
   "plum.character.import": "发起批量导入",
   "plum.character.create": "导入·新建角色",
@@ -20,6 +23,9 @@ export const ACTION_LABELS: Record<string, string> = {
 
 /** 下拉里的可筛动作。顺序按运营追查时的常用度排，不按字母序。 */
 export const FILTERABLE_ACTIONS = [
+  "plum.user.ban",
+  "plum.user.unban",
+  "plum.character.rating",
   "plum.wallet.manual_grant",
   "plum.character.import",
   "plum.character.create",
@@ -32,6 +38,8 @@ export const FILTERABLE_ACTIONS = [
 ] as const;
 
 export const RESOURCE_LABELS: Record<string, string> = {
+  product_membership: "用户权限",
+  plum_character: "角色作品",
   entitlement_ledger: "水晶账本流水",
   plum_character_import_batch: "导入批次",
   plum_character_import_row: "导入行",
@@ -40,6 +48,9 @@ export const RESOURCE_LABELS: Record<string, string> = {
 
 /** metadata 里已知键的中文名。未知键原样显示键名——多出来的东西要看得见。 */
 export const METADATA_LABELS: Record<string, string> = {
+  before: "修改前",
+  after: "修改后",
+  content_version: "内容版本",
   batch_id: "批次",
   row_key: "行标识",
   operation: "操作",
