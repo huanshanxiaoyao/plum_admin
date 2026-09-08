@@ -58,9 +58,16 @@
   font-size: 11px;
 }
 
+/* 诊断的 run id 很长（connection + 时刻），窄屏下表格必然超宽：让它在自己的容器里横向
+   滚动，而不是把「模式」这类短列挤成竖排。 */
+.tableScroll {
+  margin-top: 14px;
+  overflow-x: auto;
+}
+
 .table {
   width: 100%;
-  margin-top: 14px;
+  min-width: 880px;
   border-collapse: collapse;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -84,6 +91,10 @@
   padding: 10px 12px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
+}
+
+.nowrap {
+  white-space: nowrap;
 }
 
 .table tr:last-child td {

@@ -2,6 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  // 默认 30s 对本套件太紧：RBAC 那条用例要走近二十次跳转，而 dev server 是按需编译路由的，
+  // 四路并行时单独跑 16s 的用例会摸到 30s。CI 有 retries=2 一直替它兜着，本地没有。
+  timeout: 60_000,
   outputDir: ".artifacts/playwright/test-results",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
@@ -24,6 +27,8 @@ export default defineConfig({
       ADMIN_API_WRITE_ENABLED: "true",
       PROJECT_DOCUMENTS_DIR: ".artifacts/playwright/project-documents",
       ADMIN_EVAL_REPORTS_DIR: "tests/fixtures/eval-reports",
+      // 固定保留期，否则「还剩几天」的断言会随默认值改动而漂。
+      ADMIN_EVAL_INSPECT_RETENTION_DAYS: "3650",
     },
   },
   projects: [

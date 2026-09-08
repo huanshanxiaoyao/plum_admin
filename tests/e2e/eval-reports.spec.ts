@@ -32,12 +32,23 @@ test("admin 从页面底部的次级入口进评测报告，主导航里没有�
   await page.getByRole("link", { name: "记忆评测报告 →" }).click();
   await expect(page).toHaveURL("/eval");
   await expect(page.getByRole("heading", { name: "记忆评测" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "e2e-reference" })).toBeVisible();
-  await expect(page.getByText("mem-reference-001")).toBeVisible();
-  await expect(page.getByText("模式 C · 全真实")).toBeVisible();
-  await expect(page.getByText("high 1")).toBeVisible();
+  // 按行断言：两类产物列在同一张表里，findings 徽章会重名。
+  const trajectoryRow = page.getByRole("row").filter({ hasText: "e2e-reference" });
+  await expect(trajectoryRow.getByRole("link", { name: "e2e-reference" })).toBeVisible();
+  await expect(trajectoryRow).toContainText("mem-reference-001");
+  await expect(trajectoryRow).toContainText("模式 C · 全真实");
+  await expect(trajectoryRow).toContainText("high 1");
   // manifest 里是 ISO 时刻，列表按 UTC 定点渲染，不跟随浏览器时区。
-  await expect(page.getByText("2026-08-31 23:58 UTC")).toBeVisible();
+  await expect(trajectoryRow).toContainText("2026-08-31 23:58 UTC");
+  // 轨迹跑的是合成对话，不该出现过期提示。
+  await expect(trajectoryRow).not.toContainText("含真实用户正文");
+
+  // 只读诊断必须一眼能看出它含真实用户正文、且会过期。
+  const inspectRow = page.getByRole("row").filter({ hasText: "conn_e2e-20260901T000000Z" });
+  await expect(inspectRow).toContainText("只读诊断");
+  await expect(inspectRow).toContainText("conn_e2e");
+  await expect(inspectRow).toContainText("不调模型");
+  await expect(inspectRow).toContainText(/含真实用户正文 · \d+ 天后清除/);
   // 独立页面不套后台外壳，因此自己负责回去的路。
   await page.getByRole("link", { name: "返回 Plum 后台" }).click();
   await expect(page).toHaveURL("/");
@@ -71,6 +82,16 @@ test("operator 看不到入口，直连报告也拿不到", async ({ page }) => 
 test("未登录读报告是 401，不是把正文发出去", async ({ page }) => {
   const anonymous = await page.request.get("/eval/e2e-reference");
   expect(anonymous.status()).toBe(401);
+});
+
+test("诊断正文用自己的文件名，同样走沙箱", async ({ page }) => {
+  await signIn(page, "admin");
+  const response = await page.goto("/eval/conn_e2e-20260901T000000Z");
+  expect(response?.status()).toBe(200);
+  // 发布端不改名（inspection.html），查看端两个名字都认。
+  await expect(page.getByRole("heading", { name: "记忆诊断 · conn_e2e" })).toBeVisible();
+  expect(response?.headers()["content-security-policy"] ?? "").toContain("sandbox allow-scripts");
+  expect(response?.headers()["cache-control"]).toBe("no-store");
 });
 
 test("不存在的运行与越界的 run id 都是 404", async ({ page }) => {

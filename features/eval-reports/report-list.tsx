@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, FileWarning } from "lucide-react";
+import { daysUntilExpiry } from "../../lib/eval-reports/config.ts";
 import type { EvalReportListing, EvalReportSummary } from "../../lib/eval-reports/store.ts";
 import styles from "./report-list.module.css";
 
@@ -10,6 +11,27 @@ const MODE_LABELS: Record<EvalReportSummary["mode"], string> = {
   C: "模式 C · 全真实",
   inspect: "只读诊断",
 };
+
+/** 被评测的对象：轨迹评测是一条合成轨迹，只读诊断是一个真实 connection。 */
+function subjectOf(report: EvalReportSummary): string {
+  return report.mode === "inspect" ? report.connectionId : report.trajectory;
+}
+
+function modelOf(report: EvalReportSummary): string {
+  // 诊断只读状态并现场编译一轮 Context，一次模型都不调。
+  return report.mode === "inspect" ? "不调模型" : report.model;
+}
+
+function ExpiryNote({ generatedAt }: { generatedAt: string }) {
+  const days = daysUntilExpiry(generatedAt);
+  if (days === null) return null;
+  return (
+    <span className={`${styles.badge} ${styles.plaintext}`}>
+      <AlertTriangle size={10} aria-hidden />{" "}
+      {days === 0 ? "含真实用户正文 · 即将清除" : `含真实用户正文 · ${days} 天后清除`}
+    </span>
+  );
+}
 
 /**
  * 发布端写的是 ISO 时刻。这里按 UTC 定点渲染，而不是本地时区——服务端与浏览器时区不同会
@@ -48,7 +70,7 @@ export function EvalReportList({ listing }: { listing: EvalReportListing }): Rea
         <h1>记忆评测</h1>
         <p>
           由 ai4all_bridge 离线跑出、发布到本机的评测报告。报告是自包含单文件，在独立沙箱里打开，
-          不接触后台会话。
+          不接触后台会话。轨迹评测跑的是合成对话；只读诊断读的是真实会话，因此到期自动清除。
         </p>
       </header>
 
@@ -62,11 +84,12 @@ export function EvalReportList({ listing }: { listing: EvalReportListing }): Rea
       {reports.length === 0 ? (
         <p className={styles.empty}>还没有发布过评测报告。</p>
       ) : (
+        <div className={styles.tableScroll}>
         <table className={styles.table}>
           <thead>
             <tr>
               <th scope="col">运行</th>
-              <th scope="col">轨迹</th>
+              <th scope="col">对象</th>
               <th scope="col">模式</th>
               <th scope="col">模型</th>
               <th scope="col">发现</th>
@@ -83,15 +106,13 @@ export function EvalReportList({ listing }: { listing: EvalReportListing }): Rea
                   {report.containsUserPlaintext && (
                     <>
                       {" "}
-                      <span className={`${styles.badge} ${styles.plaintext}`}>
-                        <AlertTriangle size={10} aria-hidden /> 含真实用户正文
-                      </span>
+                      <ExpiryNote generatedAt={report.generatedAt} />
                     </>
                   )}
                 </td>
-                <td className={styles.mono}>{report.trajectory}</td>
-                <td>{MODE_LABELS[report.mode]}</td>
-                <td className={styles.mono}>{report.model}</td>
+                <td className={styles.mono}>{subjectOf(report)}</td>
+                <td className={styles.nowrap}>{MODE_LABELS[report.mode]}</td>
+                <td className={styles.mono}>{modelOf(report)}</td>
                 <td>
                   <FindingsCell findings={report.findings} />
                 </td>
@@ -100,6 +121,7 @@ export function EvalReportList({ listing }: { listing: EvalReportListing }): Rea
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

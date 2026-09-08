@@ -1,0 +1,17 @@
+[Unit]
+Description=Sweep expired Plum memory-eval diagnosis reports
+Documentation=file://__PLUM_ADMIN_DIR__/deploy/eval-inspect-sweep.mjs
+
+[Service]
+Type=oneshot
+WorkingDirectory=__PLUM_ADMIN_DIR__
+Environment=NODE_ENV=production
+Environment=PATH=__NODE_BIN_DIR__:/usr/bin:/bin
+# The sweeper reads ADMIN_EVAL_REPORTS_DIR and ADMIN_EVAL_INSPECT_RETENTION_DAYS. The frontend
+# service lets Next.js load .env itself, but a oneshot unit has no such loader, so read it here.
+EnvironmentFile=__PLUM_ADMIN_DIR__/.env
+ExecStart=__NODE_BIN_DIR__/node --experimental-transform-types deploy/eval-inspect-sweep.mjs
+UMask=0077
+StandardOutput=append:/var/log/apps/plum-admin-eval-inspect-sweep.log
+StandardError=append:/var/log/apps/plum-admin-eval-inspect-sweep.log
+SyslogIdentifier=plum-admin-eval-inspect-sweep
