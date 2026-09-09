@@ -152,8 +152,12 @@ function isPositiveInteger(value: unknown): boolean {
   return typeof value === "number" && Number.isInteger(value) && value >= 1;
 }
 
+function isInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value);
+}
+
 function isNonNegativeInteger(value: unknown): boolean {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+  return isInteger(value) && value >= 0;
 }
 
 function isIntegerInRange(value: unknown, minimum: number, maximum: number): value is number {
@@ -320,7 +324,7 @@ function isUserWallet(value: unknown): value is UserWallet {
   return isRecord(value) &&
     hasString(value, "platform_user_id") &&
     hasNumber(value, "balance") &&
-    isNonNegativeInteger(value.balance_micros) &&
+    isInteger(value.balance_micros) &&
     isNonNegativeNumber(value.expiring_total) &&
     isNonNegativeNumber(value.never_expires) &&
     Array.isArray(value.expiring) &&
