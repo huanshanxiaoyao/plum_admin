@@ -90,6 +90,57 @@ test("fixture responses satisfy the runtime API contract", () => {
   assert.equal(parseOverviewResponse(fixtureOverview()).data.active_membership_count, 5);
 });
 
+test("wallet runtime contract accepts signed integer balances and rejects invalid breakdowns", () => {
+  const baseResponse = {
+    data: {
+      platform_user_id: "pusr_debt",
+      balance: 1,
+      balance_micros: 1_000_000,
+      expiring_total: 1,
+      never_expires: 0,
+      expiring: [{
+        amount: 1,
+        amount_micros: 1_000_000,
+        expires_at: "2026-09-30T12:00:00.000Z",
+      }],
+    },
+    meta: { request_id: "00000000-0000-4000-8000-000000000001" },
+  };
+
+  for (const [label, balanceMicros] of [
+    ["negative debt", -1_000_000],
+    ["zero", 0],
+    ["positive", 1_000_000],
+  ]) {
+    const response = structuredClone(baseResponse);
+    response.data.balance = balanceMicros / 1_000_000;
+    response.data.balance_micros = balanceMicros;
+    assert.equal(parseUserWalletResponse(response), response, label);
+  }
+
+  for (const [label, invalidBalance] of [
+    ["fractional", 0.5],
+    ["string", "1000000"],
+    ["NaN", Number.NaN],
+    ["Infinity", Number.POSITIVE_INFINITY],
+  ]) {
+    const response = structuredClone(baseResponse);
+    response.data.balance_micros = invalidBalance;
+    assert.throws(() => parseUserWalletResponse(response), TypeError, label);
+  }
+
+  for (const [label, makeInvalid] of [
+    ["negative expiring total", (response) => { response.data.expiring_total = -1; }],
+    ["negative permanent total", (response) => { response.data.never_expires = -1; }],
+    ["negative expiry amount", (response) => { response.data.expiring[0].amount = -1; }],
+    ["negative expiry micros", (response) => { response.data.expiring[0].amount_micros = -1; }],
+  ]) {
+    const response = structuredClone(baseResponse);
+    makeInvalid(response);
+    assert.throws(() => parseUserWalletResponse(response), TypeError, label);
+  }
+});
+
 test("content fixtures support compound filters and cursor pagination", () => {
   const firstPage = fixtureCharacterList({ source: "ugc", rating: "general", limit: 2 });
   assert.deepEqual(firstPage.data.map((item) => item.display_name), ["Sol", "Ember"]);
