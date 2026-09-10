@@ -286,6 +286,116 @@ function uploadHost(url: string): string {
   }
 }
 
+type PreparedImage = {
+  readonly bytes: Uint8Array;
+  readonly blob: Blob;
+  readonly filename: string;
+  readonly contentType: string;
+  readonly width: number;
+  readonly height: number;
+};
+
+async function prepareFile(file: File): Promise<PreparedImage> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const { width, height } = await measure(file);
+  return {
+    bytes,
+    blob: file,
+    filename: file.name,
+    contentType: file.type || "application/octet-stream",
+    width,
+    height,
+  };
+}
+
+async function uploadPreparedImage(
+  image: PreparedImage,
+  ownerPlatformUserId: string,
+): Promise<string> {
+  const checksum = await sha256Base64(image.bytes);
+  const grantBody: MediaUploadRequest = {
+    owner_platform_user_id: ownerPlatformUserId,
+    filename: image.filename,
+    kind: "image",
+    purpose: "character_portrait",
+    content_type: image.contentType,
+    bytes: image.bytes.length,
+    checksum_sha256: checksum,
+    width: image.width,
+    height: image.height,
+  };
+  const granted = readPresignedUpload(await postJson<PresignedUpload>("/media/uploads", grantBody));
+
+  const form = new FormData();
+  for (const [key, value] of Object.entries(granted.fields)) form.append(key, value);
+  form.append("file", image.blob);
+  let uploaded: Response;
+  try {
+    uploaded = await fetch(granted.url, { method: "POST", body: form });
+  } catch {
+    throw new ImportApiError(
+      0,
+      "media_upload_unreachable",
+      `浏览器没能连上 ${uploadHost(granted.url)}：请求未发出或未返回，` +
+        `通常是本站 CSP connect-src 或该 Bucket 的 CORS 没放行。`,
+    );
+  }
+  if (!uploaded.ok) {
+    throw new ImportApiError(uploaded.status, "media_upload_failed", "立绘直传对象存储失败。");
+  }
+
+  await postJson(`/media/uploads/${encodeURIComponent(granted.mediaId)}/complete`, {
+    owner_platform_user_id: ownerPlatformUserId,
+  });
+  return granted.mediaId;
+}
+
+async function createPortraitImageSet(
+  sourceMediaId: string,
+  ownerPlatformUserId: string,
+  size: { readonly width: number; readonly height: number },
+  crop?: { readonly portrait?: CropBox; readonly avatar?: CropBox },
+): Promise<UploadedPortrait> {
+  const portraitCrop = cropRect(crop?.portrait, PORTRAIT_ASPECT, size);
+  const avatarCrop = cropRect(crop?.avatar, AVATAR_ASPECT, size);
+  const imageSetBody: ImageSetRequest = {
+    owner_platform_user_id: ownerPlatformUserId,
+    source_media_id: sourceMediaId,
+    portrait_crop: portraitCrop,
+    avatar_crop: avatarCrop,
+  };
+  const imageSet = await waitForImageSetReady(
+    readImageSet(await postJson<ImageSetResponse>("/media/image-sets", imageSetBody)),
+    ownerPlatformUserId,
+  );
+  return {
+    mediaId: imageSet.sourceMediaId,
+    imageSetId: imageSet.id,
+    portraitCrop,
+    avatarCrop,
+  };
+}
+
+/** Upload a browser-selected source image into an owner's private media scope. */
+export async function uploadSourceImageFile(
+  file: File,
+  ownerPlatformUserId: string,
+): Promise<string> {
+  const image = await prepareFile(file);
+  return uploadPreparedImage(image, ownerPlatformUserId);
+}
+
+/** Upload a browser-selected portrait and wait for its reusable image set. */
+export async function uploadPortraitFile(
+  file: File,
+  ownerPlatformUserId: string,
+  crop?: { readonly portrait?: CropBox; readonly avatar?: CropBox },
+): Promise<UploadedPortrait> {
+  const image = await prepareFile(file);
+  const mediaId = await uploadPreparedImage(image, ownerPlatformUserId);
+  return createPortraitImageSet(mediaId, ownerPlatformUserId, image, crop);
+}
+
 export type TransportOptions = {
   /** 批次默认归属。只在行上没有解析出归属时兜底。 */
   readonly ownerPlatformUserId: string;
@@ -314,78 +424,24 @@ export function createUploadTransport(
     async upload(task: UploadTask): Promise<UploadedPortrait> {
       const image: PackageImage = task.image;
       const bytes = await archive.read(image.entry);
-      const checksum = await sha256Base64(bytes);
       const blob = new Blob([bytes as BlobPart], { type: image.contentType });
       const { width, height } = await measure(blob);
-
-      // 这一行的归属账号——媒体、complete、图片集三步必须用同一个，且必须与导入行的
-      // 归属一致，否则服务端按 owner 查不到图片集。
       const ownerId = options.owners.get(task.rowKey) || options.ownerPlatformUserId;
-
-      const grantBody: MediaUploadRequest = {
-        owner_platform_user_id: ownerId,
+      const prepared: PreparedImage = {
+        bytes,
+        blob,
         filename: image.path,
-        kind: "image",
-        purpose: "character_portrait",
-        content_type: image.contentType,
-        bytes: bytes.length,
-        checksum_sha256: checksum,
+        contentType: image.contentType,
         width,
         height,
       };
-      const granted = readPresignedUpload(await postJson<PresignedUpload>("/media/uploads", grantBody));
-
-      const form = new FormData();
-      for (const [key, value] of Object.entries(granted.fields)) {
-        form.append(key, value);
-      }
-      // `file` 必须最后 append：S3 POST 策略只校验它之前的表单字段。
-      form.append("file", blob);
-      // fetch 在这里抛异常只有一种含义：请求压根没走通——页面 CSP 的 connect-src 没放行
-      // 对象存储、Bucket CORS 没放行本站 origin、DNS 或断网。这类失败在 S3 和后端两侧都不
-      // 留任何痕迹，浏览器给的又只是一句 "Failed to fetch"，不在这里点名就只能靠猜。
-      let uploaded: Response;
-      try {
-        uploaded = await fetch(granted.url, { method: "POST", body: form });
-      } catch {
-        throw new ImportApiError(
-          0,
-          "media_upload_unreachable",
-          `浏览器没能连上 ${uploadHost(granted.url)}：请求未发出或未返回，` +
-            `通常是本站 CSP connect-src 或该 Bucket 的 CORS 没放行。`,
-        );
-      }
-      if (!uploaded.ok) {
-        throw new ImportApiError(uploaded.status, "media_upload_failed", "立绘直传对象存储失败。");
-      }
-
-      await postJson(`/media/uploads/${encodeURIComponent(granted.mediaId)}/complete`, {
-        owner_platform_user_id: ownerId,
-      });
-
-      const crop = options.crops.get(task.rowKey);
-      const portraitCrop = cropRect(crop?.portrait, PORTRAIT_ASPECT, { width, height });
-      const avatarCrop = cropRect(crop?.avatar, AVATAR_ASPECT, { width, height });
-      const imageSetBody: ImageSetRequest = {
-        owner_platform_user_id: ownerId,
-        source_media_id: granted.mediaId,
-        portrait_crop: portraitCrop,
-        avatar_crop: avatarCrop,
-      };
-      const imageSet = await waitForImageSetReady(
-        readImageSet(await postJson<ImageSetResponse>("/media/image-sets", imageSetBody)),
+      const mediaId = await uploadPreparedImage(prepared, ownerId);
+      return createPortraitImageSet(
+        mediaId,
         ownerId,
+        { width, height },
+        options.crops.get(task.rowKey),
       );
-
-      // 报给导入行的是**图片集绑定的**那个 media，不是刚上传的 `granted.mediaId`：重传同一
-      // 个包时图片集会命中内容去重，返回上一次那条记录，两个 id 就不是一回事了。
-      // 裁剪也跟着一起回去——导入行要把同样的值再发一遍，服务端逐字段比对。
-      return {
-        mediaId: imageSet.sourceMediaId,
-        imageSetId: imageSet.id,
-        portraitCrop,
-        avatarCrop,
-      };
     },
   };
 }

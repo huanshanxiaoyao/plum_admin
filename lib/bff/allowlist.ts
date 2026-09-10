@@ -32,6 +32,17 @@ const RULES: readonly AllowRule[] = [
   { methods: ["POST"], path: /^imports\/media\/uploads\/[^/]+\/complete$/, capability: DAILY },
   { methods: ["POST"], path: /^imports\/media\/image-sets$/, capability: DAILY },
   { methods: ["GET"], path: /^imports\/media\/image-sets\/[^/]+$/, capability: DAILY },
+  // 角色工厂。候选、草稿、修改预览和测试对话均复用日常运营权限。
+  { methods: ["POST"], path: /^character-factory\/runs$/, capability: DAILY },
+  { methods: ["GET"], path: /^character-factory\/runs\/[^/]+$/, capability: DAILY },
+  { methods: ["POST"], path: /^character-factory\/runs\/[^/]+\/(?:start|generate|preflight|submit)$/, capability: DAILY },
+  { methods: ["PATCH"], path: /^character-factory\/runs\/[^/]+\/candidates\/[^/]+$/, capability: DAILY },
+  { methods: ["GET", "PATCH"], path: /^character-factory\/candidates\/[^/]+\/draft$/, capability: DAILY },
+  { methods: ["GET"], path: /^character-factory\/candidates\/[^/]+\/draft\/portrait$/, capability: DAILY },
+  { methods: ["POST"], path: /^character-factory\/candidates\/[^/]+\/(?:agent-revisions|preview-turns)$/, capability: DAILY },
+  { methods: ["GET"], path: /^character-factory\/candidates\/[^/]+\/agent-revisions\/[^/]+\/preview-image\/(?:before|after)$/, capability: DAILY },
+  { methods: ["POST"], path: /^character-factory\/candidates\/[^/]+\/agent-revisions\/[^/]+\/apply$/, capability: DAILY },
+  { methods: ["POST"], path: /^character-factory\/tasks\/[^/]+\/retry$/, capability: DAILY },
   // 操作审计只给 admin：审计里有操作者、资源 id 与操作原因，是「谁动过什么」的完整账本。
   { methods: ["GET"], path: /^audit-events$/, capability: "audit.read" },
   { methods: ["GET"], path: /^admin-users$/, capability: "staff.manage" },

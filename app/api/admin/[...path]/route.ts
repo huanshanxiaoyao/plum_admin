@@ -8,7 +8,13 @@ import { isSameOrigin, jsonError, requestIdFrom } from "@/lib/server/http";
 type RouteContext = { params: Promise<{ path: string[] }> };
 
 const FORWARDED_REQUEST_HEADERS = ["content-type", "idempotency-key", "if-match"];
-const FORWARDED_RESPONSE_HEADERS = ["content-type", "retry-after", "etag"];
+const FORWARDED_RESPONSE_HEADERS = [
+  "content-type",
+  "cache-control",
+  "x-content-type-options",
+  "retry-after",
+  "etag",
+];
 
 async function proxy(request: Request, context: RouteContext) {
   if (request.method !== "GET" && request.method !== "HEAD" && !isSameOrigin(request)) {

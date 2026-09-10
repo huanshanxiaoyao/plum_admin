@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Plum 角色工厂 · 单个角色创建</title>
+  <style>
+    :root { --ink:#252927; --muted:#737a75; --line:#dfe4df; --soft:#f4f6f3; --green:#256649; --mint:#eaf3eb; --coral:#ad5243; --rose:#faeee9; }
+    * { box-sizing:border-box; letter-spacing:0; }
+    html { scroll-behavior:smooth; scroll-padding-top:28px; }
+    body { margin:0; background:#fff; color:var(--ink); font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
+    a { color:inherit; text-decoration:none; }
+    a:focus-visible { outline:2px solid var(--green); outline-offset:5px; }
+    main { max-width:1160px; margin:auto; padding:38px 40px 32px; }
+    .masthead { display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:22px; border-bottom:1px solid var(--line); }
+    .brand { font-size:23px; font-weight:750; }
+    .brand span { color:var(--green); }
+    .meta,.eyebrow,figcaption { font-size:12px; color:var(--muted); }
+    .page-tabs { display:flex; gap:4px; align-items:center; margin-top:14px; font-size:12px; }
+    .page-tabs a,.page-tabs span { padding:6px 11px; border-radius:4px; color:var(--muted); }
+    .page-tabs a:hover { background:var(--soft); color:var(--green); }
+    .page-tabs .active { background:var(--mint); color:var(--green); font-weight:650; }
+    .intro { padding:36px 0 28px; }
+    .eyebrow { font-weight:600; }
+    h1 { font-size:36px; line-height:1.3; margin:8px 0 12px; }
+    p { margin:0; }
+    .lead { color:#5b645e; font-size:17px; }
+    .scope { display:flex; flex-wrap:wrap; gap:10px 28px; margin-top:24px; font-size:13px; color:var(--muted); }
+    .scope strong { color:var(--green); }
+    .scope-label { color:var(--ink); font-weight:600; margin-right:8px; }
+    .overview { padding:24px 0 30px; border-top:1px solid var(--line); }
+    .section-top { display:flex; justify-content:space-between; align-items:baseline; gap:16px; margin-bottom:20px; }
+    h2 { margin:0; font-size:20px; line-height:1.5; }
+    .section-top p { color:var(--muted); font-size:13px; }
+    .flow { display:grid; grid-template-columns:1fr 30px 1fr 30px 1.35fr 30px 1fr; align-items:center; }
+    .node { padding:20px 12px; background:var(--soft); border:1px solid var(--line); border-radius:6px; text-align:center; }
+    .node b { display:block; font-size:16px; }
+    .node small { display:block; margin-top:5px; color:var(--muted); font-size:12px; }
+    .node.image-node { background:var(--mint); border-color:#c9ddcd; }
+    .node.text-node { background:var(--rose); border-color:#ecd2c9; }
+    .fork { display:grid; gap:8px; }
+    .fork .node { padding:10px 8px; }
+    .arrow { color:#8a938b; font-size:23px; text-align:center; }
+    .workspace-node { border:1px solid #a8c2af; border-radius:6px; background:#f5f9f5; text-align:center; padding:16px 10px; }
+    .workspace-node > b { font-size:17px; }
+    .loop { display:flex; justify-content:center; align-items:center; gap:10px; margin-top:10px; padding-top:10px; border-top:1px solid #d8e4d9; font-size:13px; color:var(--green); }
+    .flow-note { margin-top:16px; font-size:13px; color:var(--muted); text-align:center; }
+    .jump { display:flex; flex-wrap:wrap; gap:12px 24px; border-top:1px solid var(--line); padding:17px 0; color:#58645b; font-size:13px; }
+    .jump a:hover { color:var(--green); text-decoration:underline; }
+    .step { display:grid; grid-template-columns:280px minmax(0,1fr); gap:44px; padding:34px 0; border-top:1px solid var(--line); align-items:center; }
+    .step-copy { align-self:start; padding-top:6px; }
+    .number { color:var(--green); font-size:12px; font-weight:700; margin-bottom:7px; }
+    .step h2 { font-size:23px; margin-bottom:12px; }
+    .step-copy > p { color:#59615b; font-size:14px; line-height:1.9; }
+    .rule { padding-left:12px; border-left:2px solid #b5cbb8; margin-top:18px; color:#414b44; font-size:13px; line-height:1.8; }
+    figure { margin:0; min-width:0; }
+    .mock { border:1px solid #d4dbd4; border-radius:6px; overflow:hidden; background:#fff; }
+    .mock-head { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 16px; background:var(--soft); border-bottom:1px solid var(--line); font-size:12px; font-weight:600; }
+    .mock-head span:last-child { font-size:11px; font-weight:400; color:var(--muted); }
+    .mock-body { padding:18px; }
+    figcaption { margin-top:8px; }
+    .label { color:var(--muted); font-size:11px; margin-bottom:5px; }
+    .field { border:1px solid var(--line); padding:9px 11px; font-size:12px; border-radius:4px; min-width:0; overflow-wrap:anywhere; }
+    .mode-block { margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--line); }
+    .mode-switch { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .mode-option { min-width:0; padding:9px 11px; border:1px solid var(--line); border-radius:4px; background:#fff; }
+    .mode-option.active { border-color:#9fbca6; background:var(--mint); }
+    .mode-option b { display:block; font-size:12px; }
+    .mode-option span { display:block; margin-top:2px; color:var(--muted); font-size:10px; line-height:1.5; }
+    .mode-option.active b { color:var(--green); }
+    .source-grid { display:grid; grid-template-columns:minmax(0,1fr) 108px; gap:12px; margin-top:12px; }
+    .source-grid .field { min-height:86px; }
+    .reference { background:#eef2ed; border:1px dashed #b6c5b8; display:flex; align-items:center; justify-content:center; min-height:86px; border-radius:4px; gap:5px; flex-direction:column; color:var(--muted); font-size:10px; }
+    .reference svg { width:48px; height:48px; }
+    .candidate-grid { display:grid; grid-template-columns:76px 76px 76px minmax(0,1fr); gap:10px; align-items:stretch; }
+    .candidate { height:108px; overflow:hidden; background:#e9eeea; border:1px solid var(--line); border-radius:4px; }
+    .candidate.add { display:flex; flex-direction:column; align-items:center; justify-content:center; border-style:dashed; background:#fff; color:var(--green); font-size:10px; text-align:center; }
+    .candidate.add b { font-size:22px; line-height:1; font-weight:400; }
+    .candidate-note { align-self:center; color:var(--muted); font-size:11px; line-height:1.8; }
+    .input-stack { display:grid; gap:12px; margin-top:15px; }
+    .input-stack .field { min-height:42px; }
+    .input-stack .field.description { min-height:68px; }
+    .required-note { color:var(--coral); font-size:11px; }
+    .intent { margin:16px 0 14px; }
+    .intent .change { margin-top:7px; }
+    .intent .change dd { min-width:0; }
+    .creative-summary { border-left:2px solid #a8c2af; background:#f5f9f5; padding:10px 12px; font-size:12px; }
+    .creative-summary .label { display:flex; justify-content:space-between; gap:8px; }
+    .mock-foot { padding:10px 16px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:11px; color:var(--muted); }
+    .action { display:inline-flex; align-items:center; justify-content:center; padding:5px 13px; border-radius:4px; background:var(--green); color:#fff; font-size:12px; white-space:nowrap; }
+    .seed { font-size:12px; text-align:center; padding:8px; background:var(--soft); }
+    .split-mark { display:flex; justify-content:space-around; color:var(--muted); font-size:18px; line-height:1.4; }
+    .parallel { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; }
+    .lane { min-width:0; border-top:3px solid #90b89a; padding-top:10px; }
+    .lane.text-lane { border-color:#d6a192; }
+    .lane-title { display:flex; align-items:center; justify-content:space-between; font-size:12px; gap:6px; }
+    .status { color:var(--green); font-size:10px; }
+    .status.wait { color:var(--coral); }
+    .thumb { margin-top:10px; height:105px; background:#ecf0eb; display:flex; justify-content:center; overflow:hidden; }
+    .portrait { height:100%; width:100%; display:block; }
+    .skeleton { padding:14px 0 0; }
+    .skeleton i { display:block; height:7px; background:#eee8e5; margin-bottom:12px; border-radius:2px; }
+    .skeleton i:nth-child(2) { width:75%; }
+    .skeleton i:nth-child(3) { width:87%; }
+    .small-note { color:var(--muted); font-size:11px; margin-top:8px; }
+    .draft { display:grid; grid-template-columns:120px minmax(0,1fr); gap:18px; }
+    .draft-portrait { height:176px; background:#e9eeea; overflow:hidden; display:flex; justify-content:center; }
+    .plain-tools { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:7px; font-size:11px; color:var(--green); }
+    .fields { display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; }
+    .data { min-width:0; }
+    .data.wide { grid-column:1 / -1; }
+    .data dt { font-size:10px; color:var(--muted); }
+    .data dd { margin:2px 0 0; padding-bottom:5px; border-bottom:1px solid var(--line); font-size:12px; }
+    dl { margin:0; }
+    .field-index { font-size:11px; color:var(--muted); padding-top:12px; line-height:1.8; }
+    .prompt { border:1px solid #c3d7c8; padding:12px; border-radius:4px; font-size:13px; background:#f8fbf8; }
+    .change { margin-top:14px; display:grid; grid-template-columns:54px 1fr; gap:7px 12px; font-size:12px; }
+    .change dt { color:var(--muted); }
+    .change dd { margin:0; }
+    .before { color:#969c97; text-decoration:line-through; }
+    .after { color:var(--green); }
+    .change-result { margin-top:14px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:12px; border-top:1px solid var(--line); font-size:11px; color:var(--green); }
+    .paired { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; padding:34px 0; border-top:1px solid var(--line); align-items:start; }
+    .paired .step { display:block; padding:0; border:0; }
+    .paired .step-copy { min-height:215px; padding:0; }
+    .paired figure { margin-top:18px; }
+    .edit-tabs { display:flex; gap:4px; padding-bottom:13px; }
+    .edit-tabs span { padding:5px 10px; background:var(--soft); border-radius:4px; color:var(--muted); font-size:11px; }
+    .edit-tabs .active { color:var(--green); background:var(--mint); font-weight:650; }
+    .image-edit { display:grid; grid-template-columns:82px minmax(0,1fr); gap:12px; margin-top:12px; }
+    .image-preview { height:118px; background:#e9eeea; overflow:hidden; }
+    .choice-row { display:flex; flex-wrap:wrap; gap:7px; margin-top:9px; }
+    .choice { border:1px solid var(--line); border-radius:4px; padding:4px 7px; color:#59635c; font-size:10px; }
+    .chat { display:flex; flex-direction:column; align-items:flex-start; gap:12px; }
+    .bubble { max-width:85%; padding:10px 12px; font-size:12px; background:var(--soft); border-radius:5px; }
+    .bubble.user { align-self:flex-end; background:var(--mint); }
+    .speaker { font-size:10px; color:var(--muted); margin-bottom:3px; }
+    .chat-input { margin-top:18px; border:1px solid var(--line); border-radius:4px; padding:8px 11px; display:flex; justify-content:space-between; font-size:12px; color:var(--muted); }
+    .chat-input svg { width:17px; height:17px; color:var(--green); }
+    .submit-grid { display:grid; grid-template-columns:1fr 24px 1fr; align-items:center; gap:10px; }
+    .checks { display:grid; gap:9px; font-size:12px; }
+    .checks span::before { content:'✓'; color:var(--green); margin-right:8px; }
+    .receipt { background:var(--mint); padding:17px 13px; border-left:3px solid #86ae91; }
+    .receipt b { color:var(--green); font-size:14px; }
+    .receipt p { font-size:11px; margin-top:8px; color:#596a5d; }
+    .boundary { background:var(--soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:20px 0; display:grid; grid-template-columns:280px minmax(0,1fr); gap:44px; }
+    .boundary h2 { font-size:16px; }
+    .boundary p { font-size:13px; color:#5e675f; }
+    footer { padding-top:20px; display:flex; justify-content:space-between; gap:15px; color:var(--muted); font-size:11px; }
+    .symbols { position:absolute; width:0; height:0; overflow:hidden; }
+    @media (max-width:800px) {
+      main { padding:24px; } .step { grid-template-columns:220px minmax(0,1fr); gap:24px; }
+      .flow { grid-template-columns:1fr 20px 1fr 20px 1.2fr 20px 1fr; } .node { padding:16px 7px; }
+      .node b { font-size:14px; } .node small { font-size:11px; } .loop { gap:5px; font-size:11px; }
+      .draft { grid-template-columns:86px minmax(0,1fr); gap:12px; } .draft-portrait { height:153px; }
+      .boundary { grid-template-columns:220px 1fr; gap:24px; }
+    }
+    @media (max-width:620px) {
+      main { padding:20px; } .masthead { align-items:baseline; } .brand { font-size:20px; } .meta { font-size:10px; }
+      h1 { font-size:29px; } .intro { padding:27px 0 23px; } .lead { font-size:15px; }
+      .scope { gap:8px; flex-direction:column; margin-top:20px; } .section-top { flex-direction:column; gap:4px; }
+      .flow { grid-template-columns:1fr; max-width:360px; margin:auto; } .flow > .arrow { transform:rotate(90deg); line-height:30px; }
+      .fork { grid-template-columns:1fr 1fr; gap:12px; } .node { padding:12px; } .node b { font-size:15px; }
+      .workspace-node { padding:12px; } .loop { font-size:13px; gap:16px; } .flow-note { text-align:left; }
+      .jump { gap:10px 18px; } .step { grid-template-columns:1fr; gap:18px; padding:25px 0; }
+      .step-copy { padding:0; } .step h2 { font-size:22px; margin-bottom:8px; } .rule { margin-top:10px; }
+      .mock-body { padding:14px; } .mock-head,.mock-foot { padding:10px 12px; } .mock-foot { flex-wrap:wrap; }
+      .source-grid { grid-template-columns:minmax(0,1fr) 82px; gap:8px; }
+      .candidate-grid { grid-template-columns:62px 62px 62px minmax(0,1fr); gap:7px; } .candidate { height:92px; }
+      .draft { grid-template-columns:85px minmax(0,1fr); gap:12px; } .draft-portrait { height:150px; }
+      .fields { gap:8px; } .data dd { font-size:11px; } .parallel { gap:12px; }
+      .submit-grid { gap:5px; grid-template-columns:1fr 18px 1fr; } .receipt { padding:12px 8px; }
+      .boundary { grid-template-columns:1fr; gap:6px; } footer { flex-direction:column; gap:4px; }
+      .page-tabs { overflow-x:auto; white-space:nowrap; padding-bottom:3px; }
+      .paired { grid-template-columns:1fr; gap:30px; padding:25px 0; } .paired .step-copy { min-height:0; } .paired figure { margin-top:14px; }
+    }
+    @media print {
+      @page { size:A4; margin:14mm; } body { font-size:12px; } main { max-width:none; padding:0; }
+      .jump { display:none; } .intro { padding:20px 0; } h1 { font-size:28px; }
+      .step { break-inside:avoid; padding:22px 0; grid-template-columns:205px minmax(0,1fr); gap:24px; }
+      .overview { break-inside:avoid; } .step h2 { font-size:20px; } .step-copy > p { font-size:12px; }
+      .boundary { break-inside:avoid; } * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    }
+    @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+  </style>
+</head>
+<body>
+  <svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <symbol id="portrait" viewBox="0 0 180 260">
+        <rect width="180" height="260" fill="#e6ece5"/>
+        <path d="M0 193H180M0 217H180M28 0V260M153 0V260" stroke="#d3ddd2" stroke-width="1"/>
+        <path d="M24 260L36 198Q49 175 73 173H107Q136 182 145 203L159 260" fill="#526c61"/>
+        <path d="M75 157V182L90 196L107 181V153" fill="#dec4b4"/>
+        <path d="M44 115Q38 54 86 49Q139 44 139 113L130 178L109 162H65L44 181Z" fill="#394a44"/>
+        <ellipse cx="90" cy="117" rx="34" ry="45" fill="#e8d3c3"/>
+        <path d="M52 107Q46 55 91 56Q135 55 131 107Q111 104 94 81Q85 103 52 107" fill="#394a44"/>
+        <path d="M69 119H79M101 119H111" stroke="#5d6056" stroke-width="2" stroke-linecap="round"/>
+        <path d="M86 139Q91 142 96 139" fill="none" stroke="#ad8270" stroke-width="2" stroke-linecap="round"/>
+        <path d="M66 178L90 196L75 215L58 190M113 178L90 196L106 215L123 192" fill="#dce4d8"/>
+        <path d="M90 196V260" stroke="#91a696" stroke-width="2"/>
+      </symbol>
+    </defs>
+  </svg>
+  <main>
+    <header class="masthead">
+      <a class="brand" href="#top"><span>plum</span> 角色工厂</a>
+      <span class="meta">产品讨论稿 / 2026.09.08</span>
+    </header>
+    <nav class="page-tabs" aria-label="角色工厂页面">
+      <span class="active">单角色生成</span><a href="multi.html">多角色生成</a><span>线上角色管理 · 待展开</span>
+    </nav>
+    <section class="intro" id="top">
+      <div class="eyebrow">创建角色 / 单个</div>
+      <h1>从一个想法，到一份可投稿的角色草稿</h1>
+      <p class="lead">放入已有创意，图文并发生成；在同一份草稿上修改或测试，满意后提交。</p>
+      <div class="scope">
+        <span><span class="scope-label">当前页面</span><strong>单角色生成</strong></span>
+        <span><span class="scope-label">另两页</span>多角色生成 / 线上角色管理</span>
+      </div>
+    </section>
+
+    <section class="overview" aria-labelledby="flow-title">
+      <div class="section-top"><h2 id="flow-title">一条主线，一个反复打磨的循环</h2><p>始终围绕同一份草稿</p></div>
+      <div class="flow" role="img" aria-label="先选择 Limited 或 Limitless 内容模式，再输入候选图片、文字描述、竞品链接，三类至少填写一项。确认创意后，内容模式同时写入图片和文字提示词，汇入可编辑草稿。修改草稿与对话测试是同级入口，共享当前草稿；校验通过后提交服务器。">
+        <div class="node"><b>模式 + 创意输入</b><small>Limited / Limitless</small><small>图片 / 文字 / 链接至少一项</small></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="fork"><div class="node image-node"><b>生图</b><small>并发分支 A</small></div><div class="node text-node"><b>生文字</b><small>并发分支 B</small></div></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="workspace-node"><b>可编辑的投稿草稿</b><div class="loop"><span>修改图文</span><span>｜</span><span>对话测试</span></div></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node"><b>提交服务器</b><small>校验 → 提交 → 回执</small></div>
+      </div>
+      <p class="flow-note">内容模式同时约束生图与生文字；生成结果先到先展示，草稿完成后可并列修改或测试。</p>
+    </section>
+
+    <nav class="jump" aria-label="文档目录">
+      <a href="#source">01 创意输入</a><a href="#generate">02 并发生成</a><a href="#draft">03 投稿草稿</a><a href="#revise">04 图文修改</a><a href="#test">05 对话测试</a><a href="#submit">06 提交</a>
+    </nav>
+
+    <section class="step" id="source">
+      <div class="step-copy"><div class="number">01 / SOURCE</div><h2>先定模式，再放入创意</h2><p>先选择 Limited 或 Limitless，再提供候选图片、文字描述或竞品链接；三类至少有一项。</p><div class="rule">内容模式为必选，默认 Limited。它会同时写入图片和文字提示词；其余创意输入可以自由组合。</div></div>
+      <figure>
+        <div class="mock"><div class="mock-head"><span>创意输入</span><span class="required-note">内容模式必选 · 素材至少一项</span></div><div class="mock-body">
+          <div class="mode-block"><div class="label">内容模式 · 必选</div><div class="mode-switch"><div class="mode-option active"><b>● Limited</b><span>图文提示词禁止成人向内容</span></div><div class="mode-option"><b>○ Limitless</b><span>图文提示词允许成人向内容</span></div></div></div>
+          <div class="label">候选图片 · 可为空，可手动添加</div><div class="candidate-grid">
+            <div class="candidate"><svg class="portrait" role="img" aria-label="手动添加的候选图片"><use href="#portrait"/></svg></div>
+            <div class="candidate add"><b>+</b><span>添加图片</span></div>
+            <div class="candidate add"><b>+</b><span>添加图片</span></div>
+            <div class="candidate-note">本地上传<br>可删除、替换、继续添加</div>
+          </div>
+          <div class="input-stack"><div><div class="label">文字描述</div><div class="field description">一个话不多的夜班书店店员。外表冷淡，但会记住常客的阅读偏好。</div></div><div><div class="label">竞品链接</div><div class="field">https://example.com/character/…</div></div></div>
+          <div class="intent"><div class="label">创作意图 · 可选</div><dl class="change"><dt>保留</dt><dd>书店背景、安静的外形气质。</dd><dt>改变</dt><dd>减少主动示爱，回复更短。</dd><dt>期望体验</dt><dd>关系慢慢推进，用行动表达关心。</dd></dl></div>
+          <div class="creative-summary"><div class="label"><span>整理后的创意</span><span>可编辑</span></div>寡言的夜班书店店员，与常客慢慢熟悉；用简短对白和细小行动表达关心。外形参考所选图片。</div>
+        </div><div class="mock-foot"><span>当前：Limited · 素材校验通过</span><span class="action">开始生成</span></div></div>
+        <figcaption>示意 01 · 内容模式必选；三类创意输入可单独使用或组合</figcaption>
+      </figure>
+    </section>
+
+    <section class="step" id="generate">
+      <div class="step-copy"><div class="number">02 / GENERATE</div><h2>图片与文字，同时生成</h2><p>按已确认的创意、创作意图和内容模式，同时启动生图与生文字。哪路先好就先编辑，结果持续汇入草稿。</p><div class="rule">两路提示词继承同一个 Limited / Limitless 模式。某一路失败，只重试该路。</div></div>
+      <figure>
+        <div class="mock"><div class="mock-head"><span>生成中</span><span>Limited · 两路独立推进</span></div><div class="mock-body"><div class="seed">已确认创意：夜班店员 · 寡言慢热 · 短回复 · 内容模式：Limited</div><div class="split-mark" aria-hidden="true"><span>↓</span><span>↓</span></div>
+          <div class="parallel"><div class="lane"><div class="lane-title"><b>角色图片</b><span class="status">已生成</span></div><div class="thumb"><svg class="portrait" role="img" aria-label="角色立绘占位示意"><use href="#portrait"/></svg></div><p class="small-note">图片提示词：禁止成人向内容</p><div class="plain-tools"><span>重生成</span><span>替换</span><span>裁剪</span></div></div><div class="lane text-lane"><div class="lane-title"><b>角色文字</b><span class="status wait">生成中</span></div><div class="skeleton" aria-hidden="true"><i></i><i></i><i></i></div><p class="small-note">文字提示词：禁止成人向内容<br>名称、简介、场景、角色设定…</p></div></div>
+        </div></div><figcaption>示意 02 · 图片已可编辑，文字继续生成</figcaption>
+      </figure>
+    </section>
+
+    <section class="step" id="draft">
+      <div class="step-copy"><div class="number">03 / DRAFT</div><h2>生成结果，就是投稿草稿</h2><p>图片和各类文字直接落到对应字段。草稿形态、必填项、素材规格对齐真实投稿要求。</p><div class="rule">生成后进入同一个工作台：编辑草稿、描述修改、测试对话都在这里完成。</div></div>
+      <figure>
+        <div class="mock"><div class="mock-head"><span>林间 · 作品草稿</span><span>可直接编辑</span></div><div class="mock-body">
+          <div class="draft"><div><div class="draft-portrait"><svg class="portrait" role="img" aria-label="林间的角色立绘示意"><use href="#portrait"/></svg></div><div class="plain-tools"><span>立绘 9:16</span><span>头像 1:1</span></div></div><dl class="fields"><div class="data"><dt>名称</dt><dd>林间</dd></div><div class="data"><dt>性别</dt><dd>女</dd></div><div class="data wide"><dt>简介</dt><dd>深夜书店里，替你留一盏灯的人。</dd></div><div class="data wide"><dt>开场场景</dt><dd>雨夜，你推开书店的门。她从书页间抬眼。</dd></div><div class="data wide"><dt>角色设定</dt><dd>夜班店员，寡言、敏锐，用行动表达关心。</dd></div></dl></div>
+          <p class="field-index">其他字段：示例对话 · 回复规则 · 标签 · 内容评级 · 可见性 · 归属账号</p>
+        </div></div><figcaption>示意 03 · 字段参考现有导入规范，最终以真实投稿表单为准</figcaption>
+      </figure>
+    </section>
+
+    <div class="paired" aria-label="草稿完成后的两个并列操作">
+      <section class="step" id="revise">
+        <div class="step-copy"><div class="number">04 / REVISE</div><h2>文字和图片，都能继续改</h2><p>选择改文字或改图片，再描述目标。文字可直接编辑；图片支持局部修改、重新生成、上传替换和裁剪。</p><div class="rule">基于当前草稿更新，只改选中的部分；展示结果并支持撤销。</div></div>
+        <figure>
+          <div class="mock"><div class="mock-head"><span>修改草稿</span><span>文字 / 图片</span></div><div class="mock-body">
+            <div class="edit-tabs"><span>改文字</span><span class="active">改图片</span></div>
+            <div class="prompt">“发色调深，背景改成雨夜；人物服装保持不变。”</div>
+            <div class="image-edit"><div class="image-preview"><svg class="portrait" role="img" aria-label="待修改的角色图片"><use href="#portrait"/></svg></div><div><div class="label">修改方式</div><div class="choice-row"><span class="choice">局部修改</span><span class="choice">重新生成</span><span class="choice">上传替换</span><span class="choice">裁剪</span></div><p class="small-note">作用范围：仅图片<br>未选中的文字字段保持不变</p></div></div>
+            <div class="change-result"><span>预览修改结果</span><span>应用 / 撤销</span></div>
+          </div></div><figcaption>示意 04 · 修改图文是一个独立入口</figcaption>
+        </figure>
+      </section>
+
+      <section class="step" id="test">
+        <div class="step-copy"><div class="number">05 / TEST</div><h2>用对话，验证角色感觉</h2><p>在独立测试框里扮演用户，与当前草稿对话。测试读取最新版草稿，与修改入口并列。</p><div class="rule">复用线上对话逻辑；修改后可重新测试。测试消息不直接改写角色设定。</div></div>
+        <figure>
+          <div class="mock"><div class="mock-head"><span>对话测试 · 林间</span><span>当前草稿 / 重新开始</span></div><div class="mock-body"><div class="chat"><div class="bubble user"><div class="speaker">模拟用户</div>今天不太想回家。</div><div class="bubble"><div class="speaker">林间 · 示例回复</div>她把对面的椅子拉开。<br>“十点关门。”<br>停了停，又把热茶推近了一点。</div></div><div class="chat-input"><span>输入下一句…</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5m-7 7 7-7 7 7"/></svg></div></div><div class="mock-foot"><span>当前使用：草稿最新版</span><span>修改后重新测试</span></div></div><figcaption>示意 05 · 测试与修改同级，不是前后步骤</figcaption>
+        </figure>
+      </section>
+    </div>
+
+    <section class="step" id="submit">
+      <div class="step-copy"><div class="number">06 / SUBMIT</div><h2>确认后，提交到服务器</h2><p>校验必填字段、图片与内容规格，再提交当前草稿。成功后返回作品标识和状态，进入后续管理。</p><div class="rule">校验失败定位补齐；提交失败保留草稿并可重试，避免重复创建。</div></div>
+      <figure>
+        <div class="mock"><div class="mock-head"><span>提交作品草稿</span><span>提交结果示意</span></div><div class="mock-body"><div class="submit-grid"><div class="checks"><span>必填信息完整</span><span>图文规格通过</span><span>归属与评级已确认</span></div><div class="arrow" aria-hidden="true">→</div><div class="receipt"><b>草稿已提交</b><p>作品标识：示例 ID<br>状态：以服务器回执为准</p></div></div></div><div class="mock-foot"><span>当前草稿 → 服务器记录</span><span class="action">查看作品</span></div></div><figcaption>示意 06 · 提交完成后衔接作品管理</figcaption>
+      </figure>
+    </section>
+
+    <aside class="boundary"><h2>页面边界</h2><p>本页只处理单角色生成。多角色生成见独立页面；提交后角色的查看、编辑与批量操作，归入“线上角色管理”。</p></aside>
+    <footer><span>Plum 角色工厂 · 单个创建核心流程</span><span>图中为界面示意，角色内容与回复均为示例。</span></footer>
+  </main>
+</body>
+</html>

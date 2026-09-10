@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   BadgeCheck,
+  Blocks,
   ChevronDown,
   CircleUserRound,
   ClipboardList,
@@ -29,6 +30,7 @@ import styles from "./admin-shell.module.css";
 const NAV_ICONS: Record<AdminModuleKey, LucideIcon> = {
   dashboard: House,
   characters: BadgeCheck,
+  characterFactory: Blocks,
   imports: PackagePlus,
   moderation: ShieldAlert,
   creators: UsersRound,

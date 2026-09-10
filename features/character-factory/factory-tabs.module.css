@@ -1,0 +1,76 @@
+.page {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+}
+
+.header {
+  min-height: 92px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.header span {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.header h1 {
+  margin: 5px 0 4px;
+  font-size: 25px;
+  line-height: 1.15;
+}
+
+.header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.tabs {
+  height: 34px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  background: var(--surface);
+}
+
+.tabs a {
+  min-width: 112px;
+  display: grid;
+  place-items: center;
+  padding: 0 11px;
+  color: var(--muted);
+  font-size: 10px;
+  text-decoration: none;
+}
+
+.tabs a + a {
+  border-left: 1px solid var(--line-strong);
+}
+
+.tabs .active {
+  color: #fff;
+  background: var(--surface-strong);
+}
+
+@media (max-width: 520px) {
+  .header {
+    min-height: 132px;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tabs {
+    width: 100%;
+    margin-top: 0;
+  }
+
+  .tabs a {
+    min-width: 0;
+  }
+}
