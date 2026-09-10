@@ -66,6 +66,25 @@
   text-transform: uppercase;
 }
 
+/* 页面底部的次级入口：与主导航明确分开，不抢日常运营的视线。 */
+.pageFooter {
+  display: flex;
+  gap: 16px;
+  padding: 14px 24px 24px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
+
+.pageFooter a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.pageFooter a:hover {
+  color: var(--green);
+  text-decoration: underline;
+}
+
 .statusDot {
   width: 7px;
   height: 7px;
@@ -77,7 +96,8 @@
 .workspace {
   min-width: 0;
   display: grid;
-  grid-template-rows: 64px minmax(0, 1fr);
+  /* 第三行给页面底部的次级入口。没有入口时这一行高度为 0，布局与之前一致。 */
+  grid-template-rows: 64px minmax(0, 1fr) auto;
 }
 
 .topbar {

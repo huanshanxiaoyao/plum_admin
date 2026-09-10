@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily sweep of expired Plum memory-eval diagnosis reports
+
+[Timer]
+# Diagnosis reports hold other people's conversations, so the sweep must survive downtime:
+# Persistent makes systemd run a missed occurrence as soon as the host is back.
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

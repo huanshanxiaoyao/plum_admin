@@ -1,0 +1,9 @@
+{
+  "run_id": "e2e-reference",
+  "trajectory": "mem-reference-001",
+  "mode": "C",
+  "model": "deepseek-v4-flash",
+  "generated_at": "2026-08-31T23:58:00Z",
+  "findings": { "high": 1, "medium": 1, "low": 2 },
+  "contains_user_plaintext": false
+}

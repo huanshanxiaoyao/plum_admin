@@ -58,6 +58,22 @@ Mock 登录仅在 `NODE_ENV` 不是 `production` 且 `ADMIN_AUTH_MODE=mock` 时�
 
 浏览器不会直接访问远端 API。单元测试和 CI Fixture 测试也不会连接线上服务。
 
+## 记忆评测报告（可选入口）
+
+`ADMIN_EVAL_REPORTS_DIR` 指向一个目录时，`/eval` 可用：列出 `ai4all_bridge` 离线跑出、
+发布到本机的记忆评测报告。不配置该变量时整个入口不存在，后台行为与未引入本功能时一致。
+
+它**不是后台业务模块**，只借这里的域名与登录托管产物：不新增后端 API、不改 Admin 契约、
+不改 BFF 白名单、不新增 Capability，也**不进主导航**。因此 `/eval` 不在 `app/(admin)/`
+分组里——它是独立页面，不套 `AdminShell`，页面与 Route Handler 各自做鉴权（仅 admin 角色）。
+后台侧只在页面底部留一条跳转。
+
+报告是 `ai4all_bridge` 生成的自包含 HTML，因此正文路由单独下发
+`Content-Security-Policy: sandbox allow-scripts; default-src 'none'; ...`：
+报告在不透明源里运行，脚本能跑但拿不到后台会话，生成端的转义疏漏不会变成本域的存储型 XSS。
+目录布局与发布方式见后端仓库的
+`docs/plans/products/plum/memory_eval_web_delivery_plan.md`。
+
 ## 代码组织
 
 - `app/` 只负责 Next.js 路由、Layout 和 Route Handler；后台业务 URL 使用显式目录，不使用业务 catch-all。

@@ -1,0 +1,8 @@
+{
+  "run_id": "conn_e2e-20260901T000000Z",
+  "mode": "inspect",
+  "connection_id": "conn_e2e",
+  "generated_at": "2026-09-01T00:00:00Z",
+  "findings": { "high": 1, "medium": 0, "low": 1 },
+  "contains_user_plaintext": true
+}
