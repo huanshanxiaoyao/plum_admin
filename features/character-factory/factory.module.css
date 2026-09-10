@@ -290,6 +290,23 @@
   aspect-ratio: 4 / 3;
 }
 
+.referencePreview {
+  min-width: 0;
+}
+
+.referencePreview .imageTile img {
+  object-fit: contain;
+}
+
+.referencePreview > small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}
+
 .imageTile img,
 .portrait img {
   width: 100%;
@@ -839,13 +856,15 @@
 
 .candidateCards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 9px;
 }
 
 .candidateCard {
   min-width: 0;
   display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  align-items: center;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 5px;
@@ -856,20 +875,24 @@
 
 .candidateCardDisabled {
   cursor: not-allowed;
-  opacity: 0.58;
 }
 
 .candidateVisual {
-  aspect-ratio: 4 / 3;
+  position: relative;
+  width: 90px;
+  height: 120px;
+  overflow: hidden;
   display: grid;
   place-items: center;
   color: #718076;
-  background:
-    linear-gradient(145deg, rgba(255,255,255,0.58), transparent 55%),
-    #dfe8e1;
+  background: #dfe8e1;
 }
 
-.candidateVisual span {
+.candidateVisual img {
+  object-fit: contain;
+}
+
+.candidateVisual .portraitPlaceholder span {
   width: 46px;
   height: 46px;
   display: grid;
@@ -881,31 +904,35 @@
   font-weight: 800;
 }
 
-.candidateCard:nth-child(3n + 2) .candidateVisual span {
-  background: #805c58;
-}
-
-.candidateCard:nth-child(3n) .candidateVisual span {
-  background: #57687a;
+.candidateCard:is(a):hover,
+.candidateCard:is(a):focus-visible {
+  border-color: var(--muted-strong);
 }
 
 .candidateCardBody {
   min-width: 0;
   display: grid;
-  gap: 5px;
-  padding: 9px;
+  gap: 6px;
+  padding: 12px 16px;
+  overflow-wrap: anywhere;
 }
 
 .candidateCardBody strong {
-  overflow: hidden;
-  font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.candidateCardBody p {
+  margin: 0;
+  color: var(--muted-strong);
+  font-size: 11px;
+  line-height: 1.6;
 }
 
 .candidateCardBody small {
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
+  line-height: 1.5;
 }
 
 .workbenchTop {
@@ -964,10 +991,6 @@
 }
 
 @media (max-width: 980px) {
-  .candidateCards {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .flow {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -984,10 +1007,6 @@
 
   .wideField {
     grid-column: auto;
-  }
-
-  .candidateCards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .metrics {
@@ -1011,7 +1030,6 @@
   .sourceGrid,
   .modeGrid,
   .flow,
-  .candidateCards,
   .metrics {
     grid-template-columns: 1fr;
   }

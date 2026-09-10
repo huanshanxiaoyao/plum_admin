@@ -114,6 +114,15 @@ export function CandidateWorkbench({ runId, candidateId, fixtureMode, canWrite, 
     };
   }, [candidateId, fixtureMode]);
 
+  useEffect(() => {
+    if (!baseline) return;
+    setMultiSession((current) => current?.runId === runId
+      ? { ...current, candidates: current.candidates.map((candidate) => candidate.id === candidateId
+        ? { ...candidate, draftRevision: baseline.revision }
+        : candidate) }
+      : current);
+  }, [baseline, candidateId, runId, setMultiSession]);
+
   const dirty = draft !== null && baseline !== null && JSON.stringify(draft) !== JSON.stringify(baseline);
   const displayedPortraitUrl = portraitUrl ?? (
     !fixtureMode && draft

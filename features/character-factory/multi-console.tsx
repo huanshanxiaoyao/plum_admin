@@ -12,11 +12,13 @@ import {
   RefreshCw,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OwnerPicker, type OwnerAccount } from "@/features/imports/owner-picker";
 import {
+  characterFactoryDraftPortraitUrl,
   createRun,
   generateCandidates,
   getRun,
@@ -50,6 +52,7 @@ import {
   type FactoryUploadProgress,
 } from "./media-upload";
 import styles from "./factory.module.css";
+import { DraftPortraitImage } from "./draft-portrait-image";
 
 type Props = {
   readonly fixtureMode: boolean;
@@ -99,6 +102,19 @@ function makeCandidates(count: number, sourceType: BatchSourceType): LocalCandid
   });
 }
 
+function ReferenceImagePreview({ file }: { readonly file: File }) {
+  const attachPreview = useCallback((image: HTMLImageElement | null) => {
+    if (!image) return;
+    const url = URL.createObjectURL(file);
+    image.src = url;
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  // Local file URLs belong to the mounted image and need no server optimization.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img ref={attachPreview} alt={file.name} />;
+}
+
 export function MultiConsole({ fixtureMode, canWrite, blockedReason }: Props) {
   const { multiSession, setMultiSession } = useFactorySession();
   const [contentMode, setContentMode] = useState<ContentMode>(multiSession?.contentMode ?? "limited");
@@ -138,6 +154,7 @@ export function MultiConsole({ fixtureMode, canWrite, blockedReason }: Props) {
         description: candidate.description,
         evidence: candidate.evidence.map((item) => item.label).join(" · ") || "Agent 生成",
         selected: candidate.decision === "selected",
+        draftRevision: candidate.draft_revision,
         status: submissionAccepted
           ? "submitted" as const
           : (candidate.status === "failed" && !candidate.work_id) || failed
@@ -373,7 +390,7 @@ export function MultiConsole({ fixtureMode, canWrite, blockedReason }: Props) {
         setStage("generating");
         setCandidates((current) => current.map((candidate, index) => candidate.selected ? { ...candidate, status: index === current.length - 1 ? "failed" : "generating" } : candidate));
         await new Promise((resolve) => setTimeout(resolve, 750));
-        setCandidates((current) => current.map((candidate) => candidate.status === "generating" ? { ...candidate, status: "ready" } : candidate));
+        setCandidates((current) => current.map((candidate) => candidate.status === "generating" ? { ...candidate, status: "ready", draftRevision: 1 } : candidate));
         setStage("review");
       }
     } catch (caught) {
@@ -401,7 +418,7 @@ export function MultiConsole({ fixtureMode, canWrite, blockedReason }: Props) {
       }
       return;
     }
-    setCandidates((current) => current.map((candidate) => candidate.status === "failed" ? { ...candidate, status: "ready" } : candidate));
+    setCandidates((current) => current.map((candidate) => candidate.status === "failed" ? { ...candidate, status: "ready", draftRevision: 1 } : candidate));
   }
 
   async function submit() {
@@ -456,7 +473,7 @@ export function MultiConsole({ fixtureMode, canWrite, blockedReason }: Props) {
   return <div className={styles.workspace}>
     {!canWrite && <p className={styles.notice}><AlertTriangle size={15} />{blockedReason}</p>}
     {error && <p className={error.includes("已启动") ? styles.notice : styles.error} role="status"><AlertTriangle size={15} />{error}</p>}
-    {sourceUploadProgress && <p className={styles.notice}><LoaderCircle className={styles.spin} size={15} />正在上传参考图 {sourceUploadProgress.completed} / {sourceUploadProgress.total}{sourceUploadProgress.failed ? ` · ${sourceUploadProgress.failed} 失败` : ""}</p>}
+    {sourceUploadProgress && <p className={sourceUploadProgress.failed && sourceUploadProgress.completed === sourceUploadProgress.total ? styles.error : styles.notice} role="status">{sourceUploadProgress.completed < sourceUploadProgress.total ? <LoaderCircle className={styles.spin} size={15} /> : <AlertTriangle size={15} />}{sourceUploadProgress.completed < sourceUploadProgress.total ? "正在上传参考图" : "参考图上传结束"} {sourceUploadProgress.completed} / {sourceUploadProgress.total}{sourceUploadProgress.failed ? ` · ${sourceUploadProgress.failed} 失败` : ""}</p>}
 
     <section className={styles.section}>
       <header className={styles.sectionHeader}><div className={styles.sectionTitle}><span className={styles.sectionIndex}>01</span><div><h2>选择创意来源</h2><p>模式作用于整批图文；创意来源三选一</p></div></div>{locked && <span className={styles.statusPill} data-tone="good"><Check size={12} />已锁定</span>}</header>
@@ -465,7 +482,27 @@ export function MultiConsole({ fixtureMode, canWrite, blockedReason }: Props) {
         <div className={styles.sourceGrid} style={{ marginTop: 12 }}>{SOURCES.map((source) => { const Icon = source.icon; const active = sourceType === source.type; return <button key={source.type} type="button" disabled={locked} className={`${styles.sourceChoice} ${active ? styles.sourceChoiceActive : ""}`} onClick={() => setSourceType(source.type)}><Icon size={17} /><strong>{source.title}</strong><small>{source.detail}</small></button>; })}</div>
         <div className={styles.formGrid}>
           {sourceType === "url_text" && <div className={styles.wideField}><label htmlFor="batch-urls">竞品或社媒网站 URL</label><textarea id="batch-urls" disabled={locked} value={urls} onChange={(event) => setUrls(event.target.value)} placeholder="每行一个 URL；例如竞品榜单、Reddit 板块或内容页" /></div>}
-          {sourceType === "image_text" && <div className={styles.wideField}><span className={styles.label}>示例图片</span><label className={styles.dropzone}><input disabled={locked} type="file" accept="image/*" multiple onChange={(event) => setImages(Array.from(event.target.files ?? []).slice(0, 8))} /><ImagePlus size={22} /><strong>{images.length ? `已选择 ${images.length} 张图片` : "上传示例图片"}</strong><small>Agent 解析共同视觉特征，文字决定参考范围</small></label></div>}
+          {sourceType === "image_text" && <div className={styles.wideField}>
+            <span className={styles.label}>示例图片</span>
+            <label className={styles.dropzone}><input aria-label="选择示例图片" disabled={locked} type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(event) => {
+              const files = Array.from(event.target.files ?? []);
+              if (files.length) {
+                setImages(files.slice(0, 8));
+                setSourceUploadProgress(null);
+                setError("");
+              }
+              event.target.value = "";
+            }} /><ImagePlus size={22} /><strong>{images.length ? `已选择 ${images.length} 张图片` : "上传示例图片"}</strong><small>PNG / JPEG / WebP · 最多 8 张</small></label>
+            {images.length > 0 && <div className={styles.imageStrip} role="group" aria-label="已选择的示例图片">{images.map((file, index) => <div className={styles.referencePreview} key={`${index}-${file.name}-${file.lastModified}`}>
+              <div className={styles.imageTile}><ReferenceImagePreview file={file} /><button disabled={locked} type="button" title={`移除 ${file.name}`} aria-label={`移除 ${file.name}`} onClick={() => {
+                setImages((current) => current.filter((_, imageIndex) => imageIndex !== index));
+                sourceUploads.current.delete(file);
+                setSourceUploadProgress(null);
+                setError("");
+              }}><X size={13} aria-hidden="true" /></button></div>
+              <small title={file.name}>{file.name}</small>
+            </div>)}</div>}
+          </div>}
           <div className={styles.wideField}><label htmlFor="batch-description">{sourceType === "text" ? "主题或角色风格" : "需求描述"}</label><textarea id="batch-description" disabled={locked} value={description} onChange={(event) => setDescription(event.target.value)} placeholder={sourceType === "text" ? "例如：红楼梦中的女性角色，保留人物冲突，但改造成现代都市背景" : "说明希望提炼什么、避开什么，以及角色之间需要怎样的差异"} /></div>
           <div className={styles.field}><label htmlFor="batch-count">角色数量</label><input id="batch-count" type="number" min={1} max={20} disabled={locked} value={targetCount} onChange={(event) => setTargetCount(Math.max(1, Math.min(20, Number(event.target.value) || 1)))} /></div>
           <div className={styles.field}><label htmlFor="batch-language">语言</label><input id="batch-language" disabled={locked} value={language} onChange={(event) => setLanguage(event.target.value)} /></div>
@@ -481,7 +518,10 @@ export function MultiConsole({ fixtureMode, canWrite, blockedReason }: Props) {
     {(stage === "pool" || stage === "generating" || stage === "review" || stage === "submitted") && <section className={styles.section}><header className={styles.sectionHeader}><div className={styles.sectionTitle}><span className={styles.sectionIndex}>03</span><div><h2>候选池</h2><p>先编辑、取舍和补充，再触发批量生成</p></div></div><span className={styles.statusPill}>{selected.length} / {candidates.length} 已选</span></header><div className={styles.sectionBody} style={{ overflowX: "auto" }}><table className={styles.candidateTable}><thead><tr><th>选择</th><th>候选</th><th>文字描述</th><th>来源依据</th><th>操作</th></tr></thead><tbody>{candidates.map((candidate) => <tr key={candidate.id}><td><input type="checkbox" checked={candidate.selected} disabled={stage !== "pool"} onChange={(event) => patchCandidate(candidate.id, { selected: event.target.checked })} aria-label={`选择 ${candidate.title}`} /></td><td><input type="text" className={styles.candidateName} value={candidate.title} readOnly={stage !== "pool"} onChange={(event) => patchCandidate(candidate.id, { title: event.target.value })} /></td><td><input type="text" value={candidate.description} readOnly={stage !== "pool"} onChange={(event) => patchCandidate(candidate.id, { description: event.target.value })} /></td><td className={styles.candidateEvidence}>{candidate.evidence}</td><td><button className={styles.iconButton} type="button" disabled={stage !== "pool"} onClick={() => removeCandidate(candidate.id)} title="删除候选"><Trash2 size={13} /></button></td></tr>)}</tbody></table>{stage === "pool" && <div className={styles.footerActions}><button className={styles.secondaryButton} type="button" onClick={addCandidate}><Plus size={13} />新增候选</button><button className={styles.primaryButton} type="button" onClick={generate}><Sparkles size={14} />生成 {selected.length} 个角色</button></div>}</div></section>}
 
     {(stage === "generating" || stage === "review" || stage === "submitted") && <section className={styles.section}><header className={styles.sectionHeader}><div className={styles.sectionTitle}><span className={styles.sectionIndex}>04</span><div><h2>批量任务</h2><p>每个候选图文并发，单项失败不阻塞整批</p></div></div><span className={styles.statusPill} data-tone={failed ? "bad" : stage === "generating" ? "warn" : "good"}>{stage === "generating" ? "生成中" : failed ? "部分失败" : "草稿"}</span></header><div className={styles.sectionBody}><div className={styles.metrics}><div className={styles.metric}><strong>{candidates.length}</strong><small>总数</small></div><div className={styles.metric}><strong>{completed}</strong><small>完成</small></div><div className={styles.metric}><strong>{running}</strong><small>生成中</small></div><div className={styles.metric}><strong>{failed}</strong><small>失败</small></div><div className={styles.metric}><strong>3</strong><small>并发上限</small></div></div><div className={styles.candidateCards} style={{ marginTop: 12 }}>{candidates.filter((candidate) => candidate.selected).map((candidate) => {
-      const content = <><div className={styles.candidateVisual}><span>{candidate.title.slice(0, 1)}</span></div><div className={styles.candidateCardBody}><strong>{candidate.title}</strong><small>{candidate.status === "submitted" ? (candidate.submissionStatus === "published" ? "已发布" : "已提交 · 待审核") : candidate.submissionMessage ? `投稿失败 · ${candidate.submissionMessage}` : candidate.preflightReady === false ? `预检未通过 · ${candidate.preflightIssues?.[0] ?? "请修改草稿"}` : candidate.status === "ready" ? "图文完成 · 打开工作台" : candidate.status === "failed" ? "生成失败 · 可单独重试" : "图文生成中"}</small></div></>;
+      const portraitSrc = candidate.draftRevision != null
+        ? characterFactoryDraftPortraitUrl(candidate.id, candidate.draftRevision)
+        : null;
+      const content = <><div className={styles.candidateVisual}><DraftPortraitImage src={portraitSrc} displayName={candidate.title} emptyLabel={candidate.status === "generating" ? "图片生成中" : "暂无图片"} /></div><div className={styles.candidateCardBody}><strong>{candidate.title}</strong><p>{candidate.description}</p><small>{candidate.status === "submitted" ? (candidate.submissionStatus === "published" ? "已发布" : "已提交 · 待审核") : candidate.submissionMessage ? `投稿失败 · ${candidate.submissionMessage}` : candidate.preflightReady === false ? `预检未通过 · ${candidate.preflightIssues?.[0] ?? "请修改草稿"}` : candidate.status === "ready" ? "图文完成 · 打开工作台" : candidate.status === "failed" ? "生成失败 · 可单独重试" : "图文生成中"}</small></div></>;
       return candidate.status === "ready" || candidate.status === "submitted"
         ? <Link key={candidate.id} className={styles.candidateCard} href={`/character-factory/multi/${encodeURIComponent(runId)}/${encodeURIComponent(candidate.id)}`}>{content}</Link>
         : <div key={candidate.id} className={`${styles.candidateCard} ${styles.candidateCardDisabled}`} aria-disabled="true">{content}</div>;
