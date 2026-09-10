@@ -179,6 +179,22 @@ test("batch UI stages follow remote lifecycle snapshots", () => {
   assert.equal(nextBatchStage("review", snapshot([], [], "submitted")), "submitted");
 });
 
+test("planned remote candidates stay editable until generation tasks exist", () => {
+  const planned = snapshot(
+    [candidate("c1", { status: "selected" })],
+    [task("candidate_plan", "succeeded")],
+    "generating",
+  );
+  for (const stage of ["discovering", "discovery_failed", "pool", "generating"]) {
+    assert.equal(nextBatchStage(stage, planned), "pool", stage);
+  }
+  const generating = {
+    ...planned,
+    tasks: [...planned.tasks, task("text_generate", "queued")],
+  };
+  assert.equal(nextBatchStage("pool", generating), "generating");
+});
+
 test("polling retries transient failures with bounded backoff", () => {
   const transient = new FactoryApiError(503, "provider_busy", "busy", "req_1", true);
   assert.equal(factoryPollRetryDelay(transient, 1), FACTORY_POLL_INTERVAL_MS);
