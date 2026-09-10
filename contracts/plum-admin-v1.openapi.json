@@ -305,6 +305,75 @@
         "title": "AdminCharacterFactoryCandidate",
         "type": "object"
       },
+      "AdminCharacterFactoryCandidateCost": {
+        "properties": {
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "cost_usd_micros": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd Micros"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "known_cost_usd_micros": {
+            "title": "Known Cost Usd Micros",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "pending_calls": {
+            "title": "Pending Calls",
+            "type": "integer"
+          },
+          "total_calls": {
+            "title": "Total Calls",
+            "type": "integer"
+          },
+          "unpriced_calls": {
+            "title": "Unpriced Calls",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cost_usd_micros",
+          "known_cost_usd_micros",
+          "input_tokens",
+          "output_tokens",
+          "total_calls",
+          "unpriced_calls",
+          "pending_calls",
+          "candidate_id"
+        ],
+        "title": "AdminCharacterFactoryCandidateCost",
+        "type": "object"
+      },
       "AdminCharacterFactoryCandidatePreflight": {
         "properties": {
           "candidate_id": {
@@ -505,6 +574,325 @@
         "title": "AdminCharacterFactoryCandidateUpdateRequest",
         "type": "object"
       },
+      "AdminCharacterFactoryCostCall": {
+        "properties": {
+          "attempt": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt"
+          },
+          "candidate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Id"
+          },
+          "cost_usd_micros": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd Micros"
+          },
+          "created_at": {
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "title": "Created At",
+            "type": "string"
+          },
+          "cycle": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "outcome": {
+            "enum": [
+              "running",
+              "succeeded",
+              "failed",
+              "unknown"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "phase": {
+            "title": "Phase",
+            "type": "string"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "provider_request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Request Id"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "priced",
+              "unpriced"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          }
+        },
+        "required": [
+          "id",
+          "candidate_id",
+          "task_id",
+          "cycle",
+          "attempt",
+          "phase",
+          "provider",
+          "model",
+          "provider_request_id",
+          "status",
+          "outcome",
+          "error_code",
+          "cost_usd_micros",
+          "input_tokens",
+          "output_tokens",
+          "created_at"
+        ],
+        "title": "AdminCharacterFactoryCostCall",
+        "type": "object"
+      },
+      "AdminCharacterFactoryCostMetrics": {
+        "properties": {
+          "cost_usd_micros": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd Micros"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "known_cost_usd_micros": {
+            "title": "Known Cost Usd Micros",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "pending_calls": {
+            "title": "Pending Calls",
+            "type": "integer"
+          },
+          "total_calls": {
+            "title": "Total Calls",
+            "type": "integer"
+          },
+          "unpriced_calls": {
+            "title": "Unpriced Calls",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cost_usd_micros",
+          "known_cost_usd_micros",
+          "input_tokens",
+          "output_tokens",
+          "total_calls",
+          "unpriced_calls",
+          "pending_calls"
+        ],
+        "title": "AdminCharacterFactoryCostMetrics",
+        "type": "object"
+      },
+      "AdminCharacterFactoryCostReport": {
+        "properties": {
+          "calls": {
+            "items": {
+              "$ref": "#/components/schemas/AdminCharacterFactoryCostCall"
+            },
+            "title": "Calls",
+            "type": "array"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/AdminCharacterFactoryCandidateCost"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "currency": {
+            "const": "USD",
+            "title": "Currency",
+            "type": "string"
+          },
+          "missing_calls": {
+            "title": "Missing Calls",
+            "type": "integer"
+          },
+          "phases": {
+            "items": {
+              "$ref": "#/components/schemas/AdminCharacterFactoryPhaseCost"
+            },
+            "title": "Phases",
+            "type": "array"
+          },
+          "shared": {
+            "$ref": "#/components/schemas/AdminCharacterFactoryCostMetrics"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/AdminCharacterFactoryCostMetrics"
+          },
+          "tracking_enabled": {
+            "title": "Tracking Enabled",
+            "type": "boolean"
+          },
+          "tracking_incomplete": {
+            "title": "Tracking Incomplete",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "tracking_enabled",
+          "tracking_incomplete",
+          "missing_calls",
+          "currency",
+          "totals",
+          "shared",
+          "candidates",
+          "phases",
+          "calls"
+        ],
+        "title": "AdminCharacterFactoryCostReport",
+        "type": "object"
+      },
+      "AdminCharacterFactoryCostResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AdminCharacterFactoryCostReport"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "AdminCharacterFactoryCostResponse",
+        "type": "object"
+      },
       "AdminCharacterFactoryCreateRunRequest": {
         "additionalProperties": false,
         "properties": {
@@ -669,6 +1057,75 @@
           }
         },
         "title": "AdminCharacterFactoryGenerateRequest",
+        "type": "object"
+      },
+      "AdminCharacterFactoryPhaseCost": {
+        "properties": {
+          "cost_usd_micros": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd Micros"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "known_cost_usd_micros": {
+            "title": "Known Cost Usd Micros",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "pending_calls": {
+            "title": "Pending Calls",
+            "type": "integer"
+          },
+          "phase": {
+            "title": "Phase",
+            "type": "string"
+          },
+          "total_calls": {
+            "title": "Total Calls",
+            "type": "integer"
+          },
+          "unpriced_calls": {
+            "title": "Unpriced Calls",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cost_usd_micros",
+          "known_cost_usd_micros",
+          "input_tokens",
+          "output_tokens",
+          "total_calls",
+          "unpriced_calls",
+          "pending_calls",
+          "phase"
+        ],
+        "title": "AdminCharacterFactoryPhaseCost",
         "type": "object"
       },
       "AdminCharacterFactoryPreflightRequest": {
@@ -6379,6 +6836,151 @@
           }
         },
         "summary": "Admin Update Character Factory Candidate",
+        "tags": [
+          "plum-admin-character-factory"
+        ]
+      }
+    },
+    "/admin/plum/character-factory/runs/{run_id}/costs": {
+      "get": {
+        "description": "Return independently observed provider usage without changing run polling.",
+        "operationId": "admin_get_character_factory_costs_admin_plum_character_factory_runs__run_id__costs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCharacterFactoryCostResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Get Character Factory Costs",
         "tags": [
           "plum-admin-character-factory"
         ]

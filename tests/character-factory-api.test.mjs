@@ -7,6 +7,7 @@ import {
   createRun,
   getDraft,
   getRun,
+  getRunCosts,
   updateDraft,
 } from "../features/character-factory/api.ts";
 
@@ -27,6 +28,33 @@ function jsonResponse(body, init = {}) {
     headers: { "Content-Type": "application/json", ...init.headers },
   });
 }
+
+test("getRunCosts preserves unknown amounts and scopes an abortable read to the run", async (t) => {
+  const original = globalThis.fetch;
+  t.after(() => { globalThis.fetch = original; });
+  const controller = new AbortController();
+  const data = {
+    tracking_enabled: true,
+    tracking_incomplete: false,
+    missing_calls: 0,
+    currency: "USD",
+    totals: { cost_usd_micros: null, known_cost_usd_micros: 12345, input_tokens: null, output_tokens: 300, total_calls: 3, unpriced_calls: 1, pending_calls: 1 },
+    shared: { cost_usd_micros: 2345, known_cost_usd_micros: 2345, input_tokens: 1200, output_tokens: 300, total_calls: 1, unpriced_calls: 0, pending_calls: 0 },
+    candidates: [],
+    phases: [],
+    calls: [],
+  };
+  let captured;
+  globalThis.fetch = async (url, init) => {
+    captured = { url, init };
+    return jsonResponse({ data, request_id: "req-cost" });
+  };
+  const response = await getRunCosts("run/a?b", controller.signal);
+  assert.equal(captured.url, "/api/admin/character-factory/runs/run%2Fa%3Fb/costs");
+  assert.equal(captured.init.method, "GET");
+  assert.equal(captured.init.signal, controller.signal);
+  assert.deepEqual(response.data, data);
+});
 
 function createBody(contentMode) {
   return {

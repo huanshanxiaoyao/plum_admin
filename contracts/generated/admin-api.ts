@@ -219,6 +219,26 @@ export interface paths {
         patch: operations["admin_update_character_factory_candidate_admin_plum_character_factory_runs__run_id__candidates__candidate_id__patch"];
         trace?: never;
     };
+    "/admin/plum/character-factory/runs/{run_id}/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Get Character Factory Costs
+         * @description Return independently observed provider usage without changing run polling.
+         */
+        get: operations["admin_get_character_factory_costs_admin_plum_character_factory_runs__run_id__costs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/plum/character-factory/runs/{run_id}/generate": {
         parameters: {
             query?: never;
@@ -1037,6 +1057,25 @@ export interface components {
             /** Work Id */
             work_id?: string | null;
         };
+        /** AdminCharacterFactoryCandidateCost */
+        AdminCharacterFactoryCandidateCost: {
+            /** Candidate Id */
+            candidate_id: string;
+            /** Cost Usd Micros */
+            cost_usd_micros: number | null;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Known Cost Usd Micros */
+            known_cost_usd_micros: number;
+            /** Output Tokens */
+            output_tokens: number | null;
+            /** Pending Calls */
+            pending_calls: number;
+            /** Total Calls */
+            total_calls: number;
+            /** Unpriced Calls */
+            unpriced_calls: number;
+        };
         /** AdminCharacterFactoryCandidatePreflight */
         AdminCharacterFactoryCandidatePreflight: {
             /** Candidate Id */
@@ -1083,6 +1122,94 @@ export interface components {
             } | null;
             /** Selected */
             selected?: boolean | null;
+        };
+        /** AdminCharacterFactoryCostCall */
+        AdminCharacterFactoryCostCall: {
+            /** Attempt */
+            attempt: number | null;
+            /** Candidate Id */
+            candidate_id: string | null;
+            /** Cost Usd Micros */
+            cost_usd_micros: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Cycle */
+            cycle: number | null;
+            /** Error Code */
+            error_code: string | null;
+            /** Id */
+            id: string;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Model */
+            model: string | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "running" | "succeeded" | "failed" | "unknown";
+            /** Output Tokens */
+            output_tokens: number | null;
+            /** Phase */
+            phase: string;
+            /** Provider */
+            provider: string | null;
+            /** Provider Request Id */
+            provider_request_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "priced" | "unpriced";
+            /** Task Id */
+            task_id: string | null;
+        };
+        /** AdminCharacterFactoryCostMetrics */
+        AdminCharacterFactoryCostMetrics: {
+            /** Cost Usd Micros */
+            cost_usd_micros: number | null;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Known Cost Usd Micros */
+            known_cost_usd_micros: number;
+            /** Output Tokens */
+            output_tokens: number | null;
+            /** Pending Calls */
+            pending_calls: number;
+            /** Total Calls */
+            total_calls: number;
+            /** Unpriced Calls */
+            unpriced_calls: number;
+        };
+        /** AdminCharacterFactoryCostReport */
+        AdminCharacterFactoryCostReport: {
+            /** Calls */
+            calls: components["schemas"]["AdminCharacterFactoryCostCall"][];
+            /** Candidates */
+            candidates: components["schemas"]["AdminCharacterFactoryCandidateCost"][];
+            /**
+             * Currency
+             * @constant
+             */
+            currency: "USD";
+            /** Missing Calls */
+            missing_calls: number;
+            /** Phases */
+            phases: components["schemas"]["AdminCharacterFactoryPhaseCost"][];
+            shared: components["schemas"]["AdminCharacterFactoryCostMetrics"];
+            totals: components["schemas"]["AdminCharacterFactoryCostMetrics"];
+            /** Tracking Enabled */
+            tracking_enabled: boolean;
+            /** Tracking Incomplete */
+            tracking_incomplete: boolean;
+        };
+        /** AdminCharacterFactoryCostResponse */
+        AdminCharacterFactoryCostResponse: {
+            data: components["schemas"]["AdminCharacterFactoryCostReport"];
+            meta: components["schemas"]["ResponseMeta"];
         };
         /** AdminCharacterFactoryCreateRunRequest */
         AdminCharacterFactoryCreateRunRequest: {
@@ -1158,6 +1285,25 @@ export interface components {
         AdminCharacterFactoryGenerateRequest: {
             /** Candidate Ids */
             candidate_ids?: string[];
+        };
+        /** AdminCharacterFactoryPhaseCost */
+        AdminCharacterFactoryPhaseCost: {
+            /** Cost Usd Micros */
+            cost_usd_micros: number | null;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Known Cost Usd Micros */
+            known_cost_usd_micros: number;
+            /** Output Tokens */
+            output_tokens: number | null;
+            /** Pending Calls */
+            pending_calls: number;
+            /** Phase */
+            phase: string;
+            /** Total Calls */
+            total_calls: number;
+            /** Unpriced Calls */
+            unpriced_calls: number;
         };
         /**
          * AdminCharacterFactoryPreflightRequest
@@ -3804,6 +3950,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminCharacterFactoryRunResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_get_character_factory_costs_admin_plum_character_factory_runs__run_id__costs_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCharacterFactoryCostResponse"];
                 };
             };
             /** @description Bad Request */

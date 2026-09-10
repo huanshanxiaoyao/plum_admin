@@ -12,6 +12,7 @@ import type {
   PreviewTurnResult,
   SubmissionConfirmation,
 } from "./contracts.ts";
+import { isFactoryCostReport, type FactoryCostReport } from "./costs.ts";
 import {
   adaptFactoryTaskResponse,
   adaptFactoryRunResponse,
@@ -227,6 +228,15 @@ export function startRun(
 export function getRun(runId: string, signal?: AbortSignal): Promise<ApiResponse<FactoryRunSnapshot>> {
   return request<BackendFactoryRunResponse>(`/runs/${encodeURIComponent(runId)}`, { method: "GET" }, { signal })
     .then(adaptFactoryRunResponse);
+}
+
+export function getRunCosts(runId: string, signal?: AbortSignal): Promise<ApiResponse<FactoryCostReport>> {
+  return request<ApiResponse<FactoryCostReport>>(
+    `/runs/${encodeURIComponent(runId)}/costs`, { method: "GET", cache: "no-store" }, { signal },
+  ).then((response) => {
+    if (!isFactoryCostReport(response?.data)) throw new FactoryApiError(0, "cost_contract_mismatch", "成本数据暂时无法读取。");
+    return response;
+  });
 }
 
 export function updateCandidate(

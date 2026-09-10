@@ -1,0 +1,140 @@
+.panel {
+  min-width: 0;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+
+.header,
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header {
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.refresh {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.refresh:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0 0 12px;
+}
+
+.metrics > div {
+  min-width: 0;
+}
+
+.metrics dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.metrics dd {
+  margin: 5px 0 0;
+  font-size: 16px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.metrics small,
+.status,
+.empty {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.status[data-tone="warn"] {
+  color: #976112;
+}
+
+.tableScroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th,
+.table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  vertical-align: top;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.table th:first-child,
+.table td:first-child {
+  text-align: left;
+  max-width: 220px;
+  overflow-wrap: anywhere;
+}
+
+.table td small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.details {
+  margin-top: 16px;
+}
+
+.details summary {
+  width: fit-content;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted-strong);
+}
+
+@media (max-width: 640px) {
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .metrics dd {
+    font-size: 14px;
+  }
+}

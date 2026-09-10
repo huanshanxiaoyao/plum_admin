@@ -47,6 +47,7 @@ test("character factory endpoints are reachable by operators", () => {
   assert.equal(requiredCapability("POST", "character-factory/runs"), DAILY);
   assert.equal(requiredCapability("POST", "character-factory/runs/run-01/start"), DAILY);
   assert.equal(requiredCapability("GET", "character-factory/runs/run-01"), DAILY);
+  assert.equal(requiredCapability("GET", "character-factory/runs/run-01/costs"), DAILY);
   assert.equal(
     requiredCapability("PATCH", "character-factory/runs/run-01/candidates/candidate-01"),
     DAILY,
@@ -90,6 +91,8 @@ test("character factory rules do not widen into neighbouring paths", () => {
   assert.equal(requiredCapability("PATCH", "character-factory/runs"), null);
   assert.equal(requiredCapability("GET", "character-factory/runs/run-01/start"), null);
   assert.equal(requiredCapability("POST", "character-factory/runs/run-01"), null);
+  assert.equal(requiredCapability("POST", "character-factory/runs/run-01/costs"), null);
+  assert.equal(requiredCapability("GET", "character-factory/runs/run-01/costs/extra"), null);
   assert.equal(requiredCapability("POST", "character-factory/runs/run-01/candidates/candidate-01"), null);
   assert.equal(requiredCapability("GET", "character-factory/runs/run-01/generate"), null);
   assert.equal(requiredCapability("POST", "character-factory/candidates/candidate-01/draft"), null);
