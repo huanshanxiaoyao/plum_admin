@@ -86,7 +86,7 @@ export async function ModerationQueuePage({ searchParams }: ModerationQueuePageP
         <label className={styles.select}><select name="status" defaultValue={query.status ?? ""} aria-label="复核状态">
           <option value="">全部状态</option>
           <option value="pending">待认领</option><option value="reviewing">审核中</option>
-          <option value="released">已放出</option><option value="confined">已自见</option><option value="purged">已下架</option>
+          <option value="released">已放出</option><option value="confined">已自见</option><option value="purged">已清除</option>
         </select></label>
         <label className={`${styles.search} ${styles.risk}`}>
           <Search size={15} />

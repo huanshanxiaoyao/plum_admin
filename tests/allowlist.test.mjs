@@ -10,6 +10,20 @@ test("governance writes require the scoped capability and exact PATCH path", () 
   assert.equal(requiredCapability("PATCH", "characters/char-01/rating/extra"), null);
 });
 
+test("takedown is a daily operation while restore is admin-only", () => {
+  // 下架是可撤销的止损，和复核三处置同一道闸门；恢复把内容重新推回公开分发，单独收紧到
+  // admin。这两条要和后端 require_operations_write_access / require_character_restore 对齐：
+  // 白名单放宽了，Operator 的请求就会一路打到后端才被拒。
+  assert.equal(requiredCapability("POST", "characters/char-01/takedown"), "operations.access");
+  assert.equal(requiredCapability("POST", "characters/char-01/restore"), "character.restore");
+  assert.equal(requiredCapability("PATCH", "characters/char-01/takedown"), null);
+  assert.equal(requiredCapability("GET", "characters/char-01/restore"), null);
+  assert.equal(requiredCapability("POST", "characters/char-01/takedown/extra"), null);
+  assert.equal(requiredCapability("POST", "characters/takedown"), null);
+  // E2E 用 `archive` 当「未放行子操作」的探针；它一旦被放行，那条 404 断言会变成远端不可达。
+  assert.equal(requiredCapability("POST", "characters/char-01/archive"), null);
+});
+
 test("daily routes resolve to operations access", () => {
   assert.equal(requiredCapability("GET", "characters"), "operations.access");
   assert.equal(requiredCapability("GET", "characters/char-01"), "operations.access");
@@ -159,8 +173,6 @@ test("staff management stays behind its own capability", () => {
 
 test("phase-one-excluded and unknown routes remain closed", () => {
   assert.equal(requiredCapability("POST", "official/works/accept-01/submit"), null);
-  assert.equal(requiredCapability("POST", "characters/char-01/takedown"), null);
-  assert.equal(requiredCapability("POST", "characters/char-01/restore"), null);
   assert.equal(requiredCapability("PATCH", "creators/pusr-01/control"), null);
   assert.equal(requiredCapability("POST", "users/pusr-01/membership/disable"), null);
   assert.equal(requiredCapability("GET", "subscriptions"), null);

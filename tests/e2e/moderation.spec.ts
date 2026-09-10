@@ -35,7 +35,7 @@ test("review detail shows the reviewed text and says the read was audited", asyn
   // 三处置齐备，且各自说清后果。
   await expect(page.getByRole("radio", { name: /通过 · 放出/ })).toBeVisible();
   await expect(page.getByRole("radio", { name: /不通过 · 自见/ })).toBeVisible();
-  await expect(page.getByRole("radio", { name: /高危下架 · 不保留/ })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /高危清除 · 不保留/ })).toBeVisible();
 });
 
 test("fixture data source disables dispositions instead of failing on submit", async ({ page }) => {

@@ -82,18 +82,19 @@ npm run contract:check
 
 `contract:check` 已纳入 `npm run verify`，生成类型过期会直接失败。当前快照包含 M1 的
 `session`、`me`、`admin-users`，以及已交付的 `characters`、`character versions`、`works`、
-`creators`、`users`、`user wallet/grants`、`overview`、`imports`、`moderation` 和 `audit-events`；后端新增路径时必须先显式加入 Admin 契约，再同步快照和生成类型。
+`creators`、`users`、`user wallet/grants`、`overview`、`imports`、`moderation`、
+`character takedown/restore` 和 `audit-events`；后端新增路径时必须先显式加入 Admin 契约，再同步快照和生成类型。
 生成类型负责编译期漂移，现有运行时 Guard 继续拒绝不可信远端响应。
 
 ## 权限
 
-| Capability | Operator | Admin |
-| --- | --- | --- |
-| `operations.access` | 是 | 是 |
-| `audit.read` | 否 | 是 |
-| `character.restore` | 否 | 是 |
-| `membership.manage` | 否 | 是 |
-| `staff.manage` | 否 | 是 |
+| Capability | Operator | Admin | 管什么 |
+| --- | --- | --- | --- |
+| `operations.access` | 是 | 是 | 日常只读查询，以及分级、下架、复核三处置、批量导入、人工充值等日常写操作 |
+| `audit.read` | 否 | 是 | 操作审计账本：谁在什么时候动过什么、原因是什么 |
+| `character.restore` | 否 | 是 | 把已下架的角色恢复上架。下架是可撤销的止损，恢复是把内容重新推回公开分发（并重新提升 CDN 上的公开图片副本），所以单独收紧到 Admin |
+| `membership.manage` | 否 | 是 | 封禁、解封 Plum Membership |
+| `staff.manage` | 否 | 是 | 后台成员的角色与状态 |
 
 ## 质量门禁
 

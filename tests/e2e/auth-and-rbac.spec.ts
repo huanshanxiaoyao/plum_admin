@@ -96,7 +96,9 @@ test("operator sees daily navigation and is denied advanced actions", async ({ p
   expect(staffResponse.status()).toBe(403);
   expect((await staffResponse.json()).error.code).toBe("admin_permission_denied");
 
-  const response = await page.request.post("/api/admin/characters/char-01/restore");
+  // 探针要挑一条**没有**放行的角色子操作：`restore` 曾经担任这个角色，等它真的上线之后
+  // 这条断言就从「未放行」悄悄变成「远端不可达」。`archive` 目前不在白名单里。
+  const response = await page.request.post("/api/admin/characters/char-01/archive");
   expect(response.status()).toBe(404);
   expect((await response.json()).error.code).toBe("resource_not_found");
 });
@@ -110,7 +112,9 @@ test("admin sees staff management and passes capability enforcement", async ({ p
   await expect(page.getByRole("button", { name: /禁用/ }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /恢复/ })).toBeVisible();
 
-  const response = await page.request.post("/api/admin/characters/char-01/restore");
+  // 探针要挑一条**没有**放行的角色子操作：`restore` 曾经担任这个角色，等它真的上线之后
+  // 这条断言就从「未放行」悄悄变成「远端不可达」。`archive` 目前不在白名单里。
+  const response = await page.request.post("/api/admin/characters/char-01/archive");
   expect(response.status()).toBe(404);
   expect((await response.json()).error.code).toBe("resource_not_found");
 });

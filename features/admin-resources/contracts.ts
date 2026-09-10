@@ -202,6 +202,9 @@ function isCharacter(value: unknown): value is CharacterSummary {
     (value.source === "official" || value.source === "ugc") &&
     hasString(value, "work_id") &&
     (value.status === "draft" || value.status === "active" || value.status === "takedown" || value.status === "archived") &&
+    // 复核的 purge 同样把角色置成 takedown，只看 status 分不出它和运营可逆下架。
+    // 恢复入口据此决定能不能点，所以这一位不能当可选字段放过去。
+    (value.moderation_hold === "none" || value.moderation_hold === "pending" || value.moderation_hold === "confined") &&
     (value.content_rating === "general" || value.content_rating === "mature") &&
     (value.visibility === "public" || value.visibility === "private") &&
     isPositiveInteger(value.content_version) &&

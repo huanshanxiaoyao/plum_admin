@@ -1640,6 +1640,15 @@
             "title": "Id",
             "type": "string"
           },
+          "moderation_hold": {
+            "enum": [
+              "none",
+              "pending",
+              "confined"
+            ],
+            "title": "Moderation Hold",
+            "type": "string"
+          },
           "prompt_version": {
             "minimum": 1.0,
             "title": "Prompt Version",
@@ -1705,6 +1714,7 @@
           "source",
           "creator",
           "status",
+          "moderation_hold",
           "content_rating",
           "visibility",
           "content_version",
@@ -1796,8 +1806,16 @@
         "title": "AdminCharacterResponse",
         "type": "object"
       },
-      "AdminCharacterTakedownRequest": {
+      "AdminCharacterRestoreRequest": {
+        "additionalProperties": false,
+        "description": "恢复只对 ``takedown`` 生效，当前状态即预期状态，无需再传 ``expected_status``。",
         "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
           "reason_code": {
             "maxLength": 80,
             "minLength": 3,
@@ -1807,7 +1825,44 @@
           }
         },
         "required": [
+          "reason",
           "reason_code"
+        ],
+        "title": "AdminCharacterRestoreRequest",
+        "type": "object"
+      },
+      "AdminCharacterTakedownRequest": {
+        "additionalProperties": false,
+        "description": "机器原因码 + 必填自由文本；前者用于聚合统计，后者是审计里唯一能看懂的那一栏。",
+        "properties": {
+          "expected_status": {
+            "enum": [
+              "draft",
+              "active",
+              "takedown",
+              "archived"
+            ],
+            "title": "Expected Status",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "reason_code": {
+            "maxLength": 80,
+            "minLength": 3,
+            "pattern": "^[a-z][a-z0-9_]{2,79}$",
+            "title": "Reason Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "reason_code",
+          "expected_status"
         ],
         "title": "AdminCharacterTakedownRequest",
         "type": "object"
@@ -8309,10 +8364,165 @@
         ]
       }
     },
+    "/admin/plum/characters/{character_id}/restore": {
+      "post": {
+        "description": "Put a taken-down Character back on air and re-promote its public image copies.\n\n只给 Admin：这是把内容重新推回公开分发。被内容复核 confine 或 purge 过的角色不在此列，\n它们的 ``moderation_hold`` 不是 ``none``，应用层会直接拒绝。",
+        "operationId": "admin_restore_character_admin_plum_characters__character_id__restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "character_id",
+            "required": true,
+            "schema": {
+              "title": "Character Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Admin-User-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Admin-User-Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminCharacterRestoreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCharacterResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Admin Restore Character",
+        "tags": [
+          "plum-admin-content"
+        ]
+      }
+    },
     "/admin/plum/characters/{character_id}/takedown": {
       "post": {
         "description": "Hide a Character immediately and enqueue idempotent public-image revocation.",
-        "operationId": "take_down_character_admin_plum_characters__character_id__takedown_post",
+        "operationId": "admin_take_down_character_admin_plum_characters__character_id__takedown_post",
         "parameters": [
           {
             "in": "path",
@@ -8458,7 +8668,7 @@
             "description": "Service Unavailable"
           }
         },
-        "summary": "Take Down Character",
+        "summary": "Admin Take Down Character",
         "tags": [
           "plum-admin-content"
         ]
