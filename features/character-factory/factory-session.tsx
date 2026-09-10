@@ -15,6 +15,7 @@ export type LocalCandidate = {
   evidence: string;
   selected: boolean;
   status: "ready" | "generating" | "failed" | "submitted";
+  draftRevision?: number | null;
   preflightReady?: boolean | null;
   preflightIssues?: readonly string[];
   submissionStatus?: "published" | "pending_review" | "rejected" | "failed" | null;

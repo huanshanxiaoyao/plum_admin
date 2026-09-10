@@ -308,6 +308,43 @@ async function prepareFile(file: File): Promise<PreparedImage> {
   };
 }
 
+async function prepareSourceImage(file: File): Promise<PreparedImage> {
+  const bitmap = await createImageBitmap(file);
+  const { width, height } = bitmap;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  try {
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("无法处理参考图，请重新选择图片。");
+    // The upload verifier rejects EXIF, XMP and PNG text; redraw only the pixels.
+    context.drawImage(bitmap, 0, 0);
+    const requestedType = file.type === "image/jpeg" || file.type === "image/webp"
+      ? file.type
+      : "image/png";
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (encoded) => encoded ? resolve(encoded) : reject(new Error("参考图转换失败，请重新选择图片。")),
+        requestedType,
+        0.92,
+      );
+    });
+    const extension = blob.type === "image/jpeg" ? "jpg" : blob.type === "image/webp" ? "webp" : "png";
+    return {
+      bytes: new Uint8Array(await blob.arrayBuffer()),
+      blob,
+      filename: `${file.name.replace(/\.[^.]+$/, "")}.${extension}`,
+      contentType: blob.type,
+      width,
+      height,
+    };
+  } finally {
+    bitmap.close();
+    canvas.width = 0;
+    canvas.height = 0;
+  }
+}
+
 async function uploadPreparedImage(
   image: PreparedImage,
   ownerPlatformUserId: string,
@@ -381,7 +418,7 @@ export async function uploadSourceImageFile(
   file: File,
   ownerPlatformUserId: string,
 ): Promise<string> {
-  const image = await prepareFile(file);
+  const image = await prepareSourceImage(file);
   return uploadPreparedImage(image, ownerPlatformUserId);
 }
 

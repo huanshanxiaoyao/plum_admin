@@ -387,8 +387,20 @@ function jsonResponse(body) {
 function installBrowserImageMocks(t, imageSetSourceMediaId = null) {
   const originalFetch = globalThis.fetch;
   const originalCreateImageBitmap = globalThis.createImageBitmap;
+  const originalDocument = globalThis.document;
   const requests = [];
   globalThis.createImageBitmap = async () => ({ width: 720, height: 1280, close() {} });
+  globalThis.document = {
+    createElement(tag) {
+      assert.equal(tag, "canvas");
+      return {
+        width: 0,
+        height: 0,
+        getContext: () => ({ drawImage() {} }),
+        toBlob: (callback, type) => callback(new Blob([new Uint8Array([4, 5, 6, 7])], { type })),
+      };
+    },
+  };
   globalThis.fetch = async (url, init = {}) => {
     requests.push({ url: String(url), init });
     if (String(url) === "/api/admin/imports/media/uploads") {
@@ -421,6 +433,8 @@ function installBrowserImageMocks(t, imageSetSourceMediaId = null) {
     globalThis.fetch = originalFetch;
     if (originalCreateImageBitmap === undefined) delete globalThis.createImageBitmap;
     else globalThis.createImageBitmap = originalCreateImageBitmap;
+    if (originalDocument === undefined) delete globalThis.document;
+    else globalThis.document = originalDocument;
   });
   return requests;
 }
@@ -436,6 +450,8 @@ test("角色来源图上传到 complete 即结束，不创建 image-set", async 
     "/api/admin/imports/media/uploads/media-uploaded/complete",
   ]);
   assert.equal(JSON.parse(requests[0].init.body).owner_platform_user_id, "owner-source");
+  assert.equal(JSON.parse(requests[0].init.body).bytes, 4);
+  assert.deepEqual(new Uint8Array(await requests[1].init.body.get("file").arrayBuffer()), new Uint8Array([4, 5, 6, 7]));
   assert.equal(JSON.parse(requests[2].init.body).owner_platform_user_id, "owner-source");
 });
 
