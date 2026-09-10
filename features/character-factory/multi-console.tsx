@@ -1,5 +1,7 @@
 "use client";
 
+import { FactoryCostPanel } from "./cost-panel";
+
 import {
   AlertTriangle,
   Check,
@@ -528,5 +530,6 @@ export function MultiConsole({ fixtureMode, canWrite, blockedReason }: Props) {
     })}</div>{failed > 0 && <div className={styles.footerActions}><p>自动重试已用完；手动重试不限制次数</p><button className={styles.secondaryButton} disabled={retryingFailed || !canWrite} type="button" onClick={retryFailed}>{retryingFailed ? <LoaderCircle className={styles.spin} size={13} /> : <RefreshCw size={13} />}{retryingFailed ? "重试中" : "仅重试失败项"}</button></div>}</div></section>}
 
     {(stage === "review" || stage === "submitted") && <section className={styles.section}><header className={styles.sectionHeader}><div className={styles.sectionTitle}><span className={styles.sectionIndex}>05</span><div><h2>批量校验与提交</h2><p>共性问题批量处理，内容问题进入单角色工作台</p></div></div>{stage === "submitted" && <span className={styles.statusPill} data-tone="good"><CheckCircle2 size={12} />已提交</span>}</header><div className={styles.sectionBody}><div className={styles.formGrid}><div className={styles.wideField}><label htmlFor="batch-reason">提交原因</label><input id="batch-reason" disabled={stage === "submitted"} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="例：北美慢热关系主题第一批" /></div><label className={`${styles.checkRow} ${styles.wideField}`}><input type="checkbox" checked={confirmed} disabled={stage === "submitted"} onChange={(event) => setConfirmed(event.target.checked)} /><span>确认角色均为成年人或无成人内容，并拥有或已取得所用素材的必要权利。</span></label></div><div className={styles.footerActions}><p>{failed ? `${completed} 项可提交，${failed} 项保留在批次中` : `${completed} 项将进入真实投稿预检`}</p><button className={styles.primaryButton} type="button" disabled={stage === "submitted"} onClick={submit}><CheckCircle2 size={14} />提交通过项</button></div></div></section>}
+    {runId && stage !== "source" && <FactoryCostPanel runId={runId} active={stage === "discovering" || stage === "generating" || retryingFailed} refreshKey={`${stage}-${retryingFailed}`} candidates={candidates} />}
   </div>;
 }

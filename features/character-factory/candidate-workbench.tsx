@@ -1,5 +1,7 @@
 "use client";
 
+import { FactoryCostPanel } from "./cost-panel";
+
 import {
   AlertTriangle,
   ArrowLeft,
@@ -318,5 +320,6 @@ export function CandidateWorkbench({ runId, candidateId, fixtureMode, canWrite, 
       </section>
       <section className={styles.section}><header className={styles.sectionHeader}><div className={styles.sectionTitle}><span className={styles.sectionIndex}>05</span><div><h3>对话测试</h3><p>固定读取草稿 v{draft.revision}，不产生线上消息</p></div></div><button className={styles.ghostButton} type="button" onClick={() => setHistory([])}>重新开始</button></header><div className={styles.sectionBody}><div className={styles.chat}>{history.length === 0 && <div className={styles.message}><small>{draft.display_name} · 草稿 v{draft.revision}</small>雨越来越大了。你要去哪？</div>}{history.map((message, index) => <div key={`${message.role}-${index}`} className={`${styles.message} ${message.role === "user" ? styles.userMessage : ""}`}><small>{message.role === "user" ? "模拟用户" : draft.display_name}</small>{message.content}</div>)}{testing && <div className={styles.message}><small>{draft.display_name}</small><LoaderCircle className={styles.spin} size={13} /></div>}</div><form className={styles.chatForm} onSubmit={sendMessage}><input className={styles.chatInput} value={chatInput} onChange={(event) => setChatInput(event.target.value)} placeholder="输入下一句" aria-label="输入测试消息" /><button type="submit" disabled={testing} aria-label="发送"><Send size={14} /></button></form></div></section>
     </div>
+    <FactoryCostPanel runId={runId} candidateId={candidateId} candidates={[{ id: candidateId, title: draft.display_name }]} active={revision.busy || testing} refreshKey={`${revision.previewTaskId}-${testing}`} />
   </div>;
 }

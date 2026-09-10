@@ -332,3 +332,103 @@ Candidate 不重复保存完整投稿正文，只保存 `work_id`。Agent 修改
 当前设计按“任务开始前选择一个真实平台归属账号”推进。若产品实际要求角色归属官方/system，先改发布模型，不应拿普通用户账号伪装官方角色。
 
 其余未定参数均已给出首期默认值，不阻塞开发。
+
+## 15. 新任务用量与成本统计
+
+### 15.1 需求与范围（2026-09-10）
+
+- 单角色和多角色共用调用成本记录，金额以 USD 展示，token 为辅助指标。
+- 纳入候选拆解、图片理解、角色文字/图片生成、Agent 改文/改图、工作台对话测试。
+- 网页抓取、手动上传、图片裁剪、草稿保存和投稿不计模型成本；不计算基础设施费用。
+- 批次总额包含所有已发生调用，包括被拒绝候选、失败调用、自动和手动重试。公共拆解与图片理解费用只计算一次；各角色显示自身直接调用成本，不将公共费用重复分摊。
+- 初次生成、后续修改和对话测试按阶段分列，避免用后续调试费用冒充初次生成费用。
+- 只对功能启用后创建的新 Run 开启统计。旧 Run 不回填；显示未记录，不能把缺失数据解释为零。
+- 这是运营侧供应商成本核算，不产生用户扣费，不修改水晶、钱包、投稿及生成状态机。
+
+### 15.2 计价依据
+
+2026-09-10 核实的官方标准价格，单位为 USD / 1M tokens：
+
+| 模型 | 普通文字输入 | 缓存文字输入 | 普通图片输入 | 缓存图片输入 | 图片输出 | 文字输出 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `gpt-image-2.5-flare` | 5 | 1.25 | 8 | 2 | 30 | 不计费 |
+| `gpt-image-2.5-sunburst` | 5 | 1.25 | 8 | 2 | 30 | 不计费 |
+| `gpt-4o-mini` | 0.15 | 0.075 | 按模型输入 token 计 | 按模型缓存输入 token 计 | 不适用 | 0.60 |
+
+- 图片模型同价的已发布快照为 `*-2026-09-08`；不将该价格泛化到未知新模型或未来快照。
+- 当前文字模型 `deepseek-v4-flash` 复用已有 `plum_model_prices` 有效版本。其它文字模型同样按实际 provider/model 解析已有价格，缺价保留用量并标待确认。
+- 图片用量需要区分文字/图片输入与缓存；图片输出优先取 `output_tokens_details.image_tokens`，缺少该明细时依据图片模型的实际响应语义处理，不能将文字输出重复收费。
+- 官方明确指出 GPT Image 2 的图片计算器不能估计 GPT Image 2.5 的 token 消耗。因此缺少实际 usage 或必要的模态/缓存拆分时，不按尺寸和质量捏造单张价格。
+- 成本保存整数微美元和调用时价格快照，计算过程中不使用浮点金额。显示金额是按公开价格与实际 usage 计算的供应商成本，不承诺等于含折扣、税项和调账的最终账单。
+
+官方来源：
+
+- [GPT Image 2.5 Flare](https://developers.openai.com/api/docs/models/gpt-image-2.5-flare)
+- [GPT Image 2.5 Sunburst](https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst)
+- [GPT-4o mini](https://developers.openai.com/api/docs/models/gpt-4o-mini)
+- [Images API usage 字段](https://developers.openai.com/api/reference/resources/images/methods/generate)
+
+### 15.3 独立记录与失败隔离
+
+在 `ai4all_bridge` 的 Plum 工厂模块内新增独立调用账本，不复用或写入用户聊天结算表。
+
+```text
+Run（新任务启用统计）
+  -> FactoryTask / Preview Turn
+      -> Provider Call（调用尝试及底层连接重试分别记录）
+          -> 原始用量 + 归一化 token + 价格快照 + 微美元金额
+```
+
+- 记录 run/candidate/task 关联、cycle/attempt、底层 request_sequence、阶段、provider/model/request ID、调用状态、用量、价格版本/快照与时间。不保存 Prompt、图片内容或对话正文。
+- 调用记录按唯一调用身份幂等保存；手动重试会更新 Task，但不能覆盖之前的成本记录。
+- 在获得供应商响应时采集用量，先于 JSON Schema 校验和图片入库。后续业务失败仍保留已有用量和金额。
+- 调用开始、完成和未知结果分别记录。已发送请求但超时、缺少 usage、缺少价格、异常退出或记账遗漏均不解释为免费。
+- 记录在任务执行入口创建；若参数或 Provider 校验在发送请求前失败，该尝试没有供应商用量，保守显示待确认。调用次数因此是尝试记录数，不能作为供应商已收费请求数。
+- 账本写入与成本查询不参与主业务事务，不影响重试判定、租约、草稿和投稿。成本记录异常需日志可追踪，并在汇总中表现为不完整，不能静默显示完整的零元成本。
+- 不新增模型调用，不改变 Prompt、模型选择、生成参数和外部并发上限。共享组件只增加兼容的用量采集能力；不改变已有返回契约和用户结算行为。
+
+### 15.4 API 与界面
+
+新增独立 `GET /admin/plum/character-factory/runs/{run_id}/costs`，沿用工厂权限、可用性检查和标准响应包装；前端使用同源显式 BFF 路径。
+
+响应包含 `tracking_enabled`、`tracking_incomplete`、`missing_calls`、`currency`、`totals`、`shared`、`candidates`、`phases` 与 `calls`。`missing_calls` 根据累计领取的任务尝试与账本中不同任务尝试比较，避免底层连接重试掩盖遗漏记录。汇总项包含：
+
+- `cost_usd_micros`：只有统计完整且全部可计价时才返回总额，否则 `null`。
+- `known_cost_usd_micros`：已确认可计价部分的合计，不能当成整批完整成本。
+- `input_tokens / output_tokens`：实际用量合计；对应记录缺失则为 `null`。
+- `total_calls / unpriced_calls / pending_calls`：调用数量和完整性信号。
+
+调用明细保留阶段、候选、模型、cycle/attempt、执行结果、计价状态和金额。任务执行失败与是否产生模型费用是两个独立状态。
+
+前端新增独立成本查询组件用于单角色、多角色及候选工作台；成本接口暂不可用时只影响该区域，不阻断业务轮询和按钮。单角色/批次显示总额、输入/输出 token、分阶段费用；批次另外列出公共费用与各角色直接成本。支持展开逐次调用明细，明确显示待确认和进行中的调用。
+
+### 15.5 验收与实现检查
+
+1. 新 Run 开启记录，旧 Run 不回填、不显示假零元。
+2. 普通、缓存、推理及图片/文字 token 不重复计价，价格改变不重算旧记录。
+3. 批量公共费用只计一次，候选删除和手动重试不丢失已发生费用。
+4. Schema 校验失败、图片保存失败仍保留供应商已经返回的 usage；超时及缺失字段呈现待确认。
+5. 记录幂等、账号/Run 隔离、API 权限和异常隔离通过聚焦 PostgreSQL 测试。
+6. 文字/视觉/图片/对话调用的用量采集均通过测试；用户钱包和生成结果不受影响。
+7. 桌面和移动端总额、部分金额、明细及接口故障状态可读且不挤压主操作。
+
+### 15.6 实现落点与发布顺序
+
+| 仓库 / 文件 | 职责 |
+| --- | --- |
+| `ai4all_bridge/app/db/migrations/plum.py`，迁移 159 | 新增独立账本、Run 统计开关及完整性标记、Task 累计预期次数；旧 Run 默认关闭 |
+| `ai4all_bridge/app/agent_runtime/llm/observation.py` | 请求上下文内可选响应与重试观察器，异常隔离 |
+| `ai4all_bridge/app/products/plum/application/character_factory_cost.py` | 用量检查、缓存拆分、价格计算和完整/部分金额汇总 |
+| `ai4all_bridge/app/products/plum/infrastructure/character_factory_cost.py` | 独立账本事务、不可变价格快照、重试归属、任务结果同步与查询 |
+| `ai4all_bridge/app/products/plum/api/admin/character_factory.py` | 独立成本读取接口，沿用角色工厂权限 |
+| `plum_admin/features/character-factory/cost-panel.tsx` | 单角色、批量、候选工作台共用成本面板，独立刷新及异常状态 |
+| `plum_admin/features/character-factory/costs.ts` | 从 OpenAPI 生成类型、运行时响应校验及金额格式化 |
+| `plum_admin/lib/bff/allowlist.ts` | 成本接口仅允许 GET |
+
+后端复用既有有效价格查询与 `compute_costs` 的实际供应商成本；不使用运营加价或水晶换算。DeepSeek 缓存命中字段在工厂计价模块中兼容。图片模型使用本节注明的价格快照，未知模型或异常用量保持待确认。
+
+发布时先部署后端并通过现有启动流程执行迁移 159，再部署前端。无需历史数据脚本；只有新版创建的新 Run 记录费用。前端先上线或成本接口暂不可用时，成本面板显示读取失败，生成流程仍可用。本次开发验收不执行生产迁移、不重启生产服务。
+
+验证采用临时 PostgreSQL 数据库和模拟供应商响应，覆盖计价/缓存异常、失败费用保留、连接重试、任务结果同步、旧任务、遗漏记录、权限及账本异常隔离；前端覆盖 API/BFF 权限、类型检查，以及桌面和手机的完整/部分成本、批量公共费用、候选归属、接口故障与异常响应。验收未调用付费模型；真实供应商最终账单仍需上线后按请求记录核对。
+
+2026-09-10 本地验证：后端 189 项聚焦测试通过（含共享 LLM adapter）；前端 API/BFF 23 项、桌面/手机成本面板 E2E 12 项通过。前端 TypeScript、接口生成一致性和修改文件 ESLint 通过，后端修改模块 Ruff 及两仓库 diff 格式检查通过。`app/db/_core.py` 既有兼容导出的 F401 不属于本次改动，未做无关清理。

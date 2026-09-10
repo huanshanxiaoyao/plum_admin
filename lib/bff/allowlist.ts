@@ -35,6 +35,7 @@ const RULES: readonly AllowRule[] = [
   // 角色工厂。候选、草稿、修改预览和测试对话均复用日常运营权限。
   { methods: ["POST"], path: /^character-factory\/runs$/, capability: DAILY },
   { methods: ["GET"], path: /^character-factory\/runs\/[^/]+$/, capability: DAILY },
+  { methods: ["GET"], path: /^character-factory\/runs\/[^/]+\/costs$/, capability: DAILY },
   { methods: ["POST"], path: /^character-factory\/runs\/[^/]+\/(?:start|generate|preflight|submit)$/, capability: DAILY },
   { methods: ["PATCH"], path: /^character-factory\/runs\/[^/]+\/candidates\/[^/]+$/, capability: DAILY },
   { methods: ["GET", "PATCH"], path: /^character-factory\/candidates\/[^/]+\/draft$/, capability: DAILY },

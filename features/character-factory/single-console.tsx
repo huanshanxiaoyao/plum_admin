@@ -1,5 +1,7 @@
 "use client";
 
+import { FactoryCostPanel } from "./cost-panel";
+
 import {
   AlertTriangle,
   Check,
@@ -649,6 +651,7 @@ export function SingleConsole({ fixtureMode, canWrite, blockedReason }: Props) {
         </div>
         <section className={styles.section}><header className={styles.sectionHeader}><div className={styles.sectionTitle}><span className={styles.sectionIndex}>06</span><div><h2>提交作品草稿</h2><p>继续走真实投稿预检、机审与发布链路</p></div></div>{stage === "submitted" && <span className={styles.statusPill} data-tone="good"><CheckCircle2 size={12} />已提交</span>}</header><div className={styles.sectionBody}><div className={styles.formGrid}><div className={styles.wideField}><label htmlFor="single-reason">提交原因</label><input id="single-reason" value={reason} disabled={stage === "submitted"} onChange={(event) => setReason(event.target.value)} placeholder="例：角色工厂首批补充" /></div><label className={`${styles.checkRow} ${styles.wideField}`}><input type="checkbox" checked={confirmed} disabled={stage === "submitted"} onChange={(event) => setConfirmed(event.target.checked)} /><span>确认角色均为成年人或无成人内容，并拥有或已取得所用素材的必要权利。</span></label></div><div className={styles.footerActions}><p>{stage === "submitted" ? `回执：${submissionReceipt}` : "提交前将再次校验字段、图片、标签、评级与归属"}</p><button className={styles.primaryButton} type="button" disabled={stage === "submitted"} onClick={submit}><CheckCircle2 size={14} />提交作品草稿</button></div></div></section>
       </>}
+      {runId && <FactoryCostPanel runId={runId} active={stage === "generating" || revision.busy || testing} refreshKey={`${stage}-${revision.previewTaskId}-${testing}`} candidates={draft ? [{ id: draft.candidate_id, title: draft.display_name }] : []} />}
     </div>
   );
 }
