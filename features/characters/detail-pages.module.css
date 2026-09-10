@@ -34,5 +34,6 @@
 .pagination button:disabled { opacity: .68; }
 .error { min-height: 420px; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--muted); }
 .error strong { color: var(--red); font-size: 13px; } .error span { font-size: 10px; }
+.note { max-width: 520px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
 @media (max-width: 720px) { .header { min-height: 116px; flex-direction: column; justify-content: flex-start; gap: 8px; } .headerStatus { padding: 0 0 16px; } .band { grid-template-columns: 1fr; gap: 16px; } .valueGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 480px) { .valueGrid { grid-template-columns: 1fr; } .sectionHeader { align-items: stretch; flex-direction: column; padding-bottom: 12px; } .sectionHeader form { width: 100%; } .sectionHeader select { flex: 1; } }

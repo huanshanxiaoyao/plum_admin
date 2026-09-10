@@ -60,6 +60,9 @@ export async function CharacterDetailPage({ params, searchParams }: { params: De
   const { response, versions } = loaded;
   const character = response.data;
   const governanceAccess = await governanceWriteAvailability("operations.access");
+  // 恢复单独收紧到 admin（capability `character.restore`），Operator 会看到禁用态和原因，
+  // 而不是一个点下去才 403 的按钮。和 BFF 白名单、后端 require_character_restore 同一道判定。
+  const restoreAccess = await governanceWriteAvailability("character.restore");
     const nextHref = versions.page.next_cursor
       ? `/characters/${encodeURIComponent(id)}?sort=${sort}&cursor=${encodeURIComponent(versions.page.next_cursor)}`
       : null;
@@ -84,6 +87,15 @@ export async function CharacterDetailPage({ params, searchParams }: { params: De
 
         <section className={styles.band} aria-labelledby="character-rating"><h2 id="character-rating">修改当前版本分级</h2>
           <GovernanceForm kind="rating" id={character.id} displayName={character.display_name} rating={character.content_rating} contentVersion={character.content_version} {...governanceAccess} />
+        </section>
+
+        <section className={styles.band} aria-labelledby="character-takedown"><h2 id="character-takedown">下架与恢复</h2>
+          {character.status === "active" && <GovernanceForm kind="takedown" id={character.id} displayName={character.display_name} {...governanceAccess} />}
+          {character.status === "takedown" && character.moderation_hold === "none" && <GovernanceForm kind="restore" id={character.id} displayName={character.display_name} {...restoreAccess} />}
+          {/* 复核的 confine/purge 也会把角色置成 takedown。这类处置不能被运营侧的可逆入口绕过，
+              所以这里给出说明而不是一个必定 409 的按钮。 */}
+          {character.status === "takedown" && character.moderation_hold !== "none" && <p className={styles.note}>该角色已被内容复核处置（{character.moderation_hold}），不能从这里恢复，请走复核流程。</p>}
+          {character.status !== "active" && character.status !== "takedown" && <p className={styles.note}>{character.status} 状态的角色没有下架或恢复操作。</p>}
         </section>
 
         <section className={styles.band} aria-labelledby="character-owner"><h2 id="character-owner">创作者与统计</h2><dl className={styles.valueGrid}>

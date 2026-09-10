@@ -18,6 +18,10 @@ const RULES: readonly AllowRule[] = [
   { methods: ["GET"], path: /^users\/[^/]+\/wallet$/, capability: DAILY },
   { methods: ["PATCH"], path: /^users\/[^/]+\/membership$/, capability: "membership.manage" },
   { methods: ["PATCH"], path: /^characters\/[^/]+\/rating$/, capability: DAILY },
+  // 下架是可撤销的止损，和复核三处置同一道闸门；恢复把内容重新推回公开分发（并重新提升
+  // CDN 上的公开副本），单独收紧到 admin。后端 require_character_restore 是同一道判定。
+  { methods: ["POST"], path: /^characters\/[^/]+\/takedown$/, capability: DAILY },
+  { methods: ["POST"], path: /^characters\/[^/]+\/restore$/, capability: "character.restore" },
   // 测试期人工充值：Operator 与 Admin 均可操作，后端负责幂等、账户边界与原子审计。
   { methods: ["POST"], path: /^users\/[^/]+\/wallet\/grants$/, capability: DAILY },
   { methods: ["GET"], path: /^moderation\/backlog$/, capability: DAILY },

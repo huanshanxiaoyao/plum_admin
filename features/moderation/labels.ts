@@ -7,7 +7,10 @@ export const REVIEW_STATUS_LABELS: Record<ModerationReviewSummary["status"], str
   reviewing: "审核中",
   released: "已放出",
   confined: "已自见",
-  purged: "已下架",
+  // 「下架」现在专指运营侧那条可逆入口（见 features/characters 的下架与恢复）。复核的
+  // purge 会擦掉正文、删掉图片字节且不可撤销，两者必须在文案上分开，否则运营会拿最重的
+  // 那把锤子去干最日常的活。
+  purged: "已清除",
 };
 
 export const HOLD_LABELS: Record<ModerationReviewSummary["moderation_hold"], string> = {
@@ -19,7 +22,7 @@ export const HOLD_LABELS: Record<ModerationReviewSummary["moderation_hold"], str
 export const DECISION_LABELS = {
   release: "通过 · 放出",
   confine: "不通过 · 自见",
-  purge: "高危下架 · 不保留",
+  purge: "高危清除 · 不保留",
 } as const;
 
 export function statusTone(status: ModerationReviewSummary["status"]): Tone {
@@ -41,21 +44,7 @@ export function isOpenReview(status: ModerationReviewSummary["status"]): boolean
 }
 
 /**
- * 处置原因码的**临时**前端词表。
- *
- * 后端只校验长度（<= 80），产品文档尚未冻结原因码口径——它应当随机审 label 收口决议
- * 一起定稿并写进 `moderation_label_policy.md`。在那之前这里保持可选 + 允许自填，
- * 避免前端单方面把一份没有依据的枚举变成事实契约。
+ * 词表本体已移到 `admin-resources`：角色下架/恢复也要用同一份，留在 moderation 下会让
+ * `admin-resources` 反向依赖 `moderation`。这里保留 re-export，复核侧的 import 不用改。
  */
-export const REASON_CODE_SUGGESTIONS = [
-  "sexual_content",
-  "minor_safety",
-  "violence_terror",
-  "contraband",
-  "political",
-  "inappropriate",
-  "religion",
-  "promotion",
-  "impersonation",
-  "other",
-] as const;
+export { REASON_CODE_SUGGESTIONS } from "../admin-resources/reason-codes";

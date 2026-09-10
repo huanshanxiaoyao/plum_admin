@@ -118,6 +118,29 @@ export interface paths {
         patch: operations["admin_update_character_rating_admin_plum_characters__character_id__rating_patch"];
         trace?: never;
     };
+    "/admin/plum/characters/{character_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Admin Restore Character
+         * @description Put a taken-down Character back on air and re-promote its public image copies.
+         *
+         *     只给 Admin：这是把内容重新推回公开分发。被内容复核 confine 或 purge 过的角色不在此列，
+         *     它们的 ``moderation_hold`` 不是 ``none``，应用层会直接拒绝。
+         */
+        post: operations["admin_restore_character_admin_plum_characters__character_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/plum/characters/{character_id}/takedown": {
         parameters: {
             query?: never;
@@ -128,10 +151,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Take Down Character
+         * Admin Take Down Character
          * @description Hide a Character immediately and enqueue idempotent public-image revocation.
          */
-        post: operations["take_down_character_admin_plum_characters__character_id__takedown_post"];
+        post: operations["admin_take_down_character_admin_plum_characters__character_id__takedown_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -750,6 +773,11 @@ export interface components {
             display_name: string;
             /** Id */
             id: string;
+            /**
+             * Moderation Hold
+             * @enum {string}
+             */
+            moderation_hold: "none" | "pending" | "confined";
             /** Prompt Version */
             prompt_version: number;
             /** Published At */
@@ -807,8 +835,28 @@ export interface components {
             data: components["schemas"]["AdminCharacterItem"];
             meta: components["schemas"]["ResponseMeta"];
         };
-        /** AdminCharacterTakedownRequest */
+        /**
+         * AdminCharacterRestoreRequest
+         * @description 恢复只对 ``takedown`` 生效，当前状态即预期状态，无需再传 ``expected_status``。
+         */
+        AdminCharacterRestoreRequest: {
+            /** Reason */
+            reason: string;
+            /** Reason Code */
+            reason_code: string;
+        };
+        /**
+         * AdminCharacterTakedownRequest
+         * @description 机器原因码 + 必填自由文本；前者用于聚合统计，后者是审计里唯一能看懂的那一栏。
+         */
         AdminCharacterTakedownRequest: {
+            /**
+             * Expected Status
+             * @enum {string}
+             */
+            expected_status: "draft" | "active" | "takedown" | "archived";
+            /** Reason */
+            reason: string;
             /** Reason Code */
             reason_code: string;
         };
@@ -2540,7 +2588,108 @@ export interface operations {
             };
         };
     };
-    take_down_character_admin_plum_characters__character_id__takedown_post: {
+    admin_restore_character_admin_plum_characters__character_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Admin-User-Id"?: string | null;
+                authorization?: string | null;
+            };
+            path: {
+                character_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCharacterRestoreRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCharacterResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_take_down_character_admin_plum_characters__character_id__takedown_post: {
         parameters: {
             query?: never;
             header?: {
