@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Plum · 我的角色管理</title>
+  <style>
+    :root {
+      --ink:#252927; --muted:#737a75; --line:#dfe4df; --soft:#f4f6f3;
+      --green:#256649; --mint:#eaf3eb; --coral:#ad5243; --rose:#faeee9;
+      --blue:#3e6170; --blue-soft:#edf3f5;
+    }
+    * { box-sizing:border-box; letter-spacing:0; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:#fff; color:var(--ink); font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
+    button,input,select,textarea { font:inherit; color:inherit; letter-spacing:0; }
+    button { cursor:pointer; }
+    a { color:inherit; text-decoration:none; }
+    main { max-width:1180px; margin:auto; padding:34px 40px 48px; }
+    .masthead { display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:20px; border-bottom:1px solid var(--line); }
+    .brand { font-size:22px; font-weight:760; }
+    .brand span { color:var(--green); }
+    .meta,.eyebrow,figcaption { color:var(--muted); font-size:12px; }
+    .product-tabs,.doc-tabs { display:flex; align-items:center; gap:4px; overflow-x:auto; white-space:nowrap; }
+    .product-tabs { margin-top:14px; }
+    .product-tabs a,.product-tabs span,.doc-tabs a { padding:6px 11px; border-radius:4px; color:var(--muted); font-size:12px; }
+    .product-tabs .active { color:var(--green); background:var(--mint); font-weight:650; }
+    .product-tabs a:hover,.doc-tabs a:hover { background:var(--soft); color:var(--green); }
+    .intro { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:24px; padding:34px 0 26px; }
+    h1 { margin:7px 0 9px; font-size:34px; line-height:1.28; }
+    h2,h3,p { margin:0; }
+    .lead { color:#5b645e; font-size:16px; }
+    .doc-tabs { justify-content:flex-end; }
+    .overview { padding:23px 0 30px; border-top:1px solid var(--line); }
+    .section-top { display:flex; align-items:baseline; justify-content:space-between; gap:18px; margin-bottom:18px; }
+    .section-top h2 { font-size:19px; }
+    .section-top p { color:var(--muted); font-size:12px; }
+    .flow { display:grid; grid-template-columns:1fr 30px 1fr 30px 1fr 30px 1.2fr; align-items:center; }
+    .flow-node { min-height:92px; padding:15px 12px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:var(--soft); border:1px solid var(--line); border-radius:6px; }
+    .flow-node strong { font-size:15px; }
+    .flow-node small { margin-top:4px; color:var(--muted); font-size:11px; }
+    .flow-node.active { background:var(--mint); border-color:#b8d0bd; }
+    .flow-node.intent { background:var(--blue-soft); border-color:#cbdcdf; }
+    .arrow { text-align:center; color:#8b938d; font-size:21px; }
+    .scenario { display:grid; grid-template-columns:250px minmax(0,1fr); gap:38px; padding:32px 0; border-top:1px solid var(--line); align-items:start; }
+    .scenario-copy .number { color:var(--green); font-size:11px; font-weight:700; }
+    .scenario-copy h2 { margin:6px 0 10px; font-size:22px; line-height:1.35; }
+    .scenario-copy p { color:#5b645e; line-height:1.85; }
+    .rule { margin-top:14px; padding-left:11px; border-left:2px solid #b5cbb8; color:#465049; font-size:12px; }
+    .mock { min-width:0; border:1px solid #d4dbd4; border-radius:6px; background:#fff; overflow:hidden; }
+    .mock-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 15px; background:var(--soft); border-bottom:1px solid var(--line); font-size:12px; font-weight:650; }
+    .mock-head span:last-child { color:var(--muted); font-size:11px; font-weight:400; }
+    .mock-body { padding:17px; }
+    .mock-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 15px; border-top:1px solid var(--line); color:var(--muted); font-size:11px; }
+    .bind-layout { display:grid; grid-template-columns:minmax(0,1fr) 210px; gap:22px; align-items:start; }
+    .field-label { display:block; margin-bottom:6px; color:#59625c; font-size:11px; font-weight:650; }
+    .input-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; }
+    input,select,textarea { width:100%; border:1px solid #cfd6d0; border-radius:4px; background:#fff; outline:none; }
+    input,select { min-height:38px; padding:8px 10px; }
+    textarea { min-height:92px; resize:vertical; padding:10px 11px; line-height:1.7; }
+    input:focus,select:focus,textarea:focus { border-color:#7ca28a; box-shadow:0 0 0 2px #edf5ef; }
+    .primary,.secondary,.icon-button { min-height:36px; border-radius:4px; border:1px solid transparent; display:inline-flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; }
+    .primary { padding:8px 14px; background:var(--green); color:#fff; }
+    .primary:disabled { cursor:not-allowed; background:#9aa59e; }
+    .secondary { padding:7px 12px; background:#fff; border-color:#cfd6d0; color:#435047; }
+    .secondary:hover { border-color:#93ad99; color:var(--green); }
+    .bound-list { display:grid; gap:8px; margin-top:15px; }
+    .bound-account { display:grid; grid-template-columns:32px minmax(0,1fr) auto; gap:10px; align-items:center; padding:9px 10px; background:var(--soft); border-radius:4px; }
+    .avatar { width:32px; height:32px; display:grid; place-items:center; border-radius:50%; background:#dce9df; color:var(--green); font-weight:700; }
+    .account-copy { min-width:0; }
+    .account-copy strong,.account-copy code { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .account-copy strong { font-size:12px; }
+    .account-copy code { color:var(--muted); font-size:10px; }
+    .state { color:var(--green); font-size:10px; }
+    .identity-preview { border-left:2px solid #aec7b4; padding:11px 13px; background:#f7faf7; }
+    .identity-preview b { display:block; margin-bottom:4px; }
+    .identity-preview span { display:block; color:var(--muted); font-size:11px; }
+    .identity-preview .ok { margin-top:9px; color:var(--green); }
+    .manage-shell { padding:0; }
+    .manage-top { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding:16px 17px; border-bottom:1px solid var(--line); }
+    .account-picker { display:grid; grid-template-columns:minmax(210px,290px) auto; gap:8px; align-items:end; }
+    .account-picker label { min-width:0; }
+    .account-picker select { font-weight:650; }
+    .summary { text-align:right; }
+    .summary strong { display:block; color:var(--green); font-size:16px; }
+    .summary span { color:var(--muted); font-size:10px; }
+    .toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 17px; background:#fafbfa; border-bottom:1px solid var(--line); }
+    .search { max-width:310px; }
+    .toolbar-right,.filters { display:flex; align-items:center; gap:7px; }
+    .filters select { min-height:34px; padding:6px 28px 6px 9px; font-size:11px; }
+    .view-switch { display:grid; grid-template-columns:1fr 1fr; padding:2px; border:1px solid #d2d9d3; border-radius:4px; background:#fff; }
+    .view-switch button { min-height:28px; padding:4px 9px; border:0; border-radius:3px; background:transparent; color:var(--muted); font-size:11px; white-space:nowrap; }
+    .view-switch button.active { background:var(--mint); color:var(--green); font-weight:650; }
+    .role-list { width:100%; }
+    .role-head,.role-row { display:grid; grid-template-columns:28px 54px minmax(120px,.72fr) minmax(230px,1.5fr) minmax(120px,.65fr) 90px; gap:11px; align-items:center; padding:10px 17px; }
+    .role-head { color:var(--muted); font-size:10px; border-bottom:1px solid var(--line); }
+    .role-row { min-height:84px; border-bottom:1px solid #e8ece8; }
+    .role-row:hover { background:#fbfcfb; }
+    .role-row.selected { background:#f2f8f3; box-shadow:inset 3px 0 #78a184; }
+    .role-row input[type="checkbox"],.role-head input[type="checkbox"] { width:16px; min-height:16px; accent-color:var(--green); box-shadow:none; }
+    .portrait { width:48px; height:64px; overflow:hidden; border-radius:3px; background:#e6ebe7; }
+    .portrait svg { width:100%; height:100%; display:block; }
+    .role-name { min-width:0; }
+    .role-name strong,.role-name code { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .role-name strong { font-size:13px; }
+    .role-name code { color:var(--muted); font-size:9px; }
+    .persona { min-width:0; }
+    .persona p { display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-height:1.55; font-size:12px; }
+    .chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+    .chip { padding:2px 6px; border-radius:3px; background:var(--soft); color:#5e6861; font-size:9px; }
+    .chip.blue { background:var(--blue-soft); color:var(--blue); }
+    .status-stack { display:grid; justify-items:start; gap:4px; }
+    .badge { padding:2px 7px; border-radius:3px; background:var(--soft); color:#5b655e; font-size:9px; }
+    .badge.good { background:var(--mint); color:var(--green); }
+    .badge.warn { background:var(--rose); color:var(--coral); }
+    .updated { color:var(--muted); font-size:10px; }
+    .stats-only { display:none; }
+    .role-list.stats-mode .persona-only { display:none; }
+    .role-list.stats-mode .role-head,.role-list.stats-mode .role-row { grid-template-columns:28px 54px minmax(120px,.72fr) minmax(360px,2.4fr); }
+    .role-list.stats-mode .stats-only { display:grid; }
+    .metrics-grid { grid-template-columns:repeat(4,minmax(64px,1fr)); gap:10px; align-items:center; }
+    .metrics-head span { color:var(--muted); font-size:10px; }
+    .metric { min-width:0; }
+    .metric b { display:block; font-size:13px; font-variant-numeric:tabular-nums; }
+    .metric small { display:none; color:var(--muted); font-size:9px; }
+    .metric.empty b { color:#a2aaa4; font-weight:500; }
+    .data-note { display:none; padding:8px 17px; border-bottom:1px solid var(--line); background:#fbfcfb; color:var(--muted); font-size:10px; }
+    .role-list.stats-mode .data-note { display:block; }
+    .instruction { position:relative; padding:15px 17px 17px; background:#f7faf7; border-top:1px solid #bfd3c3; }
+    .instruction-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
+    .instruction-top strong { font-size:13px; }
+    .selection { color:var(--green); font-size:11px; font-weight:650; }
+    .instruction-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:9px; }
+    .instruction-actions p { color:var(--muted); font-size:10px; }
+    .change-preview { display:grid; grid-template-columns:1fr 24px 1fr; gap:9px; align-items:center; margin-top:15px; padding-top:15px; border-top:1px solid #dbe6dd; }
+    .change-preview[hidden] { display:none; }
+    .change-box { padding:10px; background:#fff; border:1px solid var(--line); border-radius:4px; }
+    .change-box b { display:block; margin-bottom:4px; font-size:11px; }
+    .change-box p { color:#5c655f; font-size:10px; }
+    .change-box.after { border-color:#a9c6b0; }
+    .change-box.after b { color:var(--green); }
+    .boundary { display:grid; grid-template-columns:250px minmax(0,1fr); gap:38px; padding:20px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+    .boundary h2 { font-size:16px; }
+    .boundary p { color:#5e675f; font-size:12px; }
+    footer { display:flex; justify-content:space-between; gap:16px; padding-top:18px; color:var(--muted); font-size:10px; }
+    @media (max-width:820px) {
+      main { padding:28px 24px 40px; }
+      .scenario { grid-template-columns:190px minmax(0,1fr); gap:24px; }
+      .role-head,.role-row { grid-template-columns:26px 48px minmax(100px,.7fr) minmax(180px,1.4fr) 92px; }
+      .role-list:not(.stats-mode) .role-head > :last-child,.role-list:not(.stats-mode) .role-row > :last-child { display:none; }
+      .role-list.stats-mode .role-head,.role-list.stats-mode .role-row { grid-template-columns:26px 48px minmax(100px,.72fr) minmax(300px,2fr); }
+    }
+    @media (max-width:640px) {
+      main { padding:20px; }
+      .masthead { align-items:baseline; } .brand { font-size:19px; } .meta { font-size:10px; }
+      .intro { grid-template-columns:1fr; gap:15px; padding:27px 0 22px; }
+      h1 { font-size:28px; } .lead { font-size:14px; }
+      .doc-tabs { justify-content:flex-start; }
+      .flow { grid-template-columns:1fr; max-width:350px; margin:auto; }
+      .flow .arrow { transform:rotate(90deg); line-height:27px; }
+      .flow-node { min-height:78px; }
+      .scenario { grid-template-columns:1fr; gap:17px; padding:25px 0; }
+      .scenario-copy h2 { font-size:20px; }
+      .bind-layout { grid-template-columns:1fr; }
+      .manage-top { align-items:stretch; flex-direction:column; }
+      .account-picker { grid-template-columns:minmax(0,1fr) auto; }
+      .summary { text-align:left; display:flex; align-items:baseline; gap:6px; }
+      .toolbar { align-items:stretch; flex-direction:column; }
+      .search { max-width:none; }
+      .toolbar-right { align-items:stretch; flex-direction:column; }
+      .filters { display:grid; grid-template-columns:1fr 1fr; }
+      .role-head { display:none; }
+      .role-row { position:relative; grid-template-columns:24px 46px minmax(0,1fr); gap:9px; padding:12px; }
+      .portrait { width:44px; height:59px; }
+      .persona,.status-stack { grid-column:3; }
+      .status-stack { display:flex; flex-wrap:wrap; }
+      .role-list.stats-mode .role-row { grid-template-columns:24px 46px minmax(0,1fr); }
+      .role-list.stats-mode .stats-metrics { grid-column:2 / -1; grid-template-columns:1fr 1fr; padding-top:3px; }
+      .role-list.stats-mode .metric { padding:7px 8px; border:1px solid #e3e8e4; border-radius:3px; background:#fff; }
+      .role-list.stats-mode .metric small { display:block; }
+      .instruction-actions { align-items:stretch; flex-direction:column; }
+      .primary { width:100%; }
+      .change-preview { grid-template-columns:1fr; }
+      .change-preview .arrow { transform:rotate(90deg); }
+      .boundary { grid-template-columns:1fr; gap:6px; }
+      footer { flex-direction:column; gap:4px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <a class="brand" href="#top"><span>plum</span> 管理后台</a>
+      <span class="meta">线上角色管理 / 产品原型</span>
+    </header>
+    <nav class="product-tabs" aria-label="角色管理视图">
+      <a href="#">全部角色</a><a href="#">Work / 草稿</a><span class="active">我的角色</span>
+    </nav>
+
+    <section class="intro" id="top">
+      <div>
+        <div class="eyebrow">角色管理 / 创作者视角</div>
+        <h1>选定一个账号，批量调整它的角色</h1>
+        <p class="lead">绑定多个创作者账号；每次进入一个账号的角色列表，勾选角色后用一句话描述调整。</p>
+      </div>
+      <nav class="doc-tabs" aria-label="角色工厂原型">
+        <a href="index.html">单角色生成</a><a href="multi.html">多角色生成</a>
+      </nav>
+    </section>
+
+    <section class="overview">
+      <div class="section-top"><h2>主流程</h2><p>首次只多一步绑定，之后从账号选择开始</p></div>
+      <div class="flow" role="img" aria-label="首次绑定 Plum 用户 ID，选择一个绑定账号，勾选该账号下的一个或多个角色，输入调整需求，AI 为每个角色分别生成变更预览。">
+        <div class="flow-node"><strong>绑定账号</strong><small>首次进入 / 可绑定多个</small></div>
+        <div class="arrow">→</div>
+        <div class="flow-node active"><strong>选择当前账号</strong><small>一次只管理一个 user_id</small></div>
+        <div class="arrow">→</div>
+        <div class="flow-node"><strong>勾选角色</strong><small>单个或多个</small></div>
+        <div class="arrow">→</div>
+        <div class="flow-node intent"><strong>描述调整需求</strong><small>逐角色生成修改方案</small></div>
+      </div>
+    </section>
+
+    <section class="scenario" id="bind">
+      <div class="scenario-copy">
+        <div class="number">首次进入</div>
+        <h2>先绑定创作者账号</h2>
+        <p>输入 `plum.top` 用户 ID，校验后展示账号信息。绑定成功后可继续添加其他账号。</p>
+        <div class="rule">绑定属于当前后台操作者，只决定“我的角色”范围；不改变角色归属。</div>
+      </div>
+      <figure>
+        <div class="mock">
+          <div class="mock-head"><span>绑定 Plum 账号</span><span>首次进入自动出现</span></div>
+          <div class="mock-body bind-layout">
+            <div>
+              <label class="field-label" for="user-id">plum.top 用户 ID</label>
+              <div class="input-row"><input id="user-id" value="usr_9f21c8" aria-label="Plum 用户 ID"><button class="secondary" type="button">校验并绑定</button></div>
+              <div class="bound-list">
+                <div class="bound-account"><div class="avatar">林</div><div class="account-copy"><strong>林屿</strong><code>usr_9f21c8 · @linyu</code></div><span class="state">已绑定</span></div>
+                <div class="bound-account"><div class="avatar">夜</div><div class="account-copy"><strong>夜航船</strong><code>usr_42ac77 · @nightvoyage</code></div><span class="state">已绑定</span></div>
+              </div>
+            </div>
+            <div class="identity-preview"><b>账号已找到</b><span>显示名：林屿</span><span>公开角色：8</span><span>草稿角色：3</span><span class="ok">可绑定</span></div>
+          </div>
+          <div class="mock-foot"><span>无效、重复或已停用 ID 会明确提示</span><button class="primary" type="button">进入角色列表</button></div>
+        </div>
+        <figcaption>示意 A · 后续可从“管理绑定”增加或移除账号</figcaption>
+      </figure>
+    </section>
+
+    <section class="scenario" id="manage">
+      <div class="scenario-copy">
+        <div class="number">日常管理</div>
+        <h2>角色一行一个，人设与数据随时切换</h2>
+        <p>默认查看人设摘要、标签、评级与线上状态；切换统计视图后横向比较角色表现。</p>
+        <div class="rule">切换账号会清空当前勾选和调整内容，避免把修改带到另一个创作者名下。</div>
+      </div>
+      <figure>
+        <div class="mock manage-shell">
+          <div class="manage-top">
+            <div class="account-picker">
+              <label><span class="field-label">当前创作者账号</span><select id="account"><option>林屿 · usr_9f21c8</option><option>夜航船 · usr_42ac77</option><option>白昼档案 · usr_1bd932</option></select></label>
+              <button class="secondary" type="button">管理绑定</button>
+            </div>
+            <div class="summary"><strong>11</strong><span>个角色</span></div>
+          </div>
+          <div class="toolbar">
+            <input class="search" type="search" placeholder="搜索角色名称或人设" aria-label="搜索角色">
+            <div class="toolbar-right">
+              <div class="filters"><select aria-label="角色状态"><option>全部状态</option><option>已上线</option><option>草稿</option><option>已下架</option></select><select aria-label="内容评级"><option>全部评级</option><option>General</option><option>Mature</option></select></div>
+              <div class="view-switch" aria-label="角色列表视图"><button class="active" type="button" data-view="persona" aria-pressed="true">人设视图</button><button type="button" data-view="stats" aria-pressed="false">统计视图</button></div>
+            </div>
+          </div>
+          <div class="role-list" id="role-list">
+            <div class="data-note">互动数来自现有角色接口；连接、曝光、点击缺少字段时显示“—”。</div>
+            <div class="role-head"><input id="select-all" type="checkbox" aria-label="全选"><span>立绘</span><span>角色</span><span class="persona-only">人设条件</span><span class="persona-only">状态</span><span class="persona-only">更新</span><span class="stats-only metrics-grid metrics-head"><span>连接数</span><span>互动数</span><span>总曝光</span><span>总点击</span></span></div>
+            <label class="role-row selected">
+              <input class="role-check" type="checkbox" checked aria-label="选择沈砚">
+              <span class="portrait"><svg viewBox="0 0 48 64" aria-hidden="true"><rect width="48" height="64" fill="#dce8df"/><circle cx="24" cy="22" r="12" fill="#dec1ae"/><path d="M10 64c2-17 8-25 14-25s12 8 14 25" fill="#4e685b"/><path d="M12 21C12 7 37 6 37 22c-8-2-12-6-15-11-2 6-5 9-10 10" fill="#34463d"/></svg></span>
+              <span class="role-name"><strong>沈砚</strong><code>char_73a90f · v6</code></span>
+              <span class="persona persona-only"><p>急诊科医生，冷静克制，习惯用具体行动表达关心，不主动承认脆弱。</p><span class="chips"><i class="chip">慢热</i><i class="chip">高压职业</i><i class="chip blue">克制表达</i></span></span>
+              <span class="status-stack persona-only"><i class="badge good">已上线</i><i class="badge">General · Public</i></span>
+              <span class="updated persona-only">2 小时前</span>
+              <span class="stats-only metrics-grid stats-metrics"><span class="metric empty"><b>—</b><small>连接数</small></span><span class="metric"><b>8,420</b><small>互动数</small></span><span class="metric empty"><b>—</b><small>总曝光</small></span><span class="metric empty"><b>—</b><small>总点击</small></span></span>
+            </label>
+            <label class="role-row selected">
+              <input class="role-check" type="checkbox" checked aria-label="选择闻溪">
+              <span class="portrait"><svg viewBox="0 0 48 64" aria-hidden="true"><rect width="48" height="64" fill="#e9e2dd"/><circle cx="24" cy="22" r="12" fill="#e5c9b7"/><path d="M9 64c3-17 8-24 15-24 8 0 13 7 15 24" fill="#7d5f61"/><path d="M10 26C7 8 20 4 28 7c11 3 12 14 9 24-3-9-6-15-11-19-5 7-10 11-16 14" fill="#4e3d3c"/></svg></span>
+              <span class="role-name"><strong>闻溪</strong><code>char_18cd42 · v3</code></span>
+              <span class="persona persona-only"><p>独立摄影师，表面随性，实际对关系中的失控高度敏感，擅长转移话题。</p><span class="chips"><i class="chip">都市</i><i class="chip">回避型</i><i class="chip blue">反差感</i></span></span>
+              <span class="status-stack persona-only"><i class="badge good">已上线</i><i class="badge warn">Mature · Public</i></span>
+              <span class="updated persona-only">昨天</span>
+              <span class="stats-only metrics-grid stats-metrics"><span class="metric empty"><b>—</b><small>连接数</small></span><span class="metric"><b>3,168</b><small>互动数</small></span><span class="metric empty"><b>—</b><small>总曝光</small></span><span class="metric empty"><b>—</b><small>总点击</small></span></span>
+            </label>
+            <label class="role-row">
+              <input class="role-check" type="checkbox" aria-label="选择顾清和">
+              <span class="portrait"><svg viewBox="0 0 48 64" aria-hidden="true"><rect width="48" height="64" fill="#dde5e8"/><circle cx="24" cy="22" r="12" fill="#dfc3af"/><path d="M8 64c3-18 9-25 16-25s13 7 16 25" fill="#4d626c"/><path d="M11 23C9 9 18 5 25 6c10 1 15 9 12 23-4-8-8-13-14-16-2 5-6 8-12 10" fill="#3c484d"/></svg></span>
+              <span class="role-name"><strong>顾清和</strong><code>char_b9216e · v1</code></span>
+              <span class="persona persona-only"><p>古籍修复师，耐心而精准，对承诺极认真，用细微观察代替直接询问。</p><span class="chips"><i class="chip">古风</i><i class="chip">温柔</i><i class="chip blue">细节控</i></span></span>
+              <span class="status-stack persona-only"><i class="badge">草稿</i><i class="badge">General · Private</i></span>
+              <span class="updated persona-only">3 天前</span>
+              <span class="stats-only metrics-grid stats-metrics"><span class="metric empty"><b>—</b><small>连接数</small></span><span class="metric empty"><b>—</b><small>互动数</small></span><span class="metric empty"><b>—</b><small>总曝光</small></span><span class="metric empty"><b>—</b><small>总点击</small></span></span>
+            </label>
+          </div>
+          <div class="instruction">
+            <div class="instruction-top"><strong>调整选中角色</strong><span class="selection"><span id="selected-count">2</span> 个已选择</span></div>
+            <textarea id="instruction" aria-label="调整需求">选中的人设，增加一个设定：内心希望得到他人认可，但不会直接承认。</textarea>
+            <div class="instruction-actions"><p>AI 保留每个角色原有差异，分别生成修改方案。</p><button class="primary" id="generate" type="button">生成调整预览</button></div>
+            <div class="change-preview" id="preview" hidden>
+              <div class="change-box"><b>沈砚 · 当前</b><p>不主动承认脆弱，用行动表达关心。</p></div><div class="arrow">→</div><div class="change-box after"><b>建议变更</b><p>渴望专业能力被认可；被肯定时会淡化成果，却默默记住对方的话。</p></div>
+            </div>
+          </div>
+        </div>
+        <figcaption>示意 B · 批量输入，逐角色生成差异化修改；下一步进入变更确认</figcaption>
+      </figure>
+    </section>
+
+    <aside class="boundary">
+      <h2>本轮边界</h2>
+      <p>本页先覆盖账号绑定、账号切换、角色列表、多选与调整需求输入。真正应用修改前必须展示逐角色字段差异、失败项和版本冲突；该确认页下一轮展开。</p>
+    </aside>
+    <footer><span>入口：角色管理 → 我的角色</span><span>绑定多个账号 · 每次管理一个账号</span></footer>
+  </main>
+  <script>
+    const checks = [...document.querySelectorAll('.role-check')];
+    const count = document.getElementById('selected-count');
+    const all = document.getElementById('select-all');
+    const preview = document.getElementById('preview');
+    const generate = document.getElementById('generate');
+    const roleList = document.getElementById('role-list');
+    const viewButtons = [...document.querySelectorAll('[data-view]')];
+    function syncSelection() {
+      const selected = checks.filter((item) => item.checked);
+      count.textContent = String(selected.length);
+      checks.forEach((item) => item.closest('.role-row').classList.toggle('selected', item.checked));
+      all.checked = selected.length === checks.length;
+      all.indeterminate = selected.length > 0 && selected.length < checks.length;
+      generate.disabled = selected.length === 0;
+      preview.hidden = true;
+    }
+    checks.forEach((item) => item.addEventListener('change', syncSelection));
+    all.addEventListener('change', () => { checks.forEach((item) => { item.checked = all.checked; }); syncSelection(); });
+    document.getElementById('account').addEventListener('change', () => {
+      checks.forEach((item) => { item.checked = false; });
+      document.getElementById('instruction').value = '';
+      syncSelection();
+    });
+    generate.addEventListener('click', () => {
+      preview.hidden = false;
+    });
+    viewButtons.forEach((button) => button.addEventListener('click', () => {
+      const statsMode = button.dataset.view === 'stats';
+      roleList.classList.toggle('stats-mode', statsMode);
+      viewButtons.forEach((item) => {
+        const active = item === button;
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', String(active));
+      });
+    }));
+    syncSelection();
+  </script>
+</body>
+</html>

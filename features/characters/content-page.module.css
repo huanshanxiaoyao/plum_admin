@@ -3,7 +3,7 @@
 .pageHeader span { color: var(--green); font-size: 10px; font-weight: 800; }
 .pageHeader h1 { margin: 5px 0 4px; font-size: 25px; line-height: 1.15; }
 .pageHeader p { margin: 0; color: var(--muted); font-size: 11px; }
-.tabs { height: 34px; display: grid; grid-template-columns: 1fr 1fr; margin-top: 7px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); }
+.tabs { height: 34px; display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 7px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); }
 .tabs a { min-width: 112px; display: grid; place-items: center; padding: 0 11px; color: var(--muted); font-size: 10px; text-decoration: none; }
 .tabs a + a { border-left: 1px solid var(--line-strong); }
 .tabs .activeTab { color: #fff; background: var(--surface-strong); }
@@ -44,4 +44,4 @@
 .pagination a, .pagination button { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); background: var(--surface); }
 .pagination button:disabled { opacity: .68; }
 @media (max-width: 820px) { .pageHeader { min-height: 116px; flex-direction: column; justify-content: flex-start; gap: 12px; } .tabs { margin-top: 0; } .importEntry { margin-top: 0; } .toolbar { align-items: stretch; flex-wrap: wrap; overflow: visible; } .search { width: 100%; } .select, .owner { flex: 1 1 145px; width: auto; } }
-@media (max-width: 520px) { .pageHeader { min-height: 128px; } .headerActions { width: 100%; flex-wrap: wrap; } .tabs { flex: 1 1 100%; } .tabs a { min-width: 0; } .importEntry { flex: 1 1 100%; margin-top: 0; justify-content: center; } .select, .owner, .toolbar button, .reset { flex-basis: 100%; width: 100%; } .empty { min-height: 260px; } }
+@media (max-width: 520px) { .pageHeader { min-height: 128px; } .headerActions { width: 100%; flex-wrap: wrap; } .tabs { flex: 1 1 100%; } .tabs a { min-width: 0; padding: 0 6px; } .importEntry { flex: 1 1 100%; margin-top: 0; justify-content: center; } .select, .owner, .toolbar button, .reset { flex-basis: 100%; width: 100%; } .empty { min-height: 260px; } }

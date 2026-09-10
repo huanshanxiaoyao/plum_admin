@@ -6,10 +6,11 @@ import { AdminApiError } from "../../lib/bff/client";
 import { getCurrentIdentity } from "../../lib/auth/session";
 import { canUseImports } from "../imports/access";
 import { formatDateTime } from "../admin-sections/presentation";
+import { MyCharactersWorkspace } from "./my-characters-workspace";
 import styles from "./content-page.module.css";
 
 type SearchParams = Record<string, string | string[] | undefined>;
-type ContentView = "characters" | "works";
+type ContentView = "characters" | "works" | "mine";
 
 export type ContentPageProps = { searchParams: Promise<SearchParams> };
 
@@ -32,6 +33,27 @@ function pageHref(view: ContentView, query: Record<string, string | number | und
 
 function Badge({ children, tone = "muted" }: { children: React.ReactNode; tone?: "good" | "warn" | "muted" }) {
   return <span className={`${styles.badge} ${styles[tone]}`}>{children}</span>;
+}
+
+function ContentHeader({ view, showImportEntry }: { view: ContentView; showImportEntry: boolean }) {
+  return (
+    <header className={styles.pageHeader}>
+      <div><span>CONTENT</span><h1>角色管理</h1><p>查看线上角色、创作流程与指定账号的角色表现</p></div>
+      <div className={styles.headerActions}>
+        <nav className={styles.tabs} aria-label="内容视图">
+          <Link className={view === "characters" ? styles.activeTab : undefined} href="/characters?view=characters">全部角色</Link>
+          <Link className={view === "works" ? styles.activeTab : undefined} href="/characters?view=works">Work / 草稿</Link>
+          <Link className={view === "mine" ? styles.activeTab : undefined} href="/characters?view=mine">我的角色</Link>
+        </nav>
+        {showImportEntry && (
+          <Link className={styles.importEntry} href="/imports">
+            <Upload size={14} />
+            批量导入
+          </Link>
+        )}
+      </div>
+    </header>
+  );
 }
 
 function EmptyRow({ columns, error }: { columns: number; error?: AdminApiError }) {
@@ -93,7 +115,20 @@ function WorkFilters({ query }: { query: WorkListQuery }) {
 
 export async function ContentPage({ searchParams }: ContentPageProps) {
   const params = await searchParams;
-  const view: ContentView = first(params.view) === "works" ? "works" : "characters";
+  const requestedView = first(params.view);
+  const view: ContentView = requestedView === "works" ? "works" : requestedView === "mine" ? "mine" : "characters";
+  const identity = await getCurrentIdentity();
+  const showImportEntry = identity ? canUseImports(identity.capabilities) : false;
+
+  if (view === "mine") {
+    return (
+      <div className={styles.page}>
+        <ContentHeader view={view} showImportEntry={showImportEntry} />
+        <MyCharactersWorkspace operatorId={identity?.id ?? "unknown"} />
+      </div>
+    );
+  }
+
   const q = first(params.q)?.trim() || undefined;
   const cursor = first(params.cursor)?.trim() || undefined;
   const characterQuery: CharacterListQuery = {
@@ -126,28 +161,12 @@ export async function ContentPage({ searchParams }: ContentPageProps) {
   }
   // 运营的心智起点是角色列表，"再补一批角色"的念头在这一页产生。一级导航有入口，
   // 但要求人先想到"这件事叫批量导入"才找得到——次级入口把它放在动机出现的地方。
-  const identity = await getCurrentIdentity();
-  const showImportEntry = identity ? canUseImports(identity.capabilities) : false;
   const activeQuery = view === "characters" ? characterQuery : workQuery;
   const hasFilters = Object.entries(activeQuery).some(([key, value]) => value !== undefined && key !== "limit");
 
   return (
     <div className={styles.page}>
-      <header className={styles.pageHeader}>
-        <div><span>CONTENT</span><h1>角色管理</h1><p>查看 Character 发布结果与 Work 创作流程元数据</p></div>
-        <div className={styles.headerActions}>
-          <nav className={styles.tabs} aria-label="内容视图">
-            <Link className={view === "characters" ? styles.activeTab : undefined} href="/characters?view=characters">Character</Link>
-            <Link className={view === "works" ? styles.activeTab : undefined} href="/characters?view=works">Work / 草稿</Link>
-          </nav>
-          {showImportEntry && (
-            <Link className={styles.importEntry} href="/imports">
-              <Upload size={14} />
-              批量导入
-            </Link>
-          )}
-        </div>
-      </header>
+      <ContentHeader view={view} showImportEntry={showImportEntry} />
 
       <form className={styles.toolbar} action="/characters" method="get" aria-label="内容列表工具栏">
         <input type="hidden" name="view" value={view} />
