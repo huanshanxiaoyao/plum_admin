@@ -6,6 +6,8 @@ import {
   ImportApiError,
   readImageSet,
   readPresignedUpload,
+  uploadPortraitFile,
+  uploadSourceImageFile,
   waitForImageSetReady,
 } from "../features/imports/import-api.ts";
 import {
@@ -367,6 +369,96 @@ test("字段名对不上时报出缺的是哪个字段，而不是让下游炸",
   assert.throws(() => readImageSet({ data: { image_set_id: "cimg_abc" } }), {
     code: "image_set_contract_mismatch",
   });
+});
+
+function browserImage(name = "source.png") {
+  const image = new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" });
+  Object.defineProperty(image, "name", { value: name });
+  return image;
+}
+
+function jsonResponse(body) {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function installBrowserImageMocks(t, imageSetSourceMediaId = null) {
+  const originalFetch = globalThis.fetch;
+  const originalCreateImageBitmap = globalThis.createImageBitmap;
+  const requests = [];
+  globalThis.createImageBitmap = async () => ({ width: 720, height: 1280, close() {} });
+  globalThis.fetch = async (url, init = {}) => {
+    requests.push({ url: String(url), init });
+    if (String(url) === "/api/admin/imports/media/uploads") {
+      return jsonResponse({
+        data: {
+          media: { media_id: "media-uploaded" },
+          upload: { upload_url: "https://storage.test/upload", upload_fields: { key: "value" } },
+        },
+      });
+    }
+    if (String(url) === "https://storage.test/upload") return new Response(null, { status: 204 });
+    if (String(url) === "/api/admin/imports/media/uploads/media-uploaded/complete") {
+      return jsonResponse({ data: {} });
+    }
+    if (String(url) === "/api/admin/imports/media/image-sets") {
+      return jsonResponse({
+        data: {
+          image_set: {
+            id: "image-set-1",
+            source_media_id: imageSetSourceMediaId ?? "media-uploaded",
+            processing_status: "ready",
+            error_code: null,
+          },
+        },
+      });
+    }
+    throw new Error(`unexpected request: ${String(url)}`);
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+    if (originalCreateImageBitmap === undefined) delete globalThis.createImageBitmap;
+    else globalThis.createImageBitmap = originalCreateImageBitmap;
+  });
+  return requests;
+}
+
+test("角色来源图上传到 complete 即结束，不创建 image-set", async (t) => {
+  const requests = installBrowserImageMocks(t);
+  const mediaId = await uploadSourceImageFile(browserImage(), "owner-source");
+
+  assert.equal(mediaId, "media-uploaded");
+  assert.deepEqual(requests.map((request) => request.url), [
+    "/api/admin/imports/media/uploads",
+    "https://storage.test/upload",
+    "/api/admin/imports/media/uploads/media-uploaded/complete",
+  ]);
+  assert.equal(JSON.parse(requests[0].init.body).owner_platform_user_id, "owner-source");
+  assert.equal(JSON.parse(requests[2].init.body).owner_platform_user_id, "owner-source");
+});
+
+test("草稿立绘创建 image-set，并全程使用同一 owner", async (t) => {
+  const requests = installBrowserImageMocks(t, "media-from-image-set");
+  const portrait = await uploadPortraitFile(browserImage("portrait.png"), "owner-portrait");
+
+  assert.equal(portrait.mediaId, "media-from-image-set");
+  assert.equal(portrait.imageSetId, "image-set-1");
+  assert.deepEqual(requests.map((request) => request.url), [
+    "/api/admin/imports/media/uploads",
+    "https://storage.test/upload",
+    "/api/admin/imports/media/uploads/media-uploaded/complete",
+    "/api/admin/imports/media/image-sets",
+  ]);
+  const bffBodies = [requests[0], requests[2], requests[3]].map((request) =>
+    JSON.parse(request.init.body),
+  );
+  assert.deepEqual(
+    bffBodies.map((body) => body.owner_platform_user_id),
+    ["owner-portrait", "owner-portrait", "owner-portrait"],
+  );
+  assert.equal(bffBodies[2].source_media_id, "media-uploaded");
 });
 
 // --- 结果清单导出 ---

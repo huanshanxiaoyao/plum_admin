@@ -42,6 +42,83 @@ test("character import endpoints are reachable by operators", () => {
   assert.equal(requiredCapability("GET", "imports/media/image-sets/cimg_1"), "operations.access");
 });
 
+test("character factory endpoints are reachable by operators", () => {
+  const DAILY = "operations.access";
+  assert.equal(requiredCapability("POST", "character-factory/runs"), DAILY);
+  assert.equal(requiredCapability("POST", "character-factory/runs/run-01/start"), DAILY);
+  assert.equal(requiredCapability("GET", "character-factory/runs/run-01"), DAILY);
+  assert.equal(
+    requiredCapability("PATCH", "character-factory/runs/run-01/candidates/candidate-01"),
+    DAILY,
+  );
+  assert.equal(requiredCapability("POST", "character-factory/runs/run-01/generate"), DAILY);
+  assert.equal(requiredCapability("GET", "character-factory/candidates/candidate-01/draft"), DAILY);
+  assert.equal(
+    requiredCapability("GET", "character-factory/candidates/candidate-01/draft/portrait"),
+    DAILY,
+  );
+  assert.equal(requiredCapability("PATCH", "character-factory/candidates/candidate-01/draft"), DAILY);
+  assert.equal(
+    requiredCapability("POST", "character-factory/candidates/candidate-01/agent-revisions"),
+    DAILY,
+  );
+  assert.equal(
+    requiredCapability(
+      "POST",
+      "character-factory/candidates/candidate-01/agent-revisions/task-01/apply",
+    ),
+    DAILY,
+  );
+  assert.equal(
+    requiredCapability(
+      "GET",
+      "character-factory/candidates/candidate-01/agent-revisions/task-01/preview-image/before",
+    ),
+    DAILY,
+  );
+  assert.equal(
+    requiredCapability("POST", "character-factory/candidates/candidate-01/preview-turns"),
+    DAILY,
+  );
+  assert.equal(requiredCapability("POST", "character-factory/tasks/task-01/retry"), DAILY);
+  assert.equal(requiredCapability("POST", "character-factory/runs/run-01/preflight"), DAILY);
+  assert.equal(requiredCapability("POST", "character-factory/runs/run-01/submit"), DAILY);
+});
+
+test("character factory rules do not widen into neighbouring paths", () => {
+  assert.equal(requiredCapability("GET", "character-factory/runs"), null);
+  assert.equal(requiredCapability("PATCH", "character-factory/runs"), null);
+  assert.equal(requiredCapability("GET", "character-factory/runs/run-01/start"), null);
+  assert.equal(requiredCapability("POST", "character-factory/runs/run-01"), null);
+  assert.equal(requiredCapability("POST", "character-factory/runs/run-01/candidates/candidate-01"), null);
+  assert.equal(requiredCapability("GET", "character-factory/runs/run-01/generate"), null);
+  assert.equal(requiredCapability("POST", "character-factory/candidates/candidate-01/draft"), null);
+  assert.equal(requiredCapability("GET", "character-factory/candidates/candidate-01/agent-revisions"), null);
+  assert.equal(
+    requiredCapability(
+      "GET",
+      "character-factory/candidates/candidate-01/agent-revisions/task-01/preview-image/source",
+    ),
+    null,
+  );
+  assert.equal(
+    requiredCapability("GET", "character-factory/candidates/candidate-01/media/media-01"),
+    null,
+  );
+  assert.equal(
+    requiredCapability(
+      "PATCH",
+      "character-factory/candidates/candidate-01/agent-revisions/task-01/apply",
+    ),
+    null,
+  );
+  assert.equal(requiredCapability("GET", "character-factory/tasks/task-01/retry"), null);
+  assert.equal(requiredCapability("POST", "character-factory/runs/run-01/unknown"), null);
+  assert.equal(requiredCapability("GET", "character-factory/candidates/candidate-01/draft/extra"), null);
+  assert.equal(requiredCapability("DELETE", "character-factory/runs/run-01"), null);
+  assert.equal(requiredCapability("POST", "character-factory/arbitrary/proxy/path"), null);
+});
+
 test("import rules do not widen into neighbouring paths", () => {
   assert.equal(requiredCapability("POST", "imports"), null);
   assert.equal(requiredCapability("DELETE", "imports/0f3d1a2b"), null);

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Plum 角色工厂 · 批次角色工作台</title>
+  <style>
+    :root { --ink:#252927; --muted:#737a75; --line:#dfe4df; --soft:#f4f6f3; --green:#256649; --mint:#eaf3eb; --coral:#ad5243; --rose:#faeee9; --gold:#9b721c; --yellow:#fbf4dc; }
+    * { box-sizing:border-box; letter-spacing:0; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:#fff; font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
+    button,input,textarea,select { color:inherit; font:inherit; letter-spacing:0; }
+    button,a { -webkit-tap-highlight-color:transparent; }
+    a { color:inherit; text-decoration:none; }
+    :focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+    main { max-width:1180px; margin:auto; padding:24px 36px 32px; }
+    .topbar,.batchbar,.section-head,.panel-head,.draft-actions,.bottom-actions,.tool-row,.chat-form { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .topbar { padding-bottom:16px; border-bottom:1px solid var(--line); }
+    .brand { font-size:20px; font-weight:760; }.brand span { color:var(--green); }
+    .back,.ghost,.icon-btn,.tool,.seg button,.secondary,.primary { border:1px solid var(--line); border-radius:4px; background:#fff; cursor:pointer; }
+    .back,.ghost,.secondary,.primary { display:inline-flex; align-items:center; justify-content:center; min-height:34px; padding:6px 11px; font-size:12px; }.icon-btn:disabled { cursor:not-allowed; opacity:.35; }
+    .back:hover,.ghost:hover,.secondary:hover,.tool:hover { border-color:#9fbca6; color:var(--green); }
+    .primary { border-color:var(--green); background:var(--green); color:#fff; }
+    .batchbar { margin:14px 0 18px; padding:10px 12px; background:var(--soft); border:1px solid var(--line); border-radius:5px; }
+    .crumb { color:var(--muted); font-size:12px; }.crumb b { color:var(--ink); }
+    .candidate-nav { display:flex; align-items:center; gap:7px; }.candidate-nav span { color:var(--muted); font-size:11px; }
+    .icon-btn { width:32px; height:32px; padding:0; font-size:16px; }
+    .intro { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; padding:8px 0 20px; }
+    .eyebrow,.number,.label,.hint,figcaption { color:var(--muted); font-size:11px; }
+    .eyebrow,.number { color:var(--green); font-weight:700; }
+    h1 { margin:4px 0 4px; font-size:28px; line-height:1.3; }h2 { margin:0; font-size:18px; }p { margin:0; }
+    .intro p { color:var(--muted); }.save-state { padding:5px 9px; border-radius:4px; background:var(--mint); color:var(--green); font-size:11px; white-space:nowrap; }
+    .flow { display:grid; grid-template-columns:1fr 24px 1fr 24px 1.35fr 24px 1fr; align-items:center; padding:16px 0 22px; border-top:1px solid var(--line); }
+    .node { padding:12px 8px; border:1px solid var(--line); border-radius:5px; background:var(--soft); text-align:center; }.node.current { background:var(--mint); border-color:#b7d0bd; }.node.parallel { background:var(--yellow); border-color:#e4d7aa; }.node b { display:block; }.node small { color:var(--muted); font-size:10px; }.arrow { color:#939b94; text-align:center; }
+    .section { padding:23px 0; border-top:1px solid var(--line); }.section-head { align-items:flex-end; margin-bottom:13px; }.section-head p { color:var(--muted); font-size:12px; }.number { margin-bottom:3px; }
+    .draft-shell { display:grid; grid-template-columns:250px minmax(0,1fr); border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+    .visual { padding:14px; background:var(--soft); border-right:1px solid var(--line); }.portrait-wrap { aspect-ratio:9/16; max-height:390px; overflow:hidden; background:#e7ece8; }.portrait { display:block; width:100%; height:100%; }
+    .tool-row { justify-content:flex-start; flex-wrap:wrap; margin-top:10px; }.tool { min-height:32px; padding:5px 8px; font-size:11px; }
+    .fields { display:grid; grid-template-columns:1fr 1fr; gap:11px; padding:15px; }.control { min-width:0; }.control.wide { grid-column:1 / -1; }.control label { display:block; margin-bottom:4px; color:var(--muted); font-size:11px; }
+    input,textarea,select { width:100%; border:1px solid var(--line); border-radius:4px; background:#fff; padding:8px 9px; }.control textarea { min-height:74px; resize:vertical; }.control .tall { min-height:110px; }
+    .draft-actions { grid-column:1 / -1; padding-top:3px; }.draft-actions .hint { max-width:520px; }.draft-actions div { display:flex; gap:7px; }
+    .paired { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+    .panel { border:1px solid var(--line); border-radius:6px; overflow:hidden; }.panel-head { padding:10px 12px; background:var(--soft); border-bottom:1px solid var(--line); }.panel-head b { font-size:12px; }.panel-head span { color:var(--muted); font-size:10px; }.panel-body { padding:13px; }
+    .seg { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-bottom:11px; padding:3px; background:var(--soft); border-radius:5px; }.seg button { min-height:30px; border-color:transparent; background:transparent; font-size:11px; }.seg button.active { border-color:#b8cfbd; background:#fff; color:var(--green); font-weight:650; }
+    .prompt { min-height:86px; }.scope-list { display:flex; flex-wrap:wrap; gap:7px 12px; margin:10px 0; }.scope-list label { display:flex; align-items:center; gap:5px; color:#58615a; font-size:11px; }.scope-list input { width:auto; accent-color:var(--green); }
+    .preview { display:none; margin-top:11px; padding:10px; border-left:2px solid #d2bc75; background:var(--yellow); font-size:11px; }.preview b { display:block; margin-bottom:4px; }.preview p { color:#5f5a49; }.preview .tool-row { justify-content:flex-end; }.preview-images { display:none; grid-template-columns:1fr 1fr; gap:8px; margin:8px 0; }.preview-image { position:relative; aspect-ratio:16/9; overflow:hidden; background:#e5ebe6; }.preview-image span { position:absolute; left:5px; bottom:5px; padding:2px 5px; background:rgba(255,255,255,.88); font-size:9px; }.portrait.edited { filter:brightness(.82) saturate(.8) hue-rotate(12deg); }
+    .image-tools { display:none; margin:10px 0; padding:10px; background:var(--rose); }.image-tools.show { display:block; }.image-tools p { color:var(--muted); font-size:11px; }
+    .chat { display:grid; gap:9px; min-height:278px; max-height:360px; overflow:auto; padding:12px; background:#f7f8f6; }.bubble { max-width:84%; padding:8px 10px; border-radius:5px; background:#fff; border:1px solid var(--line); font-size:12px; }.bubble.user { justify-self:end; background:var(--mint); border-color:#c8dccd; }.speaker { margin-bottom:3px; color:var(--muted); font-size:9px; }.chat-form { margin-top:10px; }.chat-form input { min-width:0; }.chat-form button { width:36px; height:36px; border:0; border-radius:4px; background:var(--green); color:#fff; cursor:pointer; font-size:17px; }
+    .version-note { margin-top:8px; color:var(--muted); font-size:10px; }.version-note.changed { color:var(--coral); }
+    .bottom-actions { margin-top:20px; padding:11px 0; background:#fff; border-top:1px solid var(--line); }.bottom-actions p { color:var(--muted); font-size:11px; }.bottom-actions div { display:flex; gap:8px; }
+    .mobile-parallel-label { display:none; }.symbols { position:absolute; width:0; height:0; overflow:hidden; }
+    @media (max-width:760px) { main { padding:18px 20px 24px; }.intro { align-items:flex-start; }.flow { grid-template-columns:1fr; gap:6px; }.flow .arrow { transform:rotate(90deg); }.draft-shell { grid-template-columns:190px minmax(0,1fr); }.fields { grid-template-columns:1fr; }.control.wide,.draft-actions { grid-column:auto; }.paired { grid-template-columns:1fr; } }
+    @media (max-width:520px) { main { padding:14px; }.topbar .back { font-size:0; width:36px; padding:0; }.topbar .back::before { content:'←'; font-size:17px; }.batchbar,.intro,.section-head,.bottom-actions { align-items:flex-start; }.batchbar,.intro,.section-head,.bottom-actions { flex-direction:column; }.candidate-nav { align-self:stretch; justify-content:space-between; }.icon-btn { width:36px; height:36px; }.flow { display:flex; gap:5px; overflow-x:auto; padding:12px 0 16px; }.flow .node { flex:0 0 142px; }.flow .arrow { flex:0 0 14px; transform:none; align-self:center; }.draft-shell { grid-template-columns:1fr; }.visual { border-right:0; border-bottom:1px solid var(--line); }.portrait-wrap { width:150px; margin:auto; }.draft-actions { align-items:flex-start; flex-direction:column; }.paired { gap:12px; }.mobile-parallel-label { display:block; grid-column:1 / -1; padding:9px 11px; background:var(--yellow); color:#625b43; font-size:11px; }.seg button { min-height:36px; }.tool { min-height:36px; }.bottom-actions div { width:100%; }.bottom-actions .secondary,.bottom-actions .primary { flex:1; }.crumb { overflow-wrap:anywhere; } }
+  </style>
+</head>
+<body>
+  <svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="portrait" viewBox="0 0 180 260"><rect width="180" height="260" fill="#e6ece5"/><path d="M0 193H180M0 217H180M28 0V260M153 0V260" stroke="#d3ddd2"/><path d="M24 260L36 198Q49 175 73 173H107Q136 182 145 203L159 260" fill="#526c61"/><path d="M75 157V182L90 196L107 181V153" fill="#dec4b4"/><path d="M44 115Q38 54 86 49Q139 44 139 113L130 178L109 162H65L44 181Z" fill="#394a44"/><ellipse cx="90" cy="117" rx="34" ry="45" fill="#e8d3c3"/><path d="M52 107Q46 55 91 56Q135 55 131 107Q111 104 94 81Q85 103 52 107" fill="#394a44"/><path d="M69 119H79M101 119H111" stroke="#5d6056" stroke-width="2" stroke-linecap="round"/><path d="M86 139Q91 142 96 139" fill="none" stroke="#ad8270" stroke-width="2" stroke-linecap="round"/><path d="M66 178L90 196L75 215L58 190M113 178L90 196L106 215L123 192" fill="#dce4d8"/></symbol></defs></svg>
+  <main>
+    <header class="topbar"><a class="brand exit-link" href="multi.html"><span>plum</span> 角色工厂</a><a class="back exit-link" id="backBatch" href="multi.html#review">← 返回多角色批次</a></header>
+
+    <div class="batchbar"><div class="crumb">多角色生成 / 批次 <b>#B-0924</b> / 候选 <b id="candidateCrumb">03 · 林间</b></div><div class="candidate-nav"><button class="icon-btn" id="previousRole" type="button" title="上一位候选" aria-label="上一位候选">←</button><span id="candidateCount">3 / 12</span><button class="icon-btn" id="nextRole" type="button" title="下一位候选" aria-label="下一位候选">→</button></div></div>
+
+    <section class="intro"><div><div class="eyebrow">批次角色工作台</div><h1 id="roleTitle">林间 · 角色草稿</h1><p>手动编辑，或让 Agent 按描述修改；对话测试读取当前最新版。</p></div><span class="save-state" id="saveState">已保存 · 草稿 v3</span></section>
+
+    <div class="flow" role="img" aria-label="从批量生成结果进入当前角色草稿，修改与对话测试并行，保存后返回原批次。"><div class="node"><b>批量生成结果</b><small>点击一个已完成角色</small></div><div class="arrow" aria-hidden="true">→</div><div class="node current"><b>当前角色草稿</b><small>直接编辑图文字段</small></div><div class="arrow" aria-hidden="true">→</div><div class="node parallel"><b>修改图文 ｜ 对话测试</b><small>同级并行，随时往返</small></div><div class="arrow" aria-hidden="true">→</div><div class="node"><b>保存并返回批次</b><small>只更新当前角色</small></div></div>
+
+    <section class="section" id="draft"><div class="section-head"><div><div class="number">03 / DRAFT</div><h2>当前角色草稿</h2></div><p>完整字段对齐真实投稿；这里的输入可直接修改</p></div>
+      <div class="draft-shell">
+        <div class="visual"><div class="portrait-wrap"><svg class="portrait" role="img" aria-label="当前角色的立绘示意"><use href="#portrait"/></svg></div><div class="tool-row"><button class="tool" type="button" data-image-action="重新生成">重新生成</button><button class="tool" type="button" data-image-action="上传替换">上传替换</button><button class="tool" type="button" data-image-action="裁剪">裁剪</button></div><p class="hint" id="imageStatus">立绘 9:16 · 头像 1:1</p></div>
+        <div class="fields">
+          <div class="control"><label for="name">名称</label><input id="name" value="林间"></div>
+          <div class="control"><label for="gender">性别</label><select id="gender"><option selected>女</option><option>男</option><option>其他</option></select></div>
+          <div class="control wide"><label for="intro">简介</label><input id="intro" value="深夜书店里，替你留一盏灯的人。"></div>
+          <div class="control wide"><label for="opening">开场场景</label><textarea id="opening">雨夜，你推开书店的门。她从书页间抬眼。</textarea></div>
+          <div class="control wide"><label for="persona">角色设定</label><textarea class="tall" id="persona">夜班书店店员，寡言、敏锐，用行动表达关心。关系推进缓慢，不主动表白。</textarea></div>
+          <div class="control wide"><label for="examples">示例对话</label><textarea id="examples">用户：今天不太想回家。&#10;林间：她把椅子拉开。“十点关门。”</textarea></div>
+          <div class="control wide"><label for="rules">回复规则</label><textarea id="rules">回复简短；动作描写多于情绪解释；避免快速建立亲密关系。</textarea></div>
+          <div class="control"><label for="tags">标签</label><input id="tags" value="慢热, 书店, 治愈"></div>
+          <div class="control"><label for="rating">内容评级</label><select id="rating"><option selected>一般级</option><option>成人级</option></select></div>
+          <div class="control"><label for="visibility">可见性</label><select id="visibility"><option selected>公开</option><option>私密</option></select></div>
+          <div class="control"><label for="owner">归属账号</label><select id="owner"><option selected>Plum Studio / 北美</option><option>Plum Studio / 亚洲</option></select></div>
+          <div class="draft-actions"><p class="hint">批次共同要求：女性角色 · 慢热关系 · 英语 / 北美。当前修改只作用于林间。</p><div><button class="secondary" id="undoManual" type="button">撤销</button><button class="primary" id="saveDraft" type="button">保存草稿</button></div></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="paired" aria-label="草稿后的两个并列操作"><div class="mobile-parallel-label">并列入口：修改图文 ｜ 对话测试</div>
+      <section class="section" id="revise"><div class="section-head"><div><div class="number">04 / REVISE</div><h2>描述修改</h2></div><p>Agent 只改选中范围</p></div>
+        <div class="panel"><div class="panel-head"><b>AI Agent 修改</b><span>基于草稿 v3</span></div><div class="panel-body">
+          <div class="seg" role="tablist" aria-label="修改类型"><button class="active" type="button" data-mode="text">改文字</button><button type="button" data-mode="image">改图片</button></div>
+          <textarea class="prompt" id="agentPrompt" aria-label="描述修改要求">让她更克制，不直接安慰用户；通过递热茶、延长关店时间表达关心。</textarea>
+          <div class="scope-list" id="textScopes"><label><input type="checkbox" checked>角色设定</label><label><input type="checkbox" checked>开场场景</label><label><input type="checkbox">简介</label><label><input type="checkbox">示例对话</label><label><input type="checkbox">回复规则</label></div>
+          <div class="image-tools" id="imageTools"><p>图片操作</p><div class="tool-row"><button class="tool" type="button" data-image-action="局部修改">局部修改</button><button class="tool" type="button" data-image-action="重新生成">重新生成</button><button class="tool" type="button" data-image-action="上传替换">上传替换</button><button class="tool" type="button" data-image-action="裁剪">裁剪</button></div></div>
+          <button class="primary" id="previewChange" type="button">生成修改预览</button>
+          <div class="preview" id="changePreview"><b id="previewTitle">文字修改预览</b><p id="previewCopy">角色设定：减少直接情绪表达；新增“延长关店时间”等行动反馈。<br>开场场景：保留雨夜书店，弱化主动关心。</p><div class="preview-images" id="previewImages"><div class="preview-image"><svg class="portrait"><use href="#portrait"/></svg><span>当前图片</span></div><div class="preview-image"><svg class="portrait edited"><use href="#portrait"/></svg><span>修改预览</span></div></div><div class="tool-row"><button class="secondary" id="discardPreview" type="button">撤销</button><button class="primary" id="applyPreview" type="button">应用修改</button></div></div>
+        </div></div>
+      </section>
+
+      <section class="section" id="test"><div class="section-head"><div><div class="number">05 / TEST</div><h2>对话测试</h2></div><p>独立读取当前草稿</p></div>
+        <div class="panel"><div class="panel-head"><b>模拟上线对话 · <span data-role-name>林间</span></b><button class="ghost" id="restartChat" type="button">重新开始</button></div><div class="panel-body">
+          <div class="chat" id="chat"><div class="bubble user"><div class="speaker">模拟用户</div>今天不太想回家。</div><div class="bubble"><div class="speaker">林间 · 草稿 v3</div>她把对面的椅子拉开。<br>“十点关门。”<br>停了停，又把热茶推近了一点。</div></div>
+          <form class="chat-form" id="chatForm"><input id="chatInput" aria-label="输入测试消息" placeholder="输入下一句…" autocomplete="off"><button type="submit" title="发送" aria-label="发送">↑</button></form>
+          <p class="version-note" id="versionNote">当前使用：草稿 v3 · 测试消息不会写回角色设定</p>
+        </div></div>
+      </section>
+    </div>
+
+    <div class="bottom-actions"><p>返回后保留批次筛选、生成进度和当前角色位置。</p><div><button class="secondary" id="saveNext" type="button">保存并打开下一位</button><a class="primary" id="saveReturn" href="multi.html#review">保存并返回批次</a></div></div>
+  </main>
+  <script>
+    const state = document.getElementById('saveState');
+    const version = document.getElementById('versionNote');
+    const preview = document.getElementById('changePreview');
+    const prompt = document.getElementById('agentPrompt');
+    const controls = [...document.querySelectorAll('.fields input,.fields textarea,.fields select')];
+    let baselineValues = new Map();
+    const roles = [
+      { id:'02', name:'艾拉', intro:'把危险藏在礼貌里的临时盟友。', opening:'停电后，她敲响你的门，手里握着一份交易。', persona:'冷静、善于观察，关系建立在互相试探和交换条件上。', tags:'危险盟友, 克制, 悬疑' },
+      { id:'03', name:'林间', intro:'深夜书店里，替你留一盏灯的人。', opening:'雨夜，你推开书店的门。她从书页间抬眼。', persona:'夜班书店店员，寡言、敏锐，用行动表达关心。关系推进缓慢，不主动表白。', tags:'慢热, 书店, 治愈' },
+      { id:'04', name:'诺亚', intro:'只在任务结束后问你累不累的搭档。', opening:'任务失败，你们被困在废弃车站。她递来最后一瓶水。', persona:'行动果断，不轻易信任别人；面对用户时会逐步放下戒备。', tags:'搭档, 冒险, 慢热' },
+      { id:'05', name:'米娅', intro:'多年失联后，像陌生人一样重新认识你。', opening:'同学会散场，她站在旧校门口叫住了你。', persona:'外表随和，刻意回避共同往事；熟悉感会在细节中逐渐恢复。', tags:'旧友重逢, 都市, 拉扯' }
+    ];
+    let roleIndex = 1;
+    let dirty = false;
+    let mode = 'text';
+
+    function markDirty(label = '有未保存修改') { dirty = true; state.textContent = label; state.style.background = 'var(--yellow)'; state.style.color = 'var(--gold)'; }
+    function captureBaseline() { baselineValues = new Map(controls.map((control) => [control, control.value])); }
+    function saveDraft() { dirty = false; captureBaseline(); state.textContent = '已保存 · 草稿 v4'; state.style.background = 'var(--mint)'; state.style.color = 'var(--green)'; version.textContent = '草稿已更新为 v4 · 请重新开始测试'; version.classList.add('changed'); }
+    function renderInitialChat(role) { document.getElementById('chat').innerHTML = '<div class="bubble user"><div class="speaker">模拟用户</div>今天不太想回家。</div><div class="bubble"><div class="speaker">' + role.name + ' · 草稿 v3</div>她看了你一眼，把身边的位置空出来。<br>“那就再待一会儿。”</div>'; }
+    function showRole(index, updateUrl = true) { roleIndex = Math.max(0, Math.min(roles.length - 1, index)); const role = roles[roleIndex]; document.getElementById('candidateCrumb').textContent = role.id + ' · ' + role.name; document.getElementById('candidateCount').textContent = Number(role.id) + ' / 12'; document.getElementById('roleTitle').textContent = role.name + ' · 角色草稿'; document.getElementById('name').value = role.name; document.getElementById('intro').value = role.intro; document.getElementById('opening').value = role.opening; document.getElementById('persona').value = role.persona; document.getElementById('tags').value = role.tags; document.querySelectorAll('[data-role-name]').forEach((item) => { item.textContent = role.name; }); document.getElementById('previousRole').disabled = roleIndex === 0; document.getElementById('nextRole').disabled = roleIndex === roles.length - 1; document.querySelector('.portrait-wrap .portrait').classList.remove('edited'); document.getElementById('imageStatus').textContent = '立绘 9:16 · 头像 1:1'; renderInitialChat(role); captureBaseline(); state.textContent = '已保存 · 草稿 v3'; state.style.background = 'var(--mint)'; state.style.color = 'var(--green)'; version.textContent = '当前使用：草稿 v3 · 测试消息不会写回角色设定'; version.classList.remove('changed'); dirty = false; if (updateUrl) history.replaceState(null, '', '?batch=B-0924&role=' + role.id); window.scrollTo({ top:0, behavior:'smooth' }); }
+
+    controls.forEach((control) => control.addEventListener('input', () => markDirty()));
+    document.getElementById('saveDraft').addEventListener('click', saveDraft);
+    document.getElementById('undoManual').addEventListener('click', () => { baselineValues.forEach((value, control) => { control.value = value; }); dirty = false; state.textContent = '已撤销手动修改'; state.style.background = 'var(--soft)'; state.style.color = 'var(--muted)'; });
+    document.getElementById('previousRole').addEventListener('click', () => { saveDraft(); showRole(roleIndex - 1); });
+    document.getElementById('nextRole').addEventListener('click', () => { saveDraft(); showRole(roleIndex + 1); });
+    document.getElementById('saveNext').addEventListener('click', () => { saveDraft(); showRole(roleIndex + 1); });
+    document.getElementById('saveReturn').addEventListener('click', () => { saveDraft(); });
+    document.querySelectorAll('.exit-link').forEach((link) => link.addEventListener('click', (event) => { if (dirty && !window.confirm('当前角色有未保存修改，确定离开吗？')) event.preventDefault(); }));
+    document.querySelectorAll('[data-image-action]').forEach((button) => button.addEventListener('click', () => { document.getElementById('imageStatus').textContent = button.dataset.imageAction + '已进入预览，应用后写入草稿'; markDirty('图片修改待保存'); }));
+
+    document.querySelectorAll('.seg button').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('.seg button').forEach((item) => item.classList.remove('active')); button.classList.add('active'); mode = button.dataset.mode; const imageMode = mode === 'image'; document.getElementById('imageTools').classList.toggle('show', imageMode); document.getElementById('textScopes').style.display = imageMode ? 'none' : 'flex'; prompt.value = imageMode ? '发色调深，背景改成雨夜；人物服装保持不变。' : '让她更克制，不直接安慰用户；通过递热茶、延长关店时间表达关心。'; preview.style.display = 'none'; }));
+    document.getElementById('previewChange').addEventListener('click', () => { const imageMode = mode === 'image'; document.getElementById('previewTitle').textContent = imageMode ? '图片修改预览' : '文字修改预览'; document.getElementById('previewCopy').innerHTML = imageMode ? '发色与背景已调整；人物服装、构图和面部特征保持不变。' : '角色设定：减少直接情绪表达；新增“延长关店时间”等行动反馈。<br>开场场景：保留雨夜书店，弱化主动关心。'; document.getElementById('previewImages').style.display = imageMode ? 'grid' : 'none'; preview.style.display = 'block'; preview.scrollIntoView({ behavior:'smooth', block:'nearest' }); });
+    document.getElementById('discardPreview').addEventListener('click', () => { preview.style.display = 'none'; });
+    document.getElementById('applyPreview').addEventListener('click', () => { if (mode === 'image') { document.querySelector('.portrait-wrap .portrait').classList.add('edited'); } else { const persona = document.getElementById('persona'); const opening = document.getElementById('opening'); persona.value = persona.value.replace(/[。\s]*$/, '') + '；更克制地回应，用具体行动代替直接安慰。'; opening.value = opening.value.replace(/[。\s]*$/, '') + '。她没有解释，只默默为你多留了一点时间。'; } markDirty('Agent 修改待保存'); preview.style.display = 'none'; version.textContent = '草稿内容已变化 · 保存后重新开始测试'; version.classList.add('changed'); });
+    document.getElementById('restartChat').addEventListener('click', () => { document.getElementById('chat').innerHTML = ''; version.textContent = '当前使用：最新版草稿 · 新测试已开始'; version.classList.remove('changed'); });
+    document.getElementById('chatForm').addEventListener('submit', (event) => { event.preventDefault(); const input = document.getElementById('chatInput'); const value = input.value.trim(); if (!value) return; const chat = document.getElementById('chat'); const user = document.createElement('div'); user.className = 'bubble user'; user.innerHTML = '<div class="speaker">模拟用户</div>' + value.replace(/[&<>]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[char])); chat.appendChild(user); const reply = document.createElement('div'); reply.className = 'bubble'; reply.innerHTML = '<div class="speaker">' + roles[roleIndex].name + ' · 示例回复</div>她合上手里的书，看了你一眼。<br>“那就再坐一会儿。”'; chat.appendChild(reply); input.value = ''; chat.scrollTop = chat.scrollHeight; });
+    const requestedRole = new URLSearchParams(location.search).get('role');
+    const requestedIndex = roles.findIndex((role) => role.id === requestedRole);
+    showRole(requestedIndex >= 0 ? requestedIndex : 1, false);
+  </script>
+</body>
+</html>
