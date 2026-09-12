@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Plum 角色工厂 · 生图工作流</title>
+  <style>
+    :root { --ink:#252927; --muted:#737a75; --line:#dfe4df; --line-strong:#cbd4cc; --soft:#f4f6f3; --green:#256649; --mint:#eaf3eb; --coral:#ad5243; --rose:#faeee9; --blue:#42647d; --blue-soft:#edf3f7; }
+    * { box-sizing:border-box; letter-spacing:0; }
+    html { scroll-behavior:smooth; scroll-padding-top:22px; }
+    body { margin:0; color:var(--ink); background:#fff; font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
+    a { color:inherit; text-decoration:none; }
+    button,input,textarea { font:inherit; }
+    button { cursor:pointer; }
+    main { max-width:1160px; margin:auto; padding:38px 40px 34px; }
+    .masthead { display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:22px; border-bottom:1px solid var(--line); }
+    .brand { font-size:23px; font-weight:750; }.brand span,.eyebrow,.number { color:var(--green); }
+    .meta,.lead,.section-top p,figcaption,.hint { color:var(--muted); }
+    .meta,.eyebrow,.number,figcaption { font-size:12px; }
+    .page-tabs { display:flex; align-items:center; gap:4px; margin-top:14px; overflow-x:auto; white-space:nowrap; font-size:12px; }
+    .page-tabs a,.page-tabs span { padding:6px 11px; border-radius:4px; color:var(--muted); }
+    .page-tabs a:hover { color:var(--green); background:var(--soft); }
+    .page-tabs .active { color:var(--green); background:var(--mint); font-weight:650; }
+    .intro { padding:36px 0 28px; }
+    h1 { margin:8px 0 11px; font-size:36px; line-height:1.3; }
+    .lead { max-width:760px; font-size:17px; }
+    .scope { display:flex; flex-wrap:wrap; gap:10px 28px; margin-top:22px; color:var(--muted); font-size:13px; }
+    .scope b { color:var(--green); }.scope strong { margin-right:7px; color:var(--ink); }
+    .overview { padding:24px 0 30px; border-top:1px solid var(--line); }
+    .section-top { display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:19px; }
+    h2 { margin:0; font-size:20px; }.section-top p { font-size:13px; }
+    .flow { display:grid; grid-template-columns:1fr 24px 1fr 24px 1fr 24px 1.15fr 24px .85fr; align-items:center; }
+    .flow-node { min-height:92px; display:grid; align-content:center; justify-items:center; padding:12px; border:1px solid var(--line); border-radius:6px; background:var(--soft); text-align:center; }
+    .flow-node b { font-size:14px; }.flow-node small { margin-top:4px; color:var(--muted); font-size:10px; }
+    .flow-node.confirm { border-color:#b7cdbd; background:var(--mint); }.flow-node.loop { border-color:#c4d5df; background:var(--blue-soft); }
+    .arrow { color:#8d968f; font-size:19px; text-align:center; }
+    .loop-mark { margin-top:9px; color:var(--blue); font-size:11px; text-align:center; }
+    .jump { display:flex; flex-wrap:wrap; gap:12px 24px; padding:16px 0; border-top:1px solid var(--line); font-size:12px; color:#59635c; }
+    .jump a:hover { color:var(--green); text-decoration:underline; }
+    .step { display:grid; grid-template-columns:260px minmax(0,1fr); gap:42px; align-items:start; padding:34px 0; border-top:1px solid var(--line); }
+    .number { margin-bottom:6px; font-weight:750; }.step h2 { margin-bottom:10px; font-size:23px; }
+    .step-copy > p { color:#59615b; line-height:1.85; }
+    .rule { margin-top:15px; padding-left:12px; border-left:2px solid #aec7b5; color:#465149; font-size:12px; }
+    figure { min-width:0; margin:0; }.mock { overflow:hidden; border:1px solid #d4dbd4; border-radius:6px; background:#fff; }
+    .mock-head,.mock-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 15px; font-size:11px; }
+    .mock-head { border-bottom:1px solid var(--line); background:var(--soft); font-weight:650; }.mock-head span:last-child,.mock-foot { color:var(--muted); }
+    .mock-foot { border-top:1px solid var(--line); }.mock-body { padding:16px; }
+    figcaption { margin-top:7px; }
+    .label { display:block; margin-bottom:5px; color:var(--muted); font-size:10px; }
+    .input-grid { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(180px,.55fr); gap:12px; }
+    textarea,.text-field { width:100%; min-height:98px; padding:10px 11px; resize:vertical; border:1px solid var(--line-strong); border-radius:4px; outline:0; color:var(--ink); background:#fff; font-size:12px; }
+    textarea:focus,.text-field:focus { border-color:#8fb39a; box-shadow:0 0 0 2px #e6f1e8; }
+    .dropzone { min-height:98px; display:grid; place-content:center; justify-items:center; padding:12px; border:1px dashed #aab9ad; border-radius:4px; color:var(--muted); background:#fafbfa; text-align:center; font-size:10px; }
+    .dropzone b { color:var(--green); font-size:19px; font-weight:400; }.dropzone span { display:block; }
+    .mode-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:13px; }
+    .mode { padding:9px 10px; border:1px solid var(--line); border-radius:4px; color:var(--muted); background:#fff; text-align:left; font-size:10px; }
+    .mode b { display:block; color:var(--ink); font-size:12px; }.mode.active { border-color:#9dbba5; background:var(--mint); }.mode.active b { color:var(--green); }
+    .primary,.secondary,.text-button { min-height:32px; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:0 12px; border-radius:4px; font-size:11px; }
+    .primary { border:1px solid #1c503a; color:#fff; background:var(--green); }.primary:disabled { cursor:not-allowed; opacity:.45; }
+    .secondary { border:1px solid var(--line-strong); color:#526058; background:#fff; }.text-button { border:0; color:var(--green); background:transparent; }
+    .prompt-layout { display:grid; grid-template-columns:120px minmax(0,1fr); gap:14px; }
+    .analysis-card { min-height:178px; padding:11px; border:1px solid var(--line); background:var(--soft); }
+    .analysis-card b { display:block; margin-bottom:8px; font-size:11px; }.analysis-card span { display:block; margin:5px 0; color:#5d6860; font-size:10px; }
+    .prompt-editor textarea { min-height:142px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; line-height:1.65; }
+    .prompt-meta { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:7px; color:var(--muted); font-size:9px; }
+    .confirmed { display:none; color:var(--green); font-weight:700; }.confirmed.show { display:inline; }
+    .generation-layout { display:grid; grid-template-columns:170px minmax(0,1fr); gap:15px; }
+    .job-card { padding:11px; border:1px solid var(--line); background:var(--soft); }
+    .job-card dl { margin:0; }.job-card dt { margin-top:9px; color:var(--muted); font-size:9px; }.job-card dt:first-child { margin-top:0; }.job-card dd { margin:1px 0 0; font-size:11px; }
+    .reference-mini { height:72px; display:grid; place-content:center; margin-top:10px; border:1px dashed #adbbb0; color:var(--muted); background:#fff; font-size:9px; text-align:center; }
+    .image-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+    .image-card { position:relative; aspect-ratio:3/4; overflow:hidden; padding:0; border:2px solid transparent; border-radius:4px; background:#e9eeea; }
+    .image-card.selected { border-color:var(--green); }.image-card svg { width:100%; height:100%; display:block; }
+    .image-card i { position:absolute; top:5px; left:5px; width:19px; height:19px; display:grid; place-items:center; border-radius:50%; color:#fff; background:#27342dbe; font-size:9px; font-style:normal; }
+    .image-card.selected::after { content:'已选'; position:absolute; right:5px; bottom:5px; padding:2px 5px; border-radius:3px; color:#fff; background:var(--green); font-size:8px; }
+    .generation-actions,.retouch-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:7px; margin-top:10px; }
+    .retouch-layout { display:grid; grid-template-columns:minmax(180px,.65fr) minmax(0,1.35fr); gap:16px; }
+    .canvas { position:relative; aspect-ratio:3/4; max-height:310px; overflow:hidden; border:1px solid var(--line); background:#e6ece8; }.canvas svg { width:100%; height:100%; display:block; }
+    .version-tag { position:absolute; left:8px; bottom:8px; padding:3px 7px; border-radius:3px; color:#fff; background:#203027d9; font-size:9px; }
+    .edit-side { min-width:0; }.edit-side textarea { min-height:86px; }.quick-edits { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+    .quick-edits button { padding:4px 7px; border:1px solid var(--line); border-radius:3px; color:#5e6861; background:var(--soft); font-size:9px; }
+    .history { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:15px; padding-top:13px; border-top:1px solid var(--line); }
+    .version { min-width:0; padding:7px; border:1px solid var(--line); border-radius:4px; background:#fff; text-align:left; }
+    .version.active { border-color:#8fb39a; background:var(--mint); }.version b,.version small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.version b { font-size:10px; }.version small { color:var(--muted); font-size:8px; }
+    .final-strip { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:12px; padding:13px 15px; border-top:1px solid #c8dbcd; color:#4f6155; background:#f4f9f5; font-size:11px; }
+    .final-strip b { display:block; color:var(--green); font-size:12px; }.final-strip div:last-child { display:flex; gap:7px; }
+    .boundary { display:grid; grid-template-columns:260px minmax(0,1fr); gap:42px; padding:20px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+    .boundary h2 { font-size:16px; }.boundary p { color:#5e675f; font-size:12px; }
+    footer { display:flex; justify-content:space-between; gap:15px; padding-top:20px; color:var(--muted); font-size:10px; }
+    @media (max-width:820px) { main { padding:26px 24px 34px; }.step { grid-template-columns:210px minmax(0,1fr); gap:25px; }.flow { grid-template-columns:1fr 18px 1fr 18px 1fr 18px 1fr 18px .8fr; }.flow-node { padding:8px; }.generation-layout { grid-template-columns:140px minmax(0,1fr); } }
+    @media (max-width:640px) {
+      main { padding:20px 15px 30px; }.masthead { align-items:baseline; }.brand { font-size:20px; }.meta { font-size:10px; }
+      .intro { padding:27px 0 23px; }h1 { font-size:29px; }.lead { font-size:15px; }.scope { flex-direction:column; gap:7px; }
+      .section-top { align-items:flex-start; flex-direction:column; gap:3px; }.flow { grid-template-columns:1fr; max-width:350px; margin:auto; }.flow .arrow { transform:rotate(90deg); line-height:23px; }.flow-node { min-height:72px; }.loop-mark { text-align:left; }
+      .step { grid-template-columns:1fr; gap:17px; padding:26px 0; }.step h2 { font-size:21px; }.input-grid,.prompt-layout,.generation-layout,.retouch-layout,.boundary { grid-template-columns:1fr; }
+      .mode-row { grid-template-columns:1fr; }.image-grid { grid-template-columns:repeat(2,1fr); }.canvas { max-height:none; }.history { grid-template-columns:repeat(2,1fr); }.final-strip { grid-template-columns:1fr; }.final-strip div:last-child { flex-direction:column; }.final-strip button { width:100%; }footer { flex-direction:column; gap:4px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="masthead"><a class="brand" href="#top"><span>plum</span> 角色工厂</a><span class="meta">生图工作流 / 产品原型</span></header>
+    <nav class="page-tabs" aria-label="角色工厂页面"><a href="index.html">单角色生成</a><a href="multi.html">多角色生成</a><a href="management.html">线上角色管理</a><span class="active">生图工作流</span></nav>
+
+    <section class="intro" id="top">
+      <div class="eyebrow">独立工具 / 图片生产</div>
+      <h1>先把意图变成 Prompt，再生成和精修</h1>
+      <p class="lead">ChatGPT 负责理解、写 Prompt 与多轮修图；Midjourney 负责首轮候选图。每次跨模型前都由人确认。</p>
+      <div class="scope"><span><strong>输入</strong>描述或竞品图片，至少一项</span><span><strong>输出</strong><b>一个确认版本</b>，保留完整过程</span></div>
+    </section>
+
+    <section class="overview">
+      <div class="section-top"><h2>主流程</h2><p>Prompt 和图片分别确认，修图允许多轮</p></div>
+      <div class="flow" role="img" aria-label="输入描述或竞品图片，ChatGPT 生成 Prompt，人工确认，Midjourney 生成候选图，选择图片后通过 ChatGPT 多轮修图，最终确认。">
+        <div class="flow-node"><b>输入创意</b><small>描述 / 竞品图</small></div><div class="arrow">→</div>
+        <div class="flow-node confirm"><b>生成并确认 Prompt</b><small>ChatGPT</small></div><div class="arrow">→</div>
+        <div class="flow-node"><b>生成候选图</b><small>Midjourney API</small></div><div class="arrow">→</div>
+        <div class="flow-node loop"><b>多轮修图</b><small>图片 + 指令 → ChatGPT</small></div><div class="arrow">→</div>
+        <div class="flow-node confirm"><b>定稿</b><small>保存最终版本</small></div>
+      </div>
+      <div class="loop-mark">修图不满意：继续输入指令；方向不对：回到任一历史版本</div>
+    </section>
+
+    <nav class="jump" aria-label="页面目录"><a href="#input">01 输入</a><a href="#prompt">02 Prompt</a><a href="#generate">03 生图</a><a href="#retouch">04 多轮修图</a></nav>
+
+    <section class="step" id="input">
+      <div class="step-copy"><div class="number">01 / INPUT</div><h2>描述和参考图，至少给一个</h2><p>文字说清主体、画面用途和想要的感觉；竞品图只提取可复用的视觉特征，不要求用户先会写专业 Prompt。</p><div class="rule">内容模式会同时传给 Prompt 生成、Midjourney 生图和后续修图。</div></div>
+      <figure><div class="mock"><div class="mock-head"><span>输入创意</span><span>至少一项非空</span></div><div class="mock-body">
+        <div class="input-grid"><label><span class="label">画面描述</span><textarea aria-label="画面描述">一位刚结束夜班的年轻女医生，站在医院天台，城市刚亮。人物克制、疲惫，但有很强的生命力；用于角色封面。</textarea></label><div><span class="label">要模仿的竞品图片</span><div class="dropzone"><b>＋</b><span>上传或粘贴图片</span><span>可选</span></div></div></div>
+        <div class="mode-row" aria-label="内容模式"><button class="mode active" type="button"><b>Limited</b>不含成人向内容 · 默认</button><button class="mode" type="button"><b>Limitless</b>允许成人向表达</button></div>
+      </div><div class="mock-foot"><span>系统先做图片理解与输入合并</span><button class="primary" type="button">交给 ChatGPT</button></div></div><figcaption>示意 A · 有图时提取构图、光影、材质与镜头，不复制角色身份</figcaption></figure>
+    </section>
+
+    <section class="step" id="prompt">
+      <div class="step-copy"><div class="number">02 / PROMPT</div><h2>人工确认 Prompt 后再生图</h2><p>ChatGPT 把自然语言和参考图整理为完整 Prompt。运营可直接编辑，也可补一句要求重新生成。</p><div class="rule">确认后锁定 Prompt v3；后续结果必须记录所用 Prompt 版本与内容模式。</div></div>
+      <figure><div class="mock"><div class="mock-head"><span>ChatGPT · Prompt 生成</span><span>Prompt v3 · 待确认</span></div><div class="mock-body prompt-layout">
+        <div class="analysis-card"><b>识别出的方向</b><span>主体：年轻女医生</span><span>场景：清晨天台</span><span>构图：半身近景</span><span>光线：冷暖交界</span><span>用途：角色封面</span></div>
+        <div class="prompt-editor"><span class="label">Midjourney Prompt · 可编辑</span><textarea aria-label="Midjourney Prompt">cinematic portrait of a young female ER doctor after a night shift, standing on a hospital rooftop at dawn, restrained expression, visible fatigue and quiet resilience, realistic facial details, cool blue city shadows with warm sunrise rim light, medium close-up, editorial character key art, 4:5</textarea><div class="prompt-meta"><span>模型建议：portrait · stylize 180 · 4:5</span><span class="confirmed" id="prompt-confirmed">✓ 已确认 Prompt v3</span></div></div>
+      </div><div class="mock-foot"><span><button class="text-button" type="button">按“更真实、少一点电影感”重写</button></span><span><button class="secondary" type="button">另存版本</button> <button class="primary" id="confirm-prompt" type="button">确认并进入生图</button></span></div></div><figcaption>示意 B · Prompt 是独立、可编辑、可追踪的中间产物</figcaption></figure>
+    </section>
+
+    <section class="step" id="generate">
+      <div class="step-copy"><div class="number">03 / GENERATE</div><h2>Midjourney 返回一组候选图</h2><p>使用已确认 Prompt，可选择再垫一张图。返回候选后先选主图，也可重新生成或单张放大。</p><div class="rule">首轮候选保持同一任务组；选择某张图时记录 image_id，作为修图版本链的起点。</div></div>
+      <figure><div class="mock"><div class="mock-head"><span>Midjourney API · 首轮候选</span><span>任务 MJ-2841 · 已完成</span></div><div class="mock-body generation-layout">
+        <aside class="job-card"><dl><dt>Prompt</dt><dd>v3 · 已确认</dd><dt>内容模式</dt><dd>Limited</dd><dt>画幅</dt><dd>4:5</dd><dt>状态</dt><dd style="color:var(--green)">4 / 4 成功</dd></dl><div class="reference-mini">＋ 可选垫图<br>生成前上传</div></aside>
+        <div><div class="image-grid" id="candidate-grid">
+          <button class="image-card selected" type="button" aria-label="选择候选图 1"><i>1</i><svg viewBox="0 0 150 200" aria-hidden="true"><rect width="150" height="200" fill="#dce7e2"/><rect y="130" width="150" height="70" fill="#6a7b74"/><circle cx="76" cy="72" r="31" fill="#e5c7b5"/><path d="M44 75C40 31 113 25 109 80 95 68 89 55 82 43 73 61 61 71 44 75" fill="#35443f"/><path d="M27 200c7-55 29-75 49-75s42 20 50 75" fill="#edf1ed"/><path d="M66 124h20l9 41H57z" fill="#87a09a"/><circle cx="118" cy="30" r="19" fill="#f1c986" opacity=".65"/></svg></button>
+          <button class="image-card" type="button" aria-label="选择候选图 2"><i>2</i><svg viewBox="0 0 150 200" aria-hidden="true"><rect width="150" height="200" fill="#becbd1"/><path d="M0 125 150 88v112H0z" fill="#5a676d"/><circle cx="69" cy="73" r="30" fill="#e2c3b1"/><path d="M38 79C34 28 107 30 103 84 91 69 79 54 74 44 65 62 54 73 38 79" fill="#313d42"/><path d="M18 200c9-54 31-77 52-77 25 0 47 27 57 77" fill="#e8edeb"/><path d="m59 124 12 20 12-20 14 76H43z" fill="#7d9590"/></svg></button>
+          <button class="image-card" type="button" aria-label="选择候选图 3"><i>3</i><svg viewBox="0 0 150 200" aria-hidden="true"><rect width="150" height="200" fill="#e4ddd6"/><rect y="139" width="150" height="61" fill="#758078"/><circle cx="79" cy="70" r="31" fill="#e6c8b6"/><path d="M46 77C41 31 116 29 112 80 97 66 91 50 85 42 76 61 62 73 46 77" fill="#3c4440"/><path d="M27 200c5-52 28-77 53-77s45 25 49 77" fill="#f1f2ed"/><circle cx="20" cy="30" r="21" fill="#f3c987" opacity=".72"/></svg></button>
+          <button class="image-card" type="button" aria-label="选择候选图 4"><i>4</i><svg viewBox="0 0 150 200" aria-hidden="true"><rect width="150" height="200" fill="#c9d8df"/><path d="M0 117h150v83H0z" fill="#697a80"/><circle cx="73" cy="72" r="30" fill="#dfc1b0"/><path d="M41 78C37 31 108 29 106 80 91 70 84 54 78 43 70 61 57 73 41 78" fill="#323e43"/><path d="M22 200c7-51 27-76 52-76 23 0 43 23 52 76" fill="#e9eeed"/><path d="M60 124h27l7 76H50z" fill="#879b99"/></svg></button>
+        </div><div class="generation-actions"><button class="secondary" type="button">重新生成 4 张</button><button class="secondary" type="button">放大选中图</button><button class="primary" type="button">用选中图开始修图</button></div></div>
+      </div></div><figcaption>示意 C · 候选图只负责选方向，不在这一层堆叠复杂编辑</figcaption></figure>
+    </section>
+
+    <section class="step" id="retouch">
+      <div class="step-copy"><div class="number">04 / RETOUCH</div><h2>一句指令一次修改，形成版本链</h2><p>每轮把当前图片与人工指令提交给 ChatGPT 图片编辑。结果作为新版本，不覆盖原图。</p><div class="rule">可继续修改、前后对比或回退任意版本；只有人工点击“设为最终图”才结束。</div></div>
+      <figure><div class="mock"><div class="mock-head"><span>ChatGPT · 图片精修</span><span>当前版本 v3</span></div><div class="mock-body retouch-layout">
+        <div class="canvas"><svg viewBox="0 0 210 280" aria-label="当前修图结果"><rect width="210" height="280" fill="#dce7e2"/><rect y="181" width="210" height="99" fill="#64766f"/><circle cx="106" cy="99" r="45" fill="#e5c7b5"/><path d="M60 105C54 41 160 35 154 112 134 95 124 75 115 59 103 85 86 99 60 105" fill="#35443f"/><path d="M33 280c10-77 42-105 73-105 35 0 65 29 76 105" fill="#edf1ed"/><path d="M91 174h30l13 58H77z" fill="#87a09a"/><circle cx="168" cy="41" r="28" fill="#f1c986" opacity=".68"/><path d="M65 129c19 12 60 12 82 0" fill="none" stroke="#9fb4aa" opacity=".3"/></svg><span class="version-tag">v3 · 当前</span></div>
+        <div class="edit-side"><label><span class="label">本轮修图指令</span><textarea id="edit-instruction" aria-label="修图指令">保留人物和构图，把清晨阳光再加强一点；减轻脸部疲惫感，但不要变成微笑。</textarea></label><div class="quick-edits"><button type="button">保持人物一致</button><button type="button">只改背景</button><button type="button">调整构图</button><button type="button">修正手部</button></div><div class="retouch-actions"><button class="secondary" type="button">前后对比</button><button class="primary" id="edit-image" type="button">生成新版本</button></div>
+          <div class="history" aria-label="修图版本历史"><button class="version" type="button"><b>v0 · MJ 原图</b><small>候选图 1</small></button><button class="version" type="button"><b>v1</b><small>弱化背景灯光</small></button><button class="version" type="button"><b>v2</b><small>修正肩部比例</small></button><button class="version active" type="button"><b>v3 · 当前</b><small>加强晨光</small></button></div>
+        </div>
+      </div><div class="final-strip"><div><b>满意后结束版本链</b><span>保留原图、Prompt、每轮指令与生成结果</span></div><div><button class="secondary" type="button">保存到素材库</button><button class="primary" type="button">设为最终图</button></div></div></div><figcaption>示意 D · 修图是一条可追溯的版本链，不是覆盖式操作</figcaption></figure>
+    </section>
+
+    <aside class="boundary"><h2>核心数据关系</h2><p>一个图片任务包含：原始输入、内容模式、Prompt 版本、Midjourney 任务与候选图、选中源图、ChatGPT 修图版本链、最终图。任一步失败只重试当前节点，不丢失已确认结果。</p></aside>
+    <footer><span>Plum 角色工厂 · 独立生图工作流</span><span>ChatGPT 写 Prompt / 修图 · Midjourney 首轮生图</span></footer>
+  </main>
+  <script>
+    document.querySelectorAll('.mode').forEach((button) => button.addEventListener('click', () => {
+      document.querySelectorAll('.mode').forEach((item) => item.classList.toggle('active', item === button));
+    }));
+    document.getElementById('confirm-prompt').addEventListener('click', (event) => {
+      document.getElementById('prompt-confirmed').classList.add('show');
+      event.currentTarget.textContent = '已确认';
+      document.getElementById('generate').scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+    document.querySelectorAll('.image-card').forEach((button) => button.addEventListener('click', () => {
+      document.querySelectorAll('.image-card').forEach((item) => item.classList.toggle('selected', item === button));
+    }));
+    document.querySelectorAll('.version').forEach((button) => button.addEventListener('click', () => {
+      document.querySelectorAll('.version').forEach((item) => item.classList.toggle('active', item === button));
+    }));
+    document.getElementById('edit-image').addEventListener('click', (event) => {
+      const button = event.currentTarget;
+      button.textContent = '正在生成 v4…';
+      button.disabled = true;
+      window.setTimeout(() => { button.textContent = '生成新版本'; button.disabled = false; }, 900);
+    });
+  </script>
+</body>
+</html>

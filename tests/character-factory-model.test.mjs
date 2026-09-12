@@ -26,6 +26,27 @@ import {
   INITIAL_FACTORY_STATE,
   factoryReducer,
 } from "../features/character-factory/reducer.ts";
+import {
+  imageRunInputReady,
+  imageWorkflowStep,
+  shouldPollImageRun,
+} from "../features/character-factory/image-workflow.ts";
+
+test("image workflow maps backend states to stable UI steps", () => {
+  assert.equal(imageWorkflowStep("empty"), 0);
+  assert.equal(imageWorkflowStep("prompt_ready"), 1);
+  assert.equal(imageWorkflowStep("candidates_ready"), 2);
+  assert.equal(imageWorkflowStep("editing"), 3);
+  assert.equal(imageWorkflowStep("finalized"), 4);
+  assert.equal(shouldPollImageRun("generating"), true);
+  assert.equal(shouldPollImageRun("candidates_ready"), false);
+  assert.equal(shouldPollImageRun("editing"), false);
+  assert.equal(shouldPollImageRun("editing", ["succeeded", "running"]), true);
+  assert.equal(imageRunInputReady("", 0, "owner"), false);
+  assert.equal(imageRunInputReady("portrait", 0, "owner"), true);
+  assert.equal(imageRunInputReady("", 1, "owner"), true);
+  assert.equal(imageRunInputReady("portrait", 0, ""), false);
+});
 
 const now = "2026-09-09T00:00:00.000Z";
 

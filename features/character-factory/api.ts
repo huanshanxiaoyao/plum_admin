@@ -11,6 +11,12 @@ import type {
   PreviewTurnRequest,
   PreviewTurnResult,
   SubmissionConfirmation,
+  ConfirmImagePromptRequest,
+  CreateImageRunRequest,
+  EditImageRequest,
+  GenerateImageCandidatesRequest,
+  GenerateImagePromptRequest,
+  ImageRunSnapshot,
 } from "./contracts.ts";
 import { isFactoryCostReport, type FactoryCostReport } from "./costs.ts";
 import {
@@ -37,6 +43,10 @@ export function characterFactoryDraftPortraitUrl(
   revision: number,
 ): string {
   return `${BASE}/candidates/${encodeURIComponent(candidateId)}/draft/portrait?revision=${encodeURIComponent(String(revision))}`;
+}
+
+export function characterFactoryImageMediaUrl(runId: string, mediaId: string): string {
+  return `${BASE}/image-runs/${encodeURIComponent(runId)}/media/${encodeURIComponent(mediaId)}`;
 }
 
 export class FactoryApiError extends Error {
@@ -390,5 +400,118 @@ export function submitRun(
       signal,
     }).then(adaptFactoryRunResponse),
     "批量提交",
+  );
+}
+
+export function createImageRun(
+  body: CreateImageRunRequest,
+  idempotencyKey: string,
+  signal?: AbortSignal,
+): Promise<ApiResponse<ImageRunSnapshot>> {
+  return request<ApiResponse<ImageRunSnapshot>>(
+    "/image-runs",
+    json("POST", { ...body, content_mode: body.content_mode ?? "limited" }),
+    { idempotencyKey, signal },
+  );
+}
+
+export function getImageRun(runId: string, signal?: AbortSignal): Promise<ApiResponse<ImageRunSnapshot>> {
+  return request<ApiResponse<ImageRunSnapshot>>(
+    `/image-runs/${encodeURIComponent(runId)}`,
+    { method: "GET" },
+    { signal },
+  );
+}
+
+export function retryImageTask(
+  runId: string,
+  taskId: string,
+  expectedRevision: number,
+  idempotencyKey: string,
+  signal?: AbortSignal,
+): Promise<ApiResponse<ImageRunSnapshot>> {
+  return request<ApiResponse<ImageRunSnapshot>>(
+    `/image-runs/${encodeURIComponent(runId)}/tasks/${encodeURIComponent(taskId)}/retry`,
+    json("POST", { expected_revision: expectedRevision }),
+    { idempotencyKey, signal },
+  );
+}
+
+export function generateImagePrompt(
+  runId: string,
+  body: GenerateImagePromptRequest,
+  idempotencyKey: string,
+  signal?: AbortSignal,
+): Promise<ApiResponse<ImageRunSnapshot>> {
+  return request<ApiResponse<ImageRunSnapshot>>(
+    `/image-runs/${encodeURIComponent(runId)}/prompt`,
+    json("POST", body),
+    { idempotencyKey, signal },
+  );
+}
+
+export function confirmImagePrompt(
+  runId: string,
+  body: ConfirmImagePromptRequest,
+  idempotencyKey: string,
+  signal?: AbortSignal,
+): Promise<ApiResponse<ImageRunSnapshot>> {
+  return request<ApiResponse<ImageRunSnapshot>>(
+    `/image-runs/${encodeURIComponent(runId)}/prompt/confirm`,
+    json("POST", body),
+    { idempotencyKey, signal },
+  );
+}
+
+export function generateImageCandidates(
+  runId: string,
+  body: GenerateImageCandidatesRequest,
+  idempotencyKey: string,
+  signal?: AbortSignal,
+): Promise<ApiResponse<ImageRunSnapshot>> {
+  return request<ApiResponse<ImageRunSnapshot>>(
+    `/image-runs/${encodeURIComponent(runId)}/generate`,
+    json("POST", body),
+    { idempotencyKey, signal },
+  );
+}
+
+export function selectImageCandidate(
+  runId: string,
+  candidateId: string,
+  expectedRevision: number,
+  idempotencyKey: string,
+  signal?: AbortSignal,
+): Promise<ApiResponse<ImageRunSnapshot>> {
+  return request<ApiResponse<ImageRunSnapshot>>(
+    `/image-runs/${encodeURIComponent(runId)}/candidates/${encodeURIComponent(candidateId)}/select`,
+    json("POST", { expected_revision: expectedRevision }),
+    { idempotencyKey, signal },
+  );
+}
+
+export function editImageVersion(
+  runId: string,
+  body: EditImageRequest,
+  idempotencyKey: string,
+  signal?: AbortSignal,
+): Promise<ApiResponse<ImageRunSnapshot>> {
+  return request<ApiResponse<ImageRunSnapshot>>(
+    `/image-runs/${encodeURIComponent(runId)}/edits`,
+    json("POST", body),
+    { idempotencyKey, signal },
+  );
+}
+
+export function finalizeImageVersion(
+  runId: string,
+  versionId: string,
+  expectedRevision: number,
+  signal?: AbortSignal,
+): Promise<ApiResponse<ImageRunSnapshot>> {
+  return request<ApiResponse<ImageRunSnapshot>>(
+    `/image-runs/${encodeURIComponent(runId)}/versions/${encodeURIComponent(versionId)}/finalize`,
+    json("POST", { expected_revision: expectedRevision }),
+    { signal },
   );
 }
