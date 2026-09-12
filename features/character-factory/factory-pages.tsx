@@ -2,6 +2,7 @@ import { adminApiWritesEnabled, adminDataSourceMode } from "@/lib/bff/config";
 import { CandidateWorkbench } from "./candidate-workbench";
 import { MultiConsole } from "./multi-console";
 import { SingleConsole } from "./single-console";
+import { ImageWorkflowConsole } from "./image-workflow-console";
 
 function runtime() {
   const fixtureMode = adminDataSourceMode() === "fixture";
@@ -21,6 +22,10 @@ export function SingleFactoryPage() {
 
 export function MultiFactoryPage() {
   return <MultiConsole {...runtime()} />;
+}
+
+export function ImageWorkflowPage() {
+  return <ImageWorkflowConsole {...runtime()} />;
 }
 
 export async function CandidateWorkbenchPage({

@@ -29,6 +29,32 @@ test("operator can enter the factory and switch generation modes", async ({ page
   await expect(page.getByRole("button", { name: /竞品 \/ 社媒 URL/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /纯文字描述/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /示例图片 \+ 文字/ })).toBeVisible();
+
+  await page.getByRole("link", { name: "生图工作流" }).click();
+  await expect(page).toHaveURL("/character-factory/image");
+  await expect(page.getByRole("link", { name: "生图工作流" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { name: "输入创意" })).toBeVisible();
+});
+
+test("image workflow confirms prompt, selects a candidate, edits, and finalizes", async ({ page }) => {
+  await signIn(page);
+  await page.goto("/character-factory/image");
+  await page.getByLabel("画面描述").fill("极简陶器角色道具，柔和自然光");
+  await page.getByRole("button", { name: "交给 ChatGPT" }).click();
+
+  await expect(page.getByRole("heading", { name: "生成并确认 Prompt" })).toBeVisible();
+  await page.getByRole("button", { name: "确认 Prompt" }).click();
+  await page.getByRole("button", { name: "生成 4 张候选图" }).click();
+  await expect(page.getByRole("button", { name: "选择候选图 1" })).toBeVisible();
+  await page.getByRole("button", { name: "选择候选图 1" }).click();
+  await page.getByRole("button", { name: "用选中图开始修图" }).click();
+
+  await expect(page.getByRole("heading", { name: "多轮修图" })).toBeVisible();
+  await page.getByLabel("本轮修图指令").fill("背景更暖，保持主体比例");
+  await page.getByRole("button", { name: "生成新版本" }).click();
+  await expect(page.getByRole("button", { name: /v1/ })).toBeVisible();
+  await page.getByRole("button", { name: "设为最终图" }).click();
+  await expect(page.getByText("v1 已设为最终图")).toBeVisible();
 });
 
 test("single generation exposes revision and dialogue as parallel work areas", async ({ page }, testInfo) => {

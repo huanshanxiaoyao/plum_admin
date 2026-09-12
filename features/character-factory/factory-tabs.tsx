@@ -7,6 +7,7 @@ import styles from "./factory-tabs.module.css";
 const FACTORY_VIEWS = [
   { href: "/character-factory/single", label: "单角色生成" },
   { href: "/character-factory/multi", label: "多角色生成" },
+  { href: "/character-factory/image", label: "生图工作流" },
 ] as const;
 
 function isActivePath(pathname: string, href: string): boolean {

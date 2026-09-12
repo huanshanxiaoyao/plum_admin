@@ -4,11 +4,20 @@ import {
   FactoryApiError,
   characterFactoryDraftPortraitUrl,
   characterFactoryRevisionImageUrl,
+  characterFactoryImageMediaUrl,
+  confirmImagePrompt,
+  createImageRun,
+  editImageVersion,
+  finalizeImageVersion,
+  generateImageCandidates,
+  generateImagePrompt,
   createRun,
   getDraft,
   getRun,
   getRunCosts,
+  retryImageTask,
   updateDraft,
+  selectImageCandidate,
 } from "../features/character-factory/api.ts";
 
 test("character factory image URLs stay candidate and revision scoped", () => {
@@ -20,6 +29,55 @@ test("character factory image URLs stay candidate and revision scoped", () => {
     characterFactoryDraftPortraitUrl("candidate/a", 7),
     "/api/admin/character-factory/candidates/candidate%2Fa/draft/portrait?revision=7",
   );
+  assert.equal(
+    characterFactoryImageMediaUrl("run/a", "media?1"),
+    "/api/admin/character-factory/image-runs/run%2Fa/media/media%3F1",
+  );
+});
+
+test("image workflow API methods keep exact paths, bodies, and idempotency keys", async (t) => {
+  const original = globalThis.fetch;
+  t.after(() => { globalThis.fetch = original; });
+  const calls = [];
+  const snapshot = {
+    data: {
+      run: { id: "image/a", status: "input" },
+      prompts: [], candidates: [], versions: [], tasks: [],
+    },
+    meta: { request_id: "req_image" },
+  };
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url, init });
+    return jsonResponse(snapshot);
+  };
+
+  await createImageRun({ owner_platform_user_id: "pu_1", description: "vase", reference_media_ids: ["m_1"], aspect_ratio: "1:1" }, "image:create");
+  await generateImagePrompt("image/a", { expected_revision: 1, instruction: "more tactile" }, "image:prompt");
+  await confirmImagePrompt("image/a", { expected_revision: 2, prompt_version_id: "prompt/1", content: "final prompt" }, "image:confirm");
+  await generateImageCandidates("image/a", { expected_revision: 3, prompt_version_id: "prompt/1", aspect_ratio: "3:4", reference_media_id: "m_2" }, "image:generate");
+  await selectImageCandidate("image/a", "candidate/1", 4, "image:select");
+  await editImageVersion("image/a", { expected_revision: 5, source_version_id: "version/0", instruction: "warmer light" }, "image:edit");
+  await finalizeImageVersion("image/a", "version/1", 6);
+  await retryImageTask("image/a", "task/1", 7, "image:retry");
+
+  assert.deepEqual(calls.map((call) => [call.url, call.init.headers.get("Idempotency-Key")]), [
+    ["/api/admin/character-factory/image-runs", "image:create"],
+    ["/api/admin/character-factory/image-runs/image%2Fa/prompt", "image:prompt"],
+    ["/api/admin/character-factory/image-runs/image%2Fa/prompt/confirm", "image:confirm"],
+    ["/api/admin/character-factory/image-runs/image%2Fa/generate", "image:generate"],
+    ["/api/admin/character-factory/image-runs/image%2Fa/candidates/candidate%2F1/select", "image:select"],
+    ["/api/admin/character-factory/image-runs/image%2Fa/edits", "image:edit"],
+    ["/api/admin/character-factory/image-runs/image%2Fa/versions/version%2F1/finalize", null],
+    ["/api/admin/character-factory/image-runs/image%2Fa/tasks/task%2F1/retry", "image:retry"],
+  ]);
+  assert.deepEqual(JSON.parse(calls[0].init.body), {
+    owner_platform_user_id: "pu_1",
+    description: "vase",
+    reference_media_ids: ["m_1"],
+    aspect_ratio: "1:1",
+    content_mode: "limited",
+  });
+  assert.deepEqual(calls.slice(1).map((call) => JSON.parse(call.init.body).expected_revision), [1, 2, 3, 4, 5, 6, 7]);
 });
 
 function jsonResponse(body, init = {}) {

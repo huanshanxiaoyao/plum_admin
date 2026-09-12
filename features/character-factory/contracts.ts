@@ -129,8 +129,10 @@ export const FACTORY_TASK_TYPES = [
   "source_parse",
   "image_understand",
   "candidate_plan",
+  "prompt_generate",
   "text_generate",
   "image_generate",
+  "image_edit",
   "assemble_draft",
   "revise_text",
   "revise_image",
@@ -347,6 +349,123 @@ export type SubmissionConfirmation = {
   readonly adult_confirmed: true;
   readonly rights_confirmed: true;
   readonly candidate_ids: readonly string[];
+};
+
+export const IMAGE_RUN_STATUSES = [
+  "input",
+  "prompting",
+  "prompt_ready",
+  "generating",
+  "candidates_ready",
+  "editing",
+  "finalized",
+  "failed",
+] as const;
+export type ImageRunStatus = (typeof IMAGE_RUN_STATUSES)[number];
+
+export const IMAGE_ASPECT_RATIOS = ["1:1", "3:4", "4:3", "9:16", "16:9"] as const;
+export type ImageAspectRatio = (typeof IMAGE_ASPECT_RATIOS)[number];
+
+export type ImagePromptAnalysis = {
+  readonly subject?: string;
+  readonly scene?: string;
+  readonly composition?: string;
+  readonly lighting?: string;
+  readonly visual_style?: string;
+};
+
+export type ImagePromptVersion = {
+  readonly id: string;
+  readonly version: number;
+  readonly content: string;
+  readonly analysis: ImagePromptAnalysis;
+  readonly confirmed_at: string | null;
+  readonly created_at: string;
+};
+
+export type ImageCandidate = {
+  readonly id: string;
+  readonly ordinal: number;
+  readonly media_id: string;
+  readonly image_url?: string | null;
+  readonly created_at: string;
+};
+
+export type ImageVersion = {
+  readonly id: string;
+  readonly version: number;
+  readonly parent_version_id: string | null;
+  readonly media_id: string;
+  readonly image_url?: string | null;
+  readonly instruction: string | null;
+  readonly provider: string;
+  readonly is_final: boolean;
+  readonly created_at: string;
+};
+
+export type ImageRunError = {
+  readonly code: string;
+  readonly message: string;
+  readonly retryable: boolean;
+} | null;
+
+export type ImageRun = {
+  readonly id: string;
+  readonly revision: number;
+  readonly owner_platform_user_id: string;
+  readonly content_mode: ContentMode;
+  readonly description: string;
+  readonly reference_media_ids: readonly string[];
+  readonly generation_reference_media_id: string | null;
+  readonly aspect_ratio: ImageAspectRatio;
+  readonly status: ImageRunStatus;
+  readonly active_prompt_version_id: string | null;
+  readonly selected_candidate_id: string | null;
+  readonly current_version_id: string | null;
+  readonly final_version_id: string | null;
+  readonly error: ImageRunError;
+  readonly created_at: string;
+  readonly updated_at: string;
+};
+
+export type ImageRunSnapshot = {
+  readonly run: ImageRun;
+  readonly prompts: readonly ImagePromptVersion[];
+  readonly candidates: readonly ImageCandidate[];
+  readonly versions: readonly ImageVersion[];
+  readonly tasks: readonly FactoryTask[];
+};
+
+export type CreateImageRunRequest = {
+  readonly owner_platform_user_id: string;
+  readonly content_mode?: ContentMode;
+  readonly description: string;
+  readonly reference_media_ids: readonly string[];
+  readonly aspect_ratio: ImageAspectRatio;
+};
+
+export type GenerateImagePromptRequest = {
+  readonly expected_revision: number;
+  readonly instruction?: string;
+};
+
+export type ConfirmImagePromptRequest = {
+  readonly expected_revision: number;
+  readonly prompt_version_id: string;
+  readonly content: string;
+};
+
+export type GenerateImageCandidatesRequest = {
+  readonly expected_revision: number;
+  readonly prompt_version_id: string;
+  readonly aspect_ratio: ImageAspectRatio;
+  readonly reference_media_id?: string;
+};
+
+export type EditImageRequest = {
+  readonly expected_revision: number;
+  readonly source_version_id: string;
+  readonly instruction: string;
 };
 
 const PARSING_TASKS = new Set<FactoryTaskType>([
